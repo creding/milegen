@@ -33,7 +33,7 @@ export const theme = createTheme({
       },
       styles: {
         root: {
-          '&[data-variant="gradient"]': {
+          '&[dataVariant="gradient"]': {
             background: "linear-gradient(45deg, #3498db, #39c0ba)",
             color: "white",
             fontWeight: 600,
@@ -44,7 +44,7 @@ export const theme = createTheme({
               boxShadow: "0 6px 18px rgba(0, 0, 0, 0.2)",
             },
           },
-          '&[data-variant="outline-brand"]': {
+          '&[dataVariant="outlineBrand"]': {
             border: `1px solid ${brandTeal}`,
             color: brandTeal,
             fontWeight: 600,
@@ -63,7 +63,7 @@ export const theme = createTheme({
     Text: {
       styles: {
         root: {
-          '&[data-variant="gradient"]': {
+          '&[dataVariant="gradient"]': {
             background: "linear-gradient(45deg, #3498db, #39c0ba)",
             backgroundClip: "text",
             WebkitBackgroundClip: "text",
@@ -100,7 +100,7 @@ export const theme = createTheme({
       },
       styles: {
         root: {
-          "&[data-active]": {
+          "&[dataActive]": {
             background: "linear-gradient(45deg, #3498db, #39c0ba)",
             color: "white",
           },
