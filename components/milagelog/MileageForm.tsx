@@ -23,7 +23,8 @@ interface MileageFormProps {
   startDate: Date;
   endDate: Date;
   totalPersonalMiles: string;
-  destination: string;
+  vehicle: string;
+  location: string;
   businessPurpose: string;
   subscriptionStatus: string;
   entryCount: number;
@@ -32,7 +33,8 @@ interface MileageFormProps {
   onStartDateChange: (value: Date) => void;
   onEndDateChange: (value: Date) => void;
   onTotalPersonalMilesChange: (value: string) => void;
-  onDestinationChange: (value: string) => void;
+  onVehicleChange: (value: string) => void;
+  onLocationChange: (value: string) => void;
   onBusinessPurposeChange: (value: string) => void;
   onGenerate: () => void;
   onReset: () => void;
@@ -44,7 +46,8 @@ interface FormValues {
   startDate: Date;
   endDate: Date;
   totalPersonalMiles: string;
-  destination: string;
+  vehicle: string;
+  location: string;
   businessPurpose: string;
 }
 
@@ -56,7 +59,8 @@ export function MileageForm({
   startDate,
   endDate,
   totalPersonalMiles,
-  destination,
+  vehicle,
+  location,
   businessPurpose,
   subscriptionStatus,
   entryCount,
@@ -65,7 +69,8 @@ export function MileageForm({
   onStartDateChange,
   onEndDateChange,
   onTotalPersonalMilesChange,
-  onDestinationChange,
+  onVehicleChange,
+  onLocationChange,
   onBusinessPurposeChange,
   onGenerate,
   onReset,
@@ -79,7 +84,8 @@ export function MileageForm({
       startDate,
       endDate,
       totalPersonalMiles,
-      destination,
+      vehicle,
+      location,
       businessPurpose,
     },
     validate: {
@@ -103,7 +109,8 @@ export function MileageForm({
         if (parseInt(value) > totalMiles) return "Cannot exceed total mileage";
         return null;
       },
-      destination: isNotEmpty("Destination is required"),
+      vehicle: isNotEmpty("Vehicle is required"),
+      location: isNotEmpty("Location is required"),
       businessPurpose: isNotEmpty("Business purpose is required"),
     },
   });
@@ -113,7 +120,8 @@ export function MileageForm({
     onStartMileageChange(values.startMileage);
     onEndMileageChange(values.endMileage);
     onTotalPersonalMilesChange(values.totalPersonalMiles);
-    onDestinationChange(values.destination);
+    onVehicleChange(values.vehicle);
+    onLocationChange(values.location);
     onBusinessPurposeChange(values.businessPurpose);
   };
 
@@ -298,16 +306,32 @@ export function MileageForm({
           </CustomInputWrapper>
 
           <CustomInputWrapper
-            label="Destination"
+            label="Vehicle"
             required
-            error={form.errors.destination}
+            error={form.errors.vehicle}
           >
             <TextInput
-              placeholder="Enter common destination"
-              {...form.getInputProps("destination")}
+              placeholder="Enter vehicle"
+              {...form.getInputProps("vehicle")}
               onChange={(e) => {
-                form.setFieldValue("destination", e.target.value);
-                onDestinationChange(e.target.value);
+                form.setFieldValue("vehicle", e.target.value);
+                onVehicleChange(e.target.value);
+              }}
+              error={null} // Hide default error
+            />
+          </CustomInputWrapper>
+
+          <CustomInputWrapper
+            label="Location"
+            required
+            error={form.errors.location}
+          >
+            <TextInput
+              placeholder="Enter location"
+              {...form.getInputProps("location")}
+              onChange={(e) => {
+                form.setFieldValue("location", e.target.value);
+                onLocationChange(e.target.value);
               }}
               error={null} // Hide default error
             />
@@ -360,18 +384,18 @@ export function MileageForm({
                 variant="light"
                 color="gray"
                 onClick={handleReset}
-                size="md"
+                size={isMobile ? "md" : "sm"}
               >
                 Reset
               </Button>
               <Button
                 variant="gradient"
+                size={isMobile ? "md" : "sm"}
                 type="submit"
                 disabled={
                   subscriptionStatus !== "active" &&
                   entryCount >= MAX_FREE_ENTRIES
                 }
-                size="md"
               >
                 Generate Log
               </Button>
