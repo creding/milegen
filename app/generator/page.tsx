@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabaseServerClient";
-import { checkSubscriptionStatus } from "../actions/checkSubscriptionStatus";
+import { checkSubscriptionStatus } from "@/app/actions/checkSubscriptionStatus";
 import { GeneratorPage } from "@/components/pages/GeneratorPage";
 
 export default async function Page() {

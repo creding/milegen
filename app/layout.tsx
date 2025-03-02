@@ -10,6 +10,8 @@ import "@mantine/notifications/styles.css";
 import "@mantine/dates/styles.css";
 import { Nav } from "@/components/layout/Nav";
 import { Footer } from "@/components/layout/Footer";
+import { theme } from "@/theme/theme";
+
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
@@ -25,7 +27,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         className={inter.className}
         style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}
       >
-        <MantineProvider>
+        <MantineProvider theme={theme}>
           <Notifications position="top-right" />
           <Nav />
           <main>{children}</main>

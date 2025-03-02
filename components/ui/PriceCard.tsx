@@ -75,12 +75,10 @@ export function PriceCard({
           </Text>
           <Group align="baseline" gap={5}>
             <Text
+              variant="gradient"
               style={{
                 fontSize: "3.5rem",
                 fontWeight: 800,
-                background: "linear-gradient(45deg, #3498db, #39c0ba)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
                 lineHeight: 1,
               }}
             >
@@ -100,8 +98,6 @@ export function PriceCard({
               <ThemeIcon
                 size={22}
                 radius="xl"
-                color="teal"
-                variant="light"
                 style={{ marginTop: 2 }}
               >
                 <IconCheck size={14} />
@@ -112,25 +108,10 @@ export function PriceCard({
         </Stack>
 
         <Button
-          size="md"
-          radius="md"
-          fullWidth
-          style={{
-            background: popular
-              ? "linear-gradient(45deg, #3498db, #39c0ba)"
-              : "linear-gradient(45deg, #3498db, #39c0ba)",
-            boxShadow: "0 4px 14px rgba(0, 0, 0, 0.15)",
-            fontSize: "1rem",
-            fontWeight: 600,
-            padding: "10px 0",
-            transition: "transform 0.2s, box-shadow 0.2s",
-            ":hover": {
-              transform: "translateY(-2px)",
-              boxShadow: "0 6px 18px rgba(0, 0, 0, 0.2)",
-            },
-          }}
+          variant="gradient"
           component={Link}
           href={ctaLink}
+          fullWidth
         >
           {ctaText}
         </Button>

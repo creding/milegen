@@ -146,6 +146,7 @@ export function MileageForm({
 
         <Group justify="space-between">
           <Button
+            variant="gradient"
             onClick={onGenerate}
             disabled={
               subscriptionStatus !== "active" && entryCount >= MAX_FREE_ENTRIES

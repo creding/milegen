@@ -1,7 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabaseBrowserClient";
-import { Button } from "@mantine/core";
+import { Anchor, Button } from "@mantine/core";
 import { useRouter } from "next/navigation";
 
 export function SignoutButton() {
@@ -14,9 +14,5 @@ export function SignoutButton() {
     router.refresh();
   };
 
-  return (
-    <Button c="gray" variant="transparent" onClick={handleSignOut}>
-      Sign Out
-    </Button>
-  );
+  return <Anchor onClick={handleSignOut}>Sign Out</Anchor>;
 }
