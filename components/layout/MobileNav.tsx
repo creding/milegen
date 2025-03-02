@@ -57,8 +57,8 @@ export function MobileNav({ user, subscriptionStatus }: MobileNavProps) {
         position="right"
         overlayProps={{ opacity: 0.5, blur: 4 }}
         withCloseButton
-        offset={10}
-        radius="md"
+        offset={5}
+        radius="sm"
       >
         <Stack gap={0} p="md">
           {user ? (
