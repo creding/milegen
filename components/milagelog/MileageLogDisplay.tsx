@@ -176,6 +176,21 @@ export function MileageLogDisplay({
                 </Text>
               </Group>
 
+              <Divider my="xs" label="Odometer" labelPosition="center" />
+
+              <Group justify="apart">
+                <Text fw={500} c="dimmed">
+                  Starting Odometer:
+                </Text>
+                <Text fw={600}>{startMileage}</Text>
+              </Group>
+              <Group justify="apart">
+                <Text fw={500} c="dimmed">
+                  Ending Odometer:
+                </Text>
+                <Text fw={600}>{endMileage}</Text>
+              </Group>
+
               <Divider my="xs" label="Mileage" labelPosition="center" />
 
               <Group justify="apart">
@@ -197,21 +212,6 @@ export function MileageLogDisplay({
                   Personal Miles:
                 </Text>
                 <Text fw={600}>{totalPersonalMiles} miles</Text>
-              </Group>
-
-              <Divider my="xs" label="Odometer" labelPosition="center" />
-
-              <Group justify="apart">
-                <Text fw={500} c="dimmed">
-                  Starting Odometer:
-                </Text>
-                <Text fw={600}>{startMileage}</Text>
-              </Group>
-              <Group justify="apart">
-                <Text fw={500} c="dimmed">
-                  Ending Odometer:
-                </Text>
-                <Text fw={600}>{endMileage}</Text>
               </Group>
 
               <Divider my="xs" label="Tax Deduction" labelPosition="center" />
