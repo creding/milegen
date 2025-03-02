@@ -11,8 +11,10 @@ import {
   Group,
   Button,
   Stack,
+  Box,
 } from "@mantine/core";
 import { IconInfoCircle } from "@tabler/icons-react";
+import { useMediaQuery } from "@mantine/hooks";
 
 interface MileageFormProps {
   startMileage: string;
@@ -57,6 +59,8 @@ export function MileageForm({
   onGenerate,
   onReset,
 }: MileageFormProps) {
+  const isMobile = useMediaQuery("(max-width: 768px)");
+
   return (
     <Stack>
       <Stack gap={2}>
@@ -72,68 +76,128 @@ export function MileageForm({
           color="blue"
           mb="lg"
         >
-          <Text mb="sm">
-            Upgrade to our premium plan for unlimited entries, advanced
-            customization, detailed reporting, and priority support.
-          </Text>
-          <Button
-            component={Link}
-            href="/subscribe"
-            variant="filled"
-            color="blue"
-          >
-            Upgrade Now for $9.99/Year
-          </Button>
+          <Box>
+            <Text mb={isMobile ? "xs" : "sm"} size={isMobile ? "sm" : "md"}>
+              Upgrade to our premium plan for unlimited entries, advanced
+              customization, detailed reporting, and priority support.
+            </Text>
+            <Button
+              component={Link}
+              href="/subscribe"
+              variant="filled"
+              color="blue"
+              size={isMobile ? "sm" : "md"}
+              fullWidth={isMobile}
+            >
+              Upgrade Now for $9.99/Year
+            </Button>
+          </Box>
         </Alert>
       )}
 
-      <Stack>
-        <Group grow>
-          <TextInput
-            label="Starting Odometer Reading"
-            type="number"
-            value={startMileage}
-            onChange={(e) => onStartMileageChange(e.target.value)}
-            required
-          />
-          <TextInput
-            label="Ending Odometer Reading"
-            type="number"
-            value={endMileage}
-            onChange={(e) => onEndMileageChange(e.target.value)}
-            required
-          />
-          <TextInput
-            label="Total Personal Miles"
-            type="number"
-            value={totalPersonalMiles}
-            onChange={(e) => onTotalPersonalMilesChange(e.target.value)}
-            min={0}
-            step="any"
-            required
-          />
-        </Group>
+      <Stack spacing={isMobile ? "xs" : "md"}>
+        {isMobile ? (
+          <Stack>
+            <TextInput
+              label="Starting Odometer Reading"
+              type="number"
+              value={startMileage}
+              onChange={(e) => onStartMileageChange(e.target.value)}
+              required
+              size="md"
+            />
+            <TextInput
+              label="Ending Odometer Reading"
+              type="number"
+              value={endMileage}
+              onChange={(e) => onEndMileageChange(e.target.value)}
+              required
+              size="md"
+            />
+            <TextInput
+              label="Total Personal Miles"
+              type="number"
+              value={totalPersonalMiles}
+              onChange={(e) => onTotalPersonalMilesChange(e.target.value)}
+              min={0}
+              step="any"
+              required
+              size="md"
+            />
+          </Stack>
+        ) : (
+          <Group grow>
+            <TextInput
+              label="Starting Odometer Reading"
+              type="number"
+              value={startMileage}
+              onChange={(e) => onStartMileageChange(e.target.value)}
+              required
+              size="md"
+            />
+            <TextInput
+              label="Ending Odometer Reading"
+              type="number"
+              value={endMileage}
+              onChange={(e) => onEndMileageChange(e.target.value)}
+              required
+              size="md"
+            />
+            <TextInput
+              label="Total Personal Miles"
+              type="number"
+              value={totalPersonalMiles}
+              onChange={(e) => onTotalPersonalMilesChange(e.target.value)}
+              min={0}
+              step="any"
+              required
+              size="md"
+            />
+          </Group>
+        )}
 
-        <Group grow>
-          <DatePickerInput
-            value={startDate}
-            onChange={(date) => date && onStartDateChange(date)}
-            maxDate={endDate}
-            label="Start Date"
-          />
-          <DatePickerInput
-            value={endDate}
-            onChange={(date) => date && onEndDateChange(date)}
-            minDate={startDate}
-            label="End Date"
-          />
-        </Group>
+        {isMobile ? (
+          <Stack>
+            <DatePickerInput
+              value={startDate}
+              onChange={(date) => date && onStartDateChange(date)}
+              maxDate={endDate}
+              label="Start Date"
+              size="md"
+            />
+            <DatePickerInput
+              value={endDate}
+              onChange={(date) => date && onEndDateChange(date)}
+              minDate={startDate}
+              label="End Date"
+              size="md"
+            />
+          </Stack>
+        ) : (
+          <Group grow>
+            <DatePickerInput
+              value={startDate}
+              onChange={(date) => date && onStartDateChange(date)}
+              maxDate={endDate}
+              label="Start Date"
+              size="md"
+            />
+            <DatePickerInput
+              value={endDate}
+              onChange={(date) => date && onEndDateChange(date)}
+              minDate={startDate}
+              label="End Date"
+              size="md"
+            />
+          </Group>
+        )}
 
         <TextInput
           label="Default Destination"
           placeholder="e.g., Client office, Job site"
           value={destination}
           onChange={(e) => onDestinationChange(e.target.value)}
+          size="md"
         />
 
         <Textarea
@@ -141,23 +205,52 @@ export function MileageForm({
           placeholder="e.g., Client meeting, Project work"
           value={businessPurpose}
           onChange={(e) => onBusinessPurposeChange(e.target.value)}
-          rows={3}
+          rows={isMobile ? 2 : 3}
+          size="md"
         />
 
-        <Group justify="space-between">
-          <Button
-            variant="gradient"
-            onClick={onGenerate}
-            disabled={
-              subscriptionStatus !== "active" && entryCount >= MAX_FREE_ENTRIES
-            }
-          >
-            Generate Log
-          </Button>
-          <Button onClick={onReset} variant="light" color="gray">
-            Reset
-          </Button>
-        </Group>
+        {isMobile ? (
+          <Stack spacing="xs" mt="sm">
+            <Button
+              variant="gradient"
+              onClick={onGenerate}
+              disabled={
+                subscriptionStatus !== "active" &&
+                entryCount >= MAX_FREE_ENTRIES
+              }
+              fullWidth
+              size="md"
+            >
+              Generate Log
+            </Button>
+            <Button
+              onClick={onReset}
+              variant="light"
+              color="gray"
+              fullWidth
+              size="md"
+            >
+              Reset
+            </Button>
+          </Stack>
+        ) : (
+          <Group justify="space-between" mt="md">
+            <Button
+              variant="gradient"
+              onClick={onGenerate}
+              disabled={
+                subscriptionStatus !== "active" &&
+                entryCount >= MAX_FREE_ENTRIES
+              }
+              size="md"
+            >
+              Generate Log
+            </Button>
+            <Button onClick={onReset} variant="light" color="gray" size="md">
+              Reset
+            </Button>
+          </Group>
+        )}
       </Stack>
     </Stack>
   );

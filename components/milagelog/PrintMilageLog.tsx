@@ -2,23 +2,65 @@
 
 import { MileageLog } from "@/types/mileage";
 import { Button } from "@mantine/core";
+import { useMediaQuery } from "@mantine/hooks";
 import { IconPrinter } from "@tabler/icons-react";
 interface PrintMilageLogProps {
   log: MileageLog;
 }
 
 export const PrintMilageLog: React.FC<PrintMilageLogProps> = ({ log }) => {
+  const isMobile = useMediaQuery("(max-width: 768px)");
+
   const handlePrint = () => {
     const printContent = `
       <html>
         <head>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <style>
-            body { font-family: Arial, sans-serif; }
-            .header { margin-bottom: 20px; }
-            .info { margin: 5px 0; }
-            table { width: 100%; border-collapse: collapse; }
-            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-            th { background-color: #f5f5f5; }
+            body { 
+              font-family: Arial, sans-serif; 
+              margin: 0;
+              padding: 15px;
+            }
+            .header { 
+              margin-bottom: 20px; 
+            }
+            .info { 
+              margin: 5px 0; 
+            }
+            table { 
+              width: 100%; 
+              border-collapse: collapse; 
+            }
+            th, td { 
+              border: 1px solid #ddd; 
+              padding: 8px; 
+              text-align: left; 
+            }
+            th { 
+              background-color: #f5f5f5; 
+            }
+            
+            @media print {
+              body {
+                padding: 0;
+              }
+              .page-break {
+                page-break-before: always;
+              }
+            }
+            
+            @media screen and (max-width: 768px) {
+              table {
+                font-size: 14px;
+              }
+              th, td {
+                padding: 6px;
+              }
+              h1 {
+                font-size: 24px;
+              }
+            }
           </style>
         </head>
         <body>
@@ -79,6 +121,8 @@ export const PrintMilageLog: React.FC<PrintMilageLogProps> = ({ log }) => {
       onClick={handlePrint}
       variant="light"
       color="blue"
+      fullWidth={isMobile}
+      size={isMobile ? "md" : "sm"}
     >
       Print Log
     </Button>
