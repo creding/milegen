@@ -3,6 +3,7 @@
 import { SavedLogsPage } from "@/components/pages/SavedLogsPage";
 import { createClient } from "@/lib/supabaseServerClient";
 import { Suspense } from "react";
+import { SavedLogsLoadingSkeleton } from "@/components/pages/SavedLogsLoadingSkeleton";
 
 export default async function Page() {
   const supabase = await createClient();
@@ -25,7 +26,7 @@ export default async function Page() {
   }
 
   return (
-    <Suspense fallback={<p>Loading...</p>}>
+    <Suspense fallback={<SavedLogsLoadingSkeleton />}>
       <SavedLogsPage logs={logs} />
     </Suspense>
   );

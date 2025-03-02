@@ -1,7 +1,7 @@
 "use client";
 
 import { MileageLog } from "@/types/mileage";
-import { IconEye, IconPrinter, IconTrash } from "@tabler/icons-react";
+import { IconEye, IconPrinter, IconTrash, IconPlus, IconFileOff } from "@tabler/icons-react";
 import { deleteMileageLog } from "@/app/actions/deleteMileageLog";
 import { notifications } from "@mantine/notifications";
 import Link from "next/link";
@@ -20,6 +20,11 @@ import {
   TableTbody,
   TableTd,
   Stack,
+  Button,
+  Center,
+  Paper,
+  ThemeIcon,
+  Box,
 } from "@mantine/core";
 
 export const SavedLogsPage = ({ logs }: { logs: MileageLog[] }) => {
@@ -46,6 +51,32 @@ export const SavedLogsPage = ({ logs }: { logs: MileageLog[] }) => {
     }
   };
 
+  const EmptyState = () => (
+    <Paper p="xl" withBorder radius="md" shadow="sm">
+      <Center>
+        <Stack align="center" gap="md" py="xl">
+          <ThemeIcon size={80} radius={100} color="gray">
+            <IconFileOff size={40} />
+          </ThemeIcon>
+          <Title order={3}>No Mileage Logs Found</Title>
+          <Text c="dimmed" ta="center" maw={400}>
+            You haven't created any mileage logs yet. Create your first log to track your business mileage for tax deductions.
+          </Text>
+          <Button 
+            component={Link} 
+            href="/generator" 
+            leftSection={<IconPlus size="1rem" />}
+            variant="gradient"
+            gradient={{ from: 'blue', to: 'cyan' }}
+            mt="md"
+          >
+            Create Your First Log
+          </Button>
+        </Stack>
+      </Center>
+    </Paper>
+  );
+
   return (
     <Container size="xl" py="xl" mt={20}>
       <Card withBorder>
@@ -56,59 +87,63 @@ export const SavedLogsPage = ({ logs }: { logs: MileageLog[] }) => {
           </Text>
         </Stack>
 
-        <Table striped highlightOnHover>
-          <TableThead>
-            <TableTr>
-              <TableTh>Date Range</TableTh>
-              <TableTh>Total Miles</TableTh>
-              <TableTh>Business Miles</TableTh>
-              <TableTh>Personal Miles</TableTh>
-              <TableTh>Actions</TableTh>
-            </TableTr>
-          </TableThead>
-          <TableTbody>
-            {logs?.map((log) => (
-              <TableTr key={log.id}>
-                <TableTd>
-                  {new Date(log.start_date).toLocaleDateString()} -{" "}
-                  {new Date(log.end_date).toLocaleDateString()}
-                </TableTd>
-                <TableTd>{log.total_mileage}</TableTd>
-                <TableTd>{log.total_business_miles}</TableTd>
-                <TableTd>{log.total_personal_miles}</TableTd>
-                <TableTd>
-                  <Group gap="xs" justify="flex-start">
-                    <ActionIcon
-                      component={Link}
-                      href={`/saved-logs/${log.id}`}
-                      variant="subtle"
-                      color="blue"
-                      size="lg"
-                    >
-                      <IconEye size="1.125rem" />
-                    </ActionIcon>
-                    <ActionIcon
-                      onClick={() => printMileageLog(log)}
-                      variant="subtle"
-                      color="gray"
-                      size="lg"
-                    >
-                      <IconPrinter size="1.125rem" />
-                    </ActionIcon>
-                    <ActionIcon
-                      onClick={() => handleDelete(log.id as string, log.user_id as string)}
-                      variant="subtle"
-                      color="red"
-                      size="lg"
-                    >
-                      <IconTrash size="1.125rem" />
-                    </ActionIcon>
-                  </Group>
-                </TableTd>
+        {logs.length === 0 ? (
+          <EmptyState />
+        ) : (
+          <Table striped highlightOnHover>
+            <TableThead>
+              <TableTr>
+                <TableTh>Date Range</TableTh>
+                <TableTh>Total Miles</TableTh>
+                <TableTh>Business Miles</TableTh>
+                <TableTh>Personal Miles</TableTh>
+                <TableTh>Actions</TableTh>
               </TableTr>
-            ))}
-          </TableTbody>
-        </Table>
+            </TableThead>
+            <TableTbody>
+              {logs?.map((log) => (
+                <TableTr key={log.id}>
+                  <TableTd>
+                    {new Date(log.start_date).toLocaleDateString()} -{" "}
+                    {new Date(log.end_date).toLocaleDateString()}
+                  </TableTd>
+                  <TableTd>{log.total_mileage}</TableTd>
+                  <TableTd>{log.total_business_miles}</TableTd>
+                  <TableTd>{log.total_personal_miles}</TableTd>
+                  <TableTd>
+                    <Group gap="xs" justify="flex-start">
+                      <ActionIcon
+                        component={Link}
+                        href={`/saved-logs/${log.id}`}
+                        variant="subtle"
+                        color="blue"
+                        size="lg"
+                      >
+                        <IconEye size="1.125rem" />
+                      </ActionIcon>
+                      <ActionIcon
+                        onClick={() => printMileageLog(log)}
+                        variant="subtle"
+                        color="gray"
+                        size="lg"
+                      >
+                        <IconPrinter size="1.125rem" />
+                      </ActionIcon>
+                      <ActionIcon
+                        onClick={() => handleDelete(log.id as string, log.user_id as string)}
+                        variant="subtle"
+                        color="red"
+                        size="lg"
+                      >
+                        <IconTrash size="1.125rem" />
+                      </ActionIcon>
+                    </Group>
+                  </TableTd>
+                </TableTr>
+              ))}
+            </TableTbody>
+          </Table>
+        )}
       </Card>
     </Container>
   );
