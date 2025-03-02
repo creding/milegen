@@ -42,7 +42,7 @@ export function MobileNav({ user, subscriptionStatus }: MobileNavProps) {
     close();
   };
   return (
-    <div className={classes.mobileNavContainer}>
+    <Box className={classes.mobileNavContainer}>
       <Burger
         opened={opened}
         onClick={toggle}
@@ -57,7 +57,8 @@ export function MobileNav({ user, subscriptionStatus }: MobileNavProps) {
         position="right"
         overlayProps={{ opacity: 0.5, blur: 4 }}
         withCloseButton
-        size="100%"
+        offset={5}
+        radius="sm"
       >
         <Stack gap={0} p="md">
           {user ? (
@@ -137,6 +138,6 @@ export function MobileNav({ user, subscriptionStatus }: MobileNavProps) {
           )}
         </Stack>
       </Drawer>
-    </div>
+    </Box>
   );
 }
