@@ -73,14 +73,15 @@
   body {
     @apply bg-background text-foreground;
   }
-  main {
-    padding-top: 58px; /* Adjust based on your nav height */
+  body {
+    padding-top: 60px; /* Adjust based on your nav height */
+  }
+
+  a:link{
+    cursor: pointer;
   }
 }
 
-button {
-  cursor: pointer;
-}
 
 @layer components {
   .hover-card {
