@@ -42,7 +42,7 @@ export function MobileNav({ user, subscriptionStatus }: MobileNavProps) {
     close();
   };
   return (
-    <Stack className={classes.mobileNavContainer}>
+    <Box className={classes.mobileNavContainer}>
       <Burger
         opened={opened}
         onClick={toggle}
@@ -138,6 +138,6 @@ export function MobileNav({ user, subscriptionStatus }: MobileNavProps) {
           )}
         </Stack>
       </Drawer>
-    </Stack>
+    </Box>
   );
 }
