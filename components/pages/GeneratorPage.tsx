@@ -9,7 +9,7 @@ import { MileageLogDisplay } from "@/components/milagelog/MileageLogDisplay";
 import { PrintMilageLog } from "@/components/milagelog/PrintMilageLog";
 import { IconCheck, IconDeviceFloppy, IconX } from "@tabler/icons-react";
 import { Button, Card, Container, Group, Title, Stack } from "@mantine/core";
-import { MileageForm } from "@/components/milagelog/MileageForm";
+import { MileageForm } from "@/components/milagelog/MileageForm"; 
 import { User } from "@supabase/supabase-js";
 import { useMediaQuery } from "@mantine/hooks";
 
@@ -44,6 +44,7 @@ export const GeneratorPage = ({
     const end = parseInt(endMileage);
     const totalMiles = end - start;
     const personalMiles = parseInt(totalPersonalMiles) || 0;
+    
     if (isNaN(totalMiles) || totalMiles <= 0) {
       notifications.show({
         title: "Invalid Input",
