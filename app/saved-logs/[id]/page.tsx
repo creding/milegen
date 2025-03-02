@@ -44,10 +44,16 @@ export default async function Page({ params }: { params: Promise<SSRParams> }) {
           startDate={new Date(log.start_date)}
           endDate={new Date(log.end_date)}
           totalMileage={log.total_mileage}
-          totalPersonalMiles={parseInt(log.total_personal_miles)}
-          startMileage={parseInt(log.start_mileage)}
-          endMileage={parseInt(log.end_mileage)}
+          totalBusinessMiles={log.total_business_miles}
+          totalPersonalMiles={log.total_personal_miles}
+          startMileage={Number(log.start_mileage)}
+          endMileage={Number(log.end_mileage)}
+          businessDeductionRate={log.business_deduction_rate}
+          businessDeductionAmount={log.business_deduction_amount}
+          vehicleInfo={log.vehicle_info}
           mileageLog={log.log_entries}
+          logId={log.id}
+          userId={log.user_id}
         />
       </Card>
     </Container>
