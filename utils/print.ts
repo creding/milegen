@@ -1,5 +1,5 @@
 import { MileageLog } from "@/types/mileage";
-
+//Print log
 export const printMileageLog = (log: MileageLog) => {
   const printWindow = window.open("", "_blank");
   if (printWindow) {
