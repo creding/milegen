@@ -161,7 +161,7 @@ export const GeneratorPage = ({
         if (result.success) {
           notifications.show({
             title: "Success",
-            message: "Milage log saved successfully.",
+            message: "Mileage log saved successfully.",
             color: "green",
             icon: <IconCheck />,
           });
@@ -199,9 +199,9 @@ export const GeneratorPage = ({
     <Container size="xl" mt={20} py="xl" px={isMobile ? "xs" : "md"}>
       <Card withBorder>
         <Stack gap="md" mb="md">
-          <Title order={2}>Generate Milage Log</Title>
+          <Title order={2}>Generate Mileage Log</Title>
           <Text c="dimmed" size="sm">
-            Fill out the form to generate a milage log.
+            Fill out the form to generate a mileage log.
           </Text>
         </Stack>
         <MileageForm
