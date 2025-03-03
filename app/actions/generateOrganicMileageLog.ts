@@ -272,50 +272,86 @@ function generateDailyDistribution(
     });
   }
 
-  // Distribute any remaining miles to the last day
-  if (remainingBusinessMiles > 0 || remainingPersonalMiles > 0) {
-    const lastDay = dailyDistributions[dailyDistributions.length - 1];
-
-    if (remainingBusinessMiles > 0 && lastDay) {
-      const tripStartMileage = roundToOneDecimal(currentMileage);
-      const tripEndMileage = roundToOneDecimal(
-        tripStartMileage + remainingBusinessMiles
-      );
-
-      lastDay.businessTrips.push({
-        startMileage: tripStartMileage,
-        endMileage: tripEndMileage,
-        miles: roundToOneDecimal(remainingBusinessMiles),
-        purpose: getRandomBusinessPurpose(),
-      });
-
-      lastDay.totalBusinessMiles = roundToOneDecimal(
-        lastDay.totalBusinessMiles + remainingBusinessMiles
-      );
-      currentMileage = tripEndMileage;
+  // Distribute remaining business miles iteratively
+  while (remainingBusinessMiles > 0) {
+    for (const day of dailyDistributions) {
+      if (remainingBusinessMiles <= 0) break;
+      if (day.businessTrips.length > 0) {
+        // Add to existing trip if possible
+        day.businessTrips[0].miles = roundToOneDecimal(
+          day.businessTrips[0].miles + 0.1
+        );
+        day.businessTrips[0].endMileage = roundToOneDecimal(
+          day.businessTrips[0].endMileage + 0.1
+        );
+        day.totalBusinessMiles = roundToOneDecimal(
+          day.totalBusinessMiles + 0.1
+        );
+        remainingBusinessMiles = roundToOneDecimal(
+          remainingBusinessMiles - 0.1
+        );
+        currentMileage = roundToOneDecimal(currentMileage + 0.1);
+      } else {
+        // Create a new trip if needed.
+        const tripStartMileage = roundToOneDecimal(currentMileage);
+        const tripEndMileage = roundToOneDecimal(tripStartMileage + 0.1);
+        day.businessTrips.push({
+          startMileage: tripStartMileage,
+          endMileage: tripEndMileage,
+          miles: 0.1,
+          purpose: getRandomBusinessPurpose(),
+        });
+        day.totalBusinessMiles = roundToOneDecimal(
+          day.totalBusinessMiles + 0.1
+        );
+        remainingBusinessMiles = roundToOneDecimal(
+          remainingBusinessMiles - 0.1
+        );
+        currentMileage = tripEndMileage;
+      }
     }
+  }
 
-    if (remainingPersonalMiles > 0 && lastDay) {
-      const tripStartMileage = roundToOneDecimal(currentMileage);
-      const tripEndMileage = roundToOneDecimal(
-        tripStartMileage + remainingPersonalMiles
-      );
-
-      lastDay.personalTrips.push({
-        startMileage: tripStartMileage,
-        endMileage: tripEndMileage,
-        miles: roundToOneDecimal(remainingPersonalMiles),
-        purpose: "Personal Visit",
-      });
-
-      lastDay.totalPersonalMiles = roundToOneDecimal(
-        lastDay.totalPersonalMiles + remainingPersonalMiles
-      );
+  // Distribute remaining personal miles iteratively
+  while (remainingPersonalMiles > 0) {
+    for (const day of dailyDistributions) {
+      if (remainingPersonalMiles <= 0) break;
+      if (day.personalTrips.length > 0) {
+        day.personalTrips[0].miles = roundToOneDecimal(
+          day.personalTrips[0].miles + 0.1
+        );
+        day.personalTrips[0].endMileage = roundToOneDecimal(
+          day.personalTrips[0].endMileage + 0.1
+        );
+        day.totalPersonalMiles = roundToOneDecimal(
+          day.totalPersonalMiles + 0.1
+        );
+        remainingPersonalMiles = roundToOneDecimal(
+          remainingPersonalMiles - 0.1
+        );
+        currentMileage = roundToOneDecimal(currentMileage + 0.1);
+      } else {
+        const tripStartMileage = roundToOneDecimal(currentMileage);
+        const tripEndMileage = roundToOneDecimal(tripStartMileage + 0.1);
+        day.personalTrips.push({
+          startMileage: tripStartMileage,
+          endMileage: tripEndMileage,
+          miles: 0.1,
+          purpose: "Personal Visit",
+        });
+        day.totalPersonalMiles = roundToOneDecimal(
+          day.totalPersonalMiles + 0.1
+        );
+        remainingPersonalMiles = roundToOneDecimal(
+          remainingPersonalMiles - 0.1
+        );
+        currentMileage = tripEndMileage;
+      }
     }
   }
 
   return dailyDistributions;
-}
+} // This is the closing brace of generateDailyDistribution
 
 // Convert daily distributions to MileageEntry objects
 function convertToMileageEntries(
