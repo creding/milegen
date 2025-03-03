@@ -109,13 +109,13 @@ export function MileageLogDisplay({
           <Text size="sm" c="dimmed">
             Starting Mileage:
           </Text>
-          <Text size="sm">{entry.startMileage}</Text>
+          <Text size="sm">{parseFloat(entry.startMileage.toFixed(1))}</Text>
         </Group>
         <Group justify="apart">
           <Text size="sm" c="dimmed">
             Ending Mileage:
           </Text>
-          <Text size="sm">{entry.endMileage}</Text>
+          <Text size="sm">{parseFloat(entry.endMileage.toFixed(1))}</Text>
         </Group>
         <Divider my="xs" />
         <Text size="sm" c="dimmed">
@@ -131,19 +131,19 @@ export function MileageLogDisplay({
           <Text size="sm" c="dimmed">
             Total Miles:
           </Text>
-          <Text size="sm">{entry.totalMiles} miles</Text>
+          <Text size="sm">{parseFloat(entry.totalMiles.toFixed(1))} miles</Text>
         </Group>
         <Group justify="apart">
           <Text size="sm" c="dimmed">
             Business Miles:
           </Text>
-          <Text size="sm">{entry.businessMiles} miles</Text>
+          <Text size="sm">{parseFloat(entry.businessMiles.toFixed(1))} miles</Text>
         </Group>
         <Group justify="apart">
           <Text size="sm" c="dimmed">
             Personal Miles:
           </Text>
-          <Text size="sm">{entry.personalMiles} miles</Text>
+          <Text size="sm">{parseFloat(entry.personalMiles.toFixed(1))} miles</Text>
         </Group>
       </Stack>
     </Card>
@@ -182,13 +182,13 @@ export function MileageLogDisplay({
                 <Text fw={500} c="dimmed">
                   Starting Odometer:
                 </Text>
-                <Text fw={600}>{startMileage}</Text>
+                <Text fw={600}>{parseFloat(startMileage.toFixed(1))}</Text>
               </Group>
               <Group justify="apart">
                 <Text fw={500} c="dimmed">
                   Ending Odometer:
                 </Text>
-                <Text fw={600}>{endMileage}</Text>
+                <Text fw={600}>{parseFloat(endMileage.toFixed(1))}</Text>
               </Group>
 
               <Divider my="xs" label="Mileage" labelPosition="center" />
@@ -197,21 +197,21 @@ export function MileageLogDisplay({
                 <Text fw={500} c="dimmed">
                   Total Mileage:
                 </Text>
-                <Text fw={600}>{totalMileage} miles</Text>
+                <Text fw={600}>{parseFloat(totalMileage.toFixed(1))} miles</Text>
               </Group>
               <Group justify="apart">
                 <Text fw={500} c="dimmed">
                   Business Miles:
                 </Text>
                 <Text fw={600} c="blue">
-                  {totalBusinessMiles} miles
+                  {parseFloat(totalBusinessMiles.toFixed(1))} miles
                 </Text>
               </Group>
               <Group justify="apart">
                 <Text fw={500} c="dimmed">
                   Personal Miles:
                 </Text>
-                <Text fw={600}>{totalPersonalMiles} miles</Text>
+                <Text fw={600}>{parseFloat(totalPersonalMiles.toFixed(1))} miles</Text>
               </Group>
 
               <Divider my="xs" label="Tax Deduction" labelPosition="center" />
@@ -277,7 +277,7 @@ export function MileageLogDisplay({
                     <Text size="xs" c="dimmed">
                       Total Mileage
                     </Text>
-                    <Text fw={600}>{totalMileage} miles</Text>
+                    <Text fw={600}>{parseFloat(totalMileage.toFixed(1))} miles</Text>
                   </Stack>
                 </Group>
               </Stack>
@@ -292,7 +292,7 @@ export function MileageLogDisplay({
                       Odometer Reading
                     </Text>
                     <Text fw={600}>
-                      {startMileage} → {endMileage}
+                      {parseFloat(startMileage.toFixed(1))} → {parseFloat(endMileage.toFixed(1))}
                     </Text>
                   </Stack>
                 </Group>
@@ -304,7 +304,7 @@ export function MileageLogDisplay({
                     <Text size="xs" c="dimmed">
                       Personal Miles
                     </Text>
-                    <Text fw={600}>{totalPersonalMiles} miles</Text>
+                    <Text fw={600}>{parseFloat(totalPersonalMiles.toFixed(1))} miles</Text>
                   </Stack>
                 </Group>
                 <Group>
@@ -320,7 +320,7 @@ export function MileageLogDisplay({
                     <Text size="xs" c="dimmed">
                       Business Miles
                     </Text>
-                    <Text fw={600}>{totalBusinessMiles} miles</Text>
+                    <Text fw={600}>{parseFloat(totalBusinessMiles.toFixed(1))} miles</Text>
                   </Stack>
                 </Group>
               </Stack>
@@ -397,14 +397,14 @@ export function MileageLogDisplay({
             </TableThead>
             <TableTbody>
               {mileageLog.map((entry) => (
-                <TableTr key={entry.date.toString()}>
+                <TableTr key={entry.id || `${entry.date}-${entry.startMileage}-${entry.endMileage}`}>
                   <TableTd>{new Date(entry.date).toLocaleDateString()}</TableTd>
                   <TableTd>{entry.vehicle}</TableTd>
-                  <TableTd>{entry.startMileage}</TableTd>
-                  <TableTd>{entry.endMileage}</TableTd>
-                  <TableTd>{entry.totalMiles}</TableTd>
-                  <TableTd>{entry.businessMiles}</TableTd>
-                  <TableTd>{entry.personalMiles}</TableTd>
+                  <TableTd>{parseFloat(entry.startMileage.toFixed(1))}</TableTd>
+                  <TableTd>{parseFloat(entry.endMileage.toFixed(1))}</TableTd>
+                  <TableTd>{parseFloat(entry.totalMiles.toFixed(1))}</TableTd>
+                  <TableTd>{parseFloat(entry.businessMiles.toFixed(1))}</TableTd>
+                  <TableTd>{parseFloat(entry.personalMiles.toFixed(1))}</TableTd>
                   <TableTd>{entry.location}</TableTd>
                   <TableTd>{entry.businessPurpose}</TableTd>
                 </TableTr>

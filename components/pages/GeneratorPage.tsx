@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { notifications } from "@mantine/notifications";
-import { generateMileageLog } from "@/app/actions/generateMileageLog";
+import { generateOrganicMileageLog } from "@/app/actions/generateOrganicMileageLog";
 import { saveMileageLog as saveMileageLogApi } from "@/app/actions/saveMileageLog";
 import type { MileageEntry, MileageLog } from "@/types/mileage";
 import { MileageLogDisplay } from "@/components/milagelog/MileageLogDisplay";
@@ -84,7 +84,7 @@ export const GeneratorPage = ({
     }
 
     try {
-      console.log("Calling generateMileageLog with params:", {
+      console.log("Calling generateOrganicMileageLog with params:", {
         startMileage: start,
         endMileage: end,
         startDate,
@@ -97,7 +97,7 @@ export const GeneratorPage = ({
         currentEntryCount: entryCount,
       });
 
-      const result = await generateMileageLog({
+      const result = await generateOrganicMileageLog({
         startMileage: start,
         endMileage: end,
         startDate,
@@ -110,7 +110,7 @@ export const GeneratorPage = ({
         currentEntryCount: entryCount,
       });
 
-      console.log("generateMileageLog result:", result);
+      console.log("generateOrganicMileageLog result:", result);
 
       setMileageLog(result.mileageLog);
       setEntryCount(
@@ -161,7 +161,7 @@ export const GeneratorPage = ({
         if (result.success) {
           notifications.show({
             title: "Success",
-            message: "Milage log saved successfully.",
+            message: "Mileage log saved successfully.",
             color: "green",
             icon: <IconCheck />,
           });
@@ -199,9 +199,9 @@ export const GeneratorPage = ({
     <Container size="xl" mt={20} py="xl" px={isMobile ? "xs" : "md"}>
       <Card withBorder>
         <Stack gap="md" mb="md">
-          <Title order={2}>Generate Milage Log</Title>
+          <Title order={2}>Generate Mileage Log</Title>
           <Text c="dimmed" size="sm">
-            Fill out the form to generate a milage log.
+            Fill out the form to generate a mileage log.
           </Text>
         </Stack>
         <MileageForm
