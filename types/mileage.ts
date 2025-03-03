@@ -1,4 +1,5 @@
 export interface MileageEntry {
+  id?: string; // Unique identifier for the entry
   date: string;
   vehicle: string;
   startMileage: number;

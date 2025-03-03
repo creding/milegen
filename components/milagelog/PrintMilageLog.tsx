@@ -207,19 +207,19 @@ export const printMileageLog = (log: MileageLog) => {
                   
                   <div class="summary-group">
                     <div class="summary-label">Personal Miles</div>
-                    <div class="summary-value">${log.total_personal_miles} miles</div>
+                    <div class="summary-value">${parseFloat(log.total_personal_miles.toFixed(1))} miles</div>
                   </div>
                 </div>
                 
                 <div>
                   <div class="summary-group">
                     <div class="summary-label">Total Mileage</div>
-                    <div class="summary-value">${log.total_mileage} miles</div>
+                    <div class="summary-value">${parseFloat(log.total_mileage.toFixed(1))} miles</div>
                   </div>
                   
                   <div class="summary-group">
                     <div class="summary-label">Business Miles</div>
-                    <div class="summary-value highlight-value">${log.total_business_miles} miles</div>
+                    <div class="summary-value highlight-value">${parseFloat(log.total_business_miles.toFixed(1))} miles</div>
                   </div>
                   
                   <div class="summary-group">
@@ -231,7 +231,7 @@ export const printMileageLog = (log: MileageLog) => {
                 <div>
                   <div class="summary-group">
                     <div class="summary-label">Odometer Reading</div>
-                    <div class="summary-value">${log.start_mileage} → ${log.end_mileage}</div>
+                    <div class="summary-value">${parseFloat(Number(log.start_mileage).toFixed(1))} → ${parseFloat(Number(log.end_mileage).toFixed(1))}</div>
                   </div>
                   
                   <div class="summary-group">
@@ -265,11 +265,11 @@ export const printMileageLog = (log: MileageLog) => {
                   <tr>
                     <td>${new Date(entry.date).toLocaleDateString()}</td>
                     <td>${entry.vehicle}</td>
-                    <td>${entry.startMileage}</td>
-                    <td>${entry.endMileage}</td>
-                    <td>${entry.totalMiles}</td>
-                    <td>${entry.businessMiles}</td>
-                    <td>${entry.personalMiles}</td>
+                    <td>${parseFloat(entry.startMileage.toFixed(1))}</td>
+                    <td>${parseFloat(entry.endMileage.toFixed(1))}</td>
+                    <td>${parseFloat(entry.totalMiles.toFixed(1))}</td>
+                    <td>${parseFloat(entry.businessMiles.toFixed(1))}</td>
+                    <td>${parseFloat(entry.personalMiles.toFixed(1))}</td>
                     <td>${entry.location}</td>
                     <td>${entry.businessPurpose}</td>
                   </tr>

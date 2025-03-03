@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { notifications } from "@mantine/notifications";
-import { generateMileageLog } from "@/app/actions/generateMileageLog";
+import { generateOrganicMileageLog } from "@/app/actions/generateOrganicMileageLog";
 import { saveMileageLog as saveMileageLogApi } from "@/app/actions/saveMileageLog";
 import type { MileageEntry, MileageLog } from "@/types/mileage";
 import { MileageLogDisplay } from "@/components/milagelog/MileageLogDisplay";
@@ -84,7 +84,7 @@ export const GeneratorPage = ({
     }
 
     try {
-      console.log("Calling generateMileageLog with params:", {
+      console.log("Calling generateOrganicMileageLog with params:", {
         startMileage: start,
         endMileage: end,
         startDate,
@@ -97,7 +97,7 @@ export const GeneratorPage = ({
         currentEntryCount: entryCount,
       });
 
-      const result = await generateMileageLog({
+      const result = await generateOrganicMileageLog({
         startMileage: start,
         endMileage: end,
         startDate,
@@ -110,7 +110,7 @@ export const GeneratorPage = ({
         currentEntryCount: entryCount,
       });
 
-      console.log("generateMileageLog result:", result);
+      console.log("generateOrganicMileageLog result:", result);
 
       setMileageLog(result.mileageLog);
       setEntryCount(
