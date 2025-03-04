@@ -1,13 +1,16 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { HOLIDAYS, getBusinessMileageRate } from "@/utils/constants";
+import {
+  HOLIDAYS,
+  getBusinessMileageRate,
+  MAX_FREE_ENTRIES,
+} from "@/utils/constants";
 import type {
   MileageEntry as MileageEntryType,
   MileageLog,
 } from "@/types/mileage";
 import {
-  MAX_FREE_ENTRIES,
   type MileageParams,
   type DailyMileageDistribution,
   type TripEntry,
@@ -26,13 +29,6 @@ function generateDailyDistribution(
   totalPersonalMiles: number,
   startMileage: number
 ): DailyMileageDistribution[] {
-  console.log("Distributing mileage across dates:", {
-    dateCount: dates.length,
-    totalBusinessMiles,
-    totalPersonalMiles,
-    startMileage,
-  });
-
   // Verify we have valid dates to work with
   if (dates.length === 0) {
     console.error("No dates provided for mileage distribution");
@@ -41,12 +37,6 @@ function generateDailyDistribution(
 
   // Sort dates chronologically
   const sortedDates = [...dates].sort((a, b) => a.getTime() - b.getTime());
-
-  // Log the dates we're using
-  console.log(
-    "Sorted dates for distribution:",
-    sortedDates.map((d) => d.toISOString().split("T")[0])
-  );
 
   // Create a weighted distribution of miles across days
   // Workdays get more business miles, weekends get more personal miles
@@ -351,7 +341,7 @@ function generateDailyDistribution(
   }
 
   return dailyDistributions;
-} // This is the closing brace of generateDailyDistribution
+}
 
 // Convert daily distributions to MileageEntry objects
 function convertToMileageEntries(
@@ -372,9 +362,6 @@ function convertToMileageEntries(
 
     // Check if this is January 1st
     if (month === 1 && dayOfMonth === 1) {
-      console.log(
-        `Skipping January 1st (${formattedDate}) in convertToMileageEntries`
-      );
       continue; // Skip this day entirely
     }
 
@@ -382,9 +369,6 @@ function convertToMileageEntries(
     const dateStr = date.toISOString().split("T")[0];
     const yearHolidays = HOLIDAYS[year as keyof typeof HOLIDAYS] || [];
     if (yearHolidays.includes(dateStr)) {
-      console.log(
-        `Skipping holiday (${formattedDate}) in convertToMileageEntries`
-      );
       continue; // Skip this day entirely
     }
 
@@ -452,19 +436,6 @@ export async function generateOrganicMileageLog({
 }: MileageParams): Promise<{
   mileageLog: MileageLog;
 }> {
-  console.log("generateOrganicMileageLog called with params:", {
-    startMileage,
-    endMileage,
-    startDate,
-    endDate,
-    totalPersonalMiles,
-    location,
-    vehicle,
-    businessPurpose,
-    subscriptionStatus,
-    currentEntryCount,
-  });
-
   // Check subscription limits
   if (
     subscriptionStatus !== "active" &&
@@ -484,13 +455,6 @@ export async function generateOrganicMileageLog({
   const formattedStartDate = new Date(startDate);
   const formattedEndDate = new Date(endDate);
 
-  console.log("Formatted dates:", {
-    formattedStartDate,
-    formattedEndDate,
-    startDateValid: !isNaN(formattedStartDate.getTime()),
-    endDateValid: !isNaN(formattedEndDate.getTime()),
-  });
-
   if (
     isNaN(formattedStartDate.getTime()) ||
     isNaN(formattedEndDate.getTime())
@@ -508,19 +472,12 @@ export async function generateOrganicMileageLog({
   const parsedPersonalMiles = parseFloat(totalPersonalMiles.toString());
 
   const totalMiles = roundToOneDecimal(parsedEndMileage - parsedStartMileage);
-  console.log("Total miles calculated:", totalMiles);
 
   if (totalMiles <= 0) {
-    console.log("Invalid mileage range:", parsedStartMileage, parsedEndMileage);
     throw new Error("End mileage must be greater than start mileage");
   }
 
   if (parsedPersonalMiles >= totalMiles) {
-    console.log(
-      "Personal miles exceed total:",
-      parsedPersonalMiles,
-      totalMiles
-    );
     throw new Error("Personal miles cannot exceed total miles");
   }
 
@@ -531,7 +488,6 @@ export async function generateOrganicMileageLog({
 
   // Get all dates in range
   const allDates = getAllDatesInRange(formattedStartDate, formattedEndDate);
-  console.log("All dates in range:", allDates.length, allDates);
 
   if (allDates.length === 0) {
     throw new Error("No valid workdays found in the selected date range");
@@ -545,16 +501,12 @@ export async function generateOrganicMileageLog({
     parsedStartMileage
   );
 
-  console.log("Generated daily distributions:", mileageDistribution);
-
   // Convert to MileageEntry objects
   const logEntries = convertToMileageEntries(
     mileageDistribution,
     location,
     vehicle
   );
-
-  console.log("Generated log entries:", logEntries);
 
   // Calculate business deduction
   const year = formattedStartDate.getFullYear();
@@ -569,9 +521,6 @@ export async function generateOrganicMileageLog({
     0
   );
   const expectedTotalMiles = parsedEndMileage - parsedStartMileage;
-  console.log(
-    `Total miles in log: ${totalLogMiles}, Expected total miles: ${expectedTotalMiles}`
-  );
 
   if (Math.abs(totalLogMiles - expectedTotalMiles) > 1) {
     console.warn(
@@ -600,10 +549,6 @@ export async function generateOrganicMileageLog({
           lastEntry.personalMiles + difference
         );
       }
-
-      console.log(
-        `Adjusted last entry to account for ${difference} miles difference`
-      );
     }
   }
 
@@ -625,7 +570,6 @@ export async function generateOrganicMileageLog({
     log_entries: logEntries,
   };
 
-  console.log("Final mileage log:", mileageLog);
   revalidatePath("/generator");
   return {
     mileageLog,
