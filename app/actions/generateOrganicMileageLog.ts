@@ -20,7 +20,7 @@ import {
   isWorkday,
   getRandomInt,
   getRandomBusinessPurpose,
-  getRandomPersonalPurpose,
+  getWeightedPersonalPurpose,
   BUSINESS_TYPES,
 } from "@/utils/mileageUtils";
 import { generateSmartLocation } from "@/utils/locationUtils";
@@ -211,7 +211,7 @@ function generateDailyDistribution(
             startMileage: tripStartMileage,
             endMileage: tripEndMileage,
             miles: tripMiles,
-            purpose: getRandomPersonalPurpose(),
+            purpose: getWeightedPersonalPurpose(date),
           });
 
           currentMileage = tripEndMileage;
@@ -331,7 +331,7 @@ function generateDailyDistribution(
           startMileage: tripStartMileage,
           endMileage: tripEndMileage,
           miles: 0.1,
-          purpose: getRandomPersonalPurpose(),
+          purpose: getWeightedPersonalPurpose(day.date),
         });
         day.totalPersonalMiles = roundToOneDecimal(
           day.totalPersonalMiles + 0.1
@@ -370,17 +370,23 @@ function convertToMileageEntries(
         date
       );
 
-      entries.push({
+      // Create the entry without vehicle_info (will be inherited from top level)
+      const entry: MileageEntryType = {
         date: new Date(date),
         start_mileage: trip.startMileage,
         end_mileage: trip.endMileage,
         miles: trip.miles,
         purpose: trip.purpose,
         type: "business",
-        vehicle_info: vehicle,
-        business_type: businessType,
         location: location,
-      });
+      };
+
+      // Only add business_type if it exists
+      if (businessType) {
+        entry.business_type = businessType;
+      }
+
+      entries.push(entry);
     }
 
     // Process personal trips
@@ -394,6 +400,7 @@ function convertToMileageEntries(
         date
       );
 
+      // Create the entry without vehicle_info (will be inherited from top level)
       entries.push({
         date: new Date(date),
         start_mileage: trip.startMileage,
@@ -401,7 +408,6 @@ function convertToMileageEntries(
         miles: trip.miles,
         purpose: trip.purpose,
         type: "personal",
-        vehicle_info: vehicle,
         location: location,
       });
     }

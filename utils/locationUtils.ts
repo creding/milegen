@@ -334,49 +334,72 @@ const CONSTRUCTION_LOCATIONS: LocationMapping[] = [
 // Personal locations by distance category
 const PERSONAL_LOCATIONS: Record<DistanceCategory, string[]> = {
   veryNear: [
-    "Grocery Store",
-    "Coffee Shop",
-    "Gym",
-    "Restaurant",
-    "Store",
-    "Park",
-    "School"
+    "Kroger Grocery Store",
+    "Starbucks Coffee",
+    "Planet Fitness",
+    "Chipotle Restaurant",
+    "Walgreens",
+    "City Park",
+    "Elementary School",
+    "Local Pharmacy",
+    "7-Eleven",
+    "Neighborhood Cafe",
+    "Corner Market",
+    "Public Library",
+    "Post Office"
   ],
   near: [
-    "Mall",
-    "Theater",
+    "Westfield Mall",
+    "AMC Theater",
     "Friend's House",
-    "Doctor's Office",
-    "Dentist",
+    "Dr. Johnson's Office",
+    "Aspen Dental",
     "Community Center",
-    "Library"
+    "Public Library",
+    "Target",
+    "Home Depot",
+    "LA Fitness",
+    "Trader Joe's",
+    "Whole Foods Market",
+    "PetSmart"
   ],
   medium: [
-    "Shopping Center",
-    "Entertainment Venue",
+    "Oakwood Shopping Center",
+    "Performing Arts Center",
     "Family Home",
-    "Store",
-    "Medical Center",
+    "IKEA",
+    "Regional Medical Center",
     "Sports Complex",
-    "Park"
+    "State Park",
+    "Outlet Mall",
+    "Costco Wholesale",
+    "University Campus",
+    "County Fairgrounds",
+    "Golf Course"
   ],
   far: [
-    "Weekend Destination",
-    "Park",
-    "Mall",
-    "Medical Facility",
+    "Lakeside Resort",
+    "Premium Outlets",
+    "Memorial Hospital",
     "Family Visit",
-    "Day Trip",
-    "Event"
+    "Wine Country",
+    "Concert Venue",
+    "State Fair",
+    "National Park",
+    "Beach Resort",
+    "Mountain Retreat"
   ],
   veryFar: [
-    "Vacation Destination",
+    "Disney World",
     "Family Reunion",
     "Holiday Travel",
-    "Out of State",
-    "Tourist Attraction",
-    "Extended Trip",
-    "Event"
+    "Grand Canyon",
+    "Las Vegas Strip",
+    "New York City",
+    "Cruise Port",
+    "Yellowstone National Park",
+    "Miami Beach",
+    "San Francisco"
   ]
 };
 
@@ -392,7 +415,15 @@ const PERSONAL_PURPOSE_MAPPING: Record<string, DistanceCategory> = {
   "Family Visit": "medium",
   "Vacation": "veryFar",
   "School Pickup": "veryNear",
-  "Errands": "veryNear"
+  "Errands": "veryNear",
+  "Commuting": "near",
+  "Gym/Fitness": "veryNear",
+  "School Drop-off/Pick-up": "veryNear",
+  "Religious Activity": "near",
+  "Volunteer Work": "near",
+  "Home Improvement": "near",
+  "Pet Care": "veryNear",
+  "Hobby": "medium"
 };
 
 // Compile all business type location mappings
@@ -516,6 +547,55 @@ function getBusinessLocation(purpose: string, miles: number, businessType?: stri
   return getRandomItem(locationTypes);
 }
 
+// Seasonal location options
+const SEASONAL_LOCATIONS: Record<string, string[]> = {
+  winter: [
+    "Ski Resort",
+    "Ice Skating Rink",
+    "Winter Festival",
+    "Holiday Market",
+    "Indoor Mall"
+  ],
+  spring: [
+    "Botanical Garden",
+    "Farmers Market",
+    "Spring Festival",
+    "Garden Center",
+    "Park"
+  ],
+  summer: [
+    "Beach",
+    "Water Park",
+    "Summer Festival",
+    "Outdoor Concert",
+    "Baseball Game",
+    "Swimming Pool",
+    "Amusement Park"
+  ],
+  fall: [
+    "Pumpkin Patch",
+    "Apple Orchard",
+    "Fall Festival",
+    "Corn Maze",
+    "Football Game"
+  ]
+};
+
+// Get the season based on date
+function getSeason(date: Date): string {
+  const month = date.getMonth();
+  
+  if (month >= 11 || month <= 1) { // December, January, February
+    return "winter";
+  } else if (month >= 2 && month <= 4) { // March, April, May
+    return "spring";
+  } else if (month >= 5 && month <= 7) { // June, July, August
+    return "summer";
+  } else { // September, October, November
+    return "fall";
+  }
+}
+
 /**
  * Generate a smart location based on trip purpose, miles driven, business type, and date
  * 
@@ -533,6 +613,19 @@ export function generateSmartLocation(
   businessType?: string,
   date?: Date
 ): string {
+  // For entertainment and vacation purposes, consider seasonal options
+  if (type === 'personal' && date && 
+      (purpose === 'Entertainment' || purpose === 'Vacation' || purpose === 'Family Visit' || purpose === 'Hobby')) {
+    
+    const season = getSeason(date);
+    
+    // 30% chance to use a seasonal location for these purposes
+    if (Math.random() < 0.3) {
+      return getRandomItem(SEASONAL_LOCATIONS[season]);
+    }
+  }
+  
+  // Default location generation
   if (type === 'personal') {
     return getPersonalLocation(purpose, miles);
   } else {

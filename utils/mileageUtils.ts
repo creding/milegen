@@ -12,13 +12,17 @@ export const BUSINESS_TYPES: BusinessType[] = [
     purposes: [
       "Client Visit",
       "Client Visit",
-      "Client Visit",
       "Client Meeting",
       "Business Lunch",
       "Conference",
       "Site Inspection",
       "Sales Presentation",
       "Project Planning",
+      "Strategy Session",
+      "Contract Negotiation",
+      "Team Workshop",
+      "Client Training",
+      "Product Demo",
     ],
   },
   {
@@ -32,6 +36,11 @@ export const BUSINESS_TYPES: BusinessType[] = [
       "Listing Appointment",
       "Market Research",
       "Property Appraisal",
+      "Property Maintenance Check",
+      "Staging Consultation",
+      "Market Analysis Visit",
+      "Closing Meeting",
+      "Photography Session",
     ],
   },
   {
@@ -44,6 +53,11 @@ export const BUSINESS_TYPES: BusinessType[] = [
       "Training Session",
       "Facility Inspection",
       "Professional Meeting",
+      "Continuing Education",
+      "Medical Equipment Delivery",
+      "Lab Sample Transport",
+      "Insurance Meeting",
+      "Pharmacy Delivery",
     ],
   },
   {
@@ -55,6 +69,12 @@ export const BUSINESS_TYPES: BusinessType[] = [
       "Restaurant Pickup",
       "Customer Delivery",
       "Supply Pickup",
+      "Catering Delivery",
+      "Grocery Delivery",
+      "Alcohol Delivery",
+      "Special Order Pickup",
+      "Multi-Order Delivery",
+      "Restaurant Partner Meeting",
     ],
   },
   {
@@ -65,6 +85,12 @@ export const BUSINESS_TYPES: BusinessType[] = [
       "Passenger Dropoff",
       "Airport Transfer",
       "Event Transportation",
+      "Late Night Service",
+      "Corporate Client",
+      "Scheduled Ride",
+      "Long Distance Trip",
+      "Premium Service",
+      "Group Transportation",
     ],
   },
   {
@@ -76,6 +102,12 @@ export const BUSINESS_TYPES: BusinessType[] = [
       "Warehouse Visit",
       "Distribution Center",
       "Express Delivery",
+      "Priority Package Delivery",
+      "Return Pickup",
+      "Signature Required Delivery",
+      "Bulk Shipment",
+      "Fragile Item Delivery",
+      "International Shipping Dropoff",
     ],
   },
   {
@@ -88,6 +120,12 @@ export const BUSINESS_TYPES: BusinessType[] = [
       "Trade Show",
       "Client Meeting",
       "Networking Event",
+      "Territory Canvassing",
+      "Customer Follow-up",
+      "Proposal Presentation",
+      "Contract Signing",
+      "Product Training",
+      "Competitor Research",
     ],
   },
   {
@@ -100,6 +138,12 @@ export const BUSINESS_TYPES: BusinessType[] = [
       "Supplier Visit",
       "Inspection",
       "Bid Presentation",
+      "Equipment Transport",
+      "Permit Application",
+      "Subcontractor Meeting",
+      "Safety Inspection",
+      "Project Estimation",
+      "Tool Pickup",
     ],
   },
 ];
@@ -130,6 +174,32 @@ export const PERSONAL_PURPOSES = [
   "Vacation",
   "School Pickup",
   "Errands",
+];
+
+// Enhanced personal purposes with weights and day-of-week preferences
+export interface WeightedPurpose {
+  purpose: string;
+  weight: number;
+  weekdayPreference: number; // 0-1 where 0 = weekend only, 1 = weekday only, 0.5 = equal
+}
+
+export const ENHANCED_PERSONAL_PURPOSES: WeightedPurpose[] = [
+  { purpose: "Commuting", weight: 10, weekdayPreference: 0.9 },
+  { purpose: "Grocery Shopping", weight: 8, weekdayPreference: 0.5 },
+  { purpose: "Shopping", weight: 6, weekdayPreference: 0.4 },
+  { purpose: "Medical Appointment", weight: 3, weekdayPreference: 0.8 },
+  { purpose: "Gym/Fitness", weight: 7, weekdayPreference: 0.6 },
+  { purpose: "Restaurant", weight: 6, weekdayPreference: 0.4 },
+  { purpose: "Entertainment", weight: 5, weekdayPreference: 0.2 },
+  { purpose: "Family Visit", weight: 5, weekdayPreference: 0.3 },
+  { purpose: "Vacation", weight: 2, weekdayPreference: 0.1 },
+  { purpose: "School Drop-off/Pick-up", weight: 8, weekdayPreference: 0.9 },
+  { purpose: "Errands", weight: 7, weekdayPreference: 0.6 },
+  { purpose: "Religious Activity", weight: 3, weekdayPreference: 0.2 },
+  { purpose: "Volunteer Work", weight: 2, weekdayPreference: 0.5 },
+  { purpose: "Home Improvement", weight: 3, weekdayPreference: 0.3 },
+  { purpose: "Pet Care", weight: 4, weekdayPreference: 0.5 },
+  { purpose: "Hobby", weight: 3, weekdayPreference: 0.4 },
 ];
 
 export interface MileageParams {
@@ -169,55 +239,22 @@ export function roundToTwoDecimals(num: number): number {
   return parseFloat(num.toFixed(2));
 }
 
-// Get all dates in range, filtering for workdays
+// Get all dates in range
 export function getAllDatesInRange(startDate: Date, endDate: Date): Date[] {
   const dates: Date[] = [];
-
-  // Find the first valid workday on or after the start date
-  let firstWorkday = new Date(startDate);
-
-  // Keep advancing the date until we find a workday
-  while (firstWorkday <= endDate) {
-    // Check if January 1st
-    const month = firstWorkday.getMonth() + 1;
-    const day = firstWorkday.getDate();
-
-    if (month === 1 && day === 1) {
-      firstWorkday.setDate(firstWorkday.getDate() + 1);
-      continue;
-    }
-
-    const isWorkdayResult = isWorkday(firstWorkday);
-
-    if (isWorkdayResult) {
-      break;
-    }
-
-    firstWorkday.setDate(firstWorkday.getDate() + 1);
-  }
-
-  // If we couldn't find a workday in the range, return empty array
-  if (firstWorkday > endDate) {
-    return [];
-  }
-
-  // Collect all workdays in the range
-  let currentDate = new Date(firstWorkday);
+  
+  // Create a copy of the start date to avoid modifying the original
+  let currentDate = new Date(startDate);
+  
+  // Loop through all dates in the range
   while (currentDate <= endDate) {
-    // Check if January 1st
-    const month = currentDate.getMonth() + 1;
-    const day = currentDate.getDate();
-
-    if (month === 1 && day === 1) {
-      currentDate.setDate(currentDate.getDate() + 1);
-      continue;
-    }
-
-    if (isWorkday(currentDate)) {
-      dates.push(new Date(currentDate));
-    }
+    // Add the current date to our array
+    dates.push(new Date(currentDate));
+    
+    // Move to the next day
     currentDate.setDate(currentDate.getDate() + 1);
   }
+  
   return dates;
 }
 
@@ -277,4 +314,44 @@ export function getRandomBusinessPurpose(businessType?: string): string {
 // Get a random personal purpose
 export function getRandomPersonalPurpose(): string {
   return PERSONAL_PURPOSES[Math.floor(Math.random() * PERSONAL_PURPOSES.length)];
+}
+
+// Get a weighted random personal purpose based on day of week
+export function getWeightedPersonalPurpose(date?: Date): string {
+  // If no date provided, use current date
+  const currentDate = date || new Date();
+  const isWeekday = [1, 2, 3, 4, 5].includes(currentDate.getDay());
+  
+  // Calculate total weight considering day of week preference
+  let totalWeight = 0;
+  const adjustedWeights: number[] = [];
+  
+  ENHANCED_PERSONAL_PURPOSES.forEach(purpose => {
+    // Adjust weight based on weekday/weekend
+    let adjustedWeight = purpose.weight;
+    if (isWeekday) {
+      // On weekdays, increase weight for weekday activities
+      adjustedWeight *= (0.5 + purpose.weekdayPreference/2);
+    } else {
+      // On weekends, increase weight for weekend activities
+      adjustedWeight *= (1.5 - purpose.weekdayPreference/2);
+    }
+    
+    adjustedWeights.push(adjustedWeight);
+    totalWeight += adjustedWeight;
+  });
+  
+  // Select a purpose based on weighted probability
+  let random = Math.random() * totalWeight;
+  let runningTotal = 0;
+  
+  for (let i = 0; i < adjustedWeights.length; i++) {
+    runningTotal += adjustedWeights[i];
+    if (random <= runningTotal) {
+      return ENHANCED_PERSONAL_PURPOSES[i].purpose;
+    }
+  }
+  
+  // Fallback in case of rounding errors
+  return ENHANCED_PERSONAL_PURPOSES[0].purpose;
 }
