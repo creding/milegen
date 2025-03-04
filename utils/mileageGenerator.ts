@@ -56,7 +56,7 @@ interface DailyMileageDistribution {
   totalPersonalMiles: number;
 }
 
-interface MileageLog {
+export interface MileageLog {
   start_date: string;
   end_date: string;
   start_mileage: number;
@@ -80,7 +80,7 @@ interface MileageLog {
   business_type: string;
 }
 
-interface MileageEntry {
+export interface MileageEntry {
   date: Date;
   type: string;
   miles: number;
@@ -259,12 +259,20 @@ async function distributeMileageAcrossDays(
   }
 
   // Distribute personal miles - more on weekends
-  const weekendPersonalMiles = roundMiles((totalPersonalMiles * 0.6) / weekendDays); // 60% on weekends
-  const weekdayPersonalMiles = roundMiles((totalPersonalMiles * 0.4) / workdays); // 40% on workdays
+  const weekendPersonalMiles = roundMiles(
+    (totalPersonalMiles * 0.6) / weekendDays
+  ); // 60% on weekends
+  const weekdayPersonalMiles = roundMiles(
+    (totalPersonalMiles * 0.4) / workdays
+  ); // 40% on workdays
 
   // Distribute business miles - more on workdays
-  const weekdayBusinessMiles = roundMiles((targetBusinessMiles * 0.9) / workdays); // 90% on workdays
-  const weekendBusinessMiles = roundMiles((targetBusinessMiles * 0.1) / weekendDays); // 10% on weekends
+  const weekdayBusinessMiles = roundMiles(
+    (targetBusinessMiles * 0.9) / workdays
+  ); // 90% on workdays
+  const weekendBusinessMiles = roundMiles(
+    (targetBusinessMiles * 0.1) / weekendDays
+  ); // 10% on weekends
 
   // Reset for distribution
   currentDate = new Date(startDate);
@@ -273,10 +281,14 @@ async function distributeMileageAcrossDays(
 
   while (currentDate <= endDate) {
     const isWorkingDay = await isWorkday(currentDate);
-    
+
     // Calculate base miles for this day
-    let personalMiles = isWorkingDay ? weekdayPersonalMiles : weekendPersonalMiles;
-    let businessMiles = isWorkingDay ? weekdayBusinessMiles : weekendBusinessMiles;
+    let personalMiles = isWorkingDay
+      ? weekdayPersonalMiles
+      : weekendPersonalMiles;
+    let businessMiles = isWorkingDay
+      ? weekdayBusinessMiles
+      : weekendBusinessMiles;
 
     // Add slight variation while ensuring we don't exceed targets
     const variation = 0.85 + Math.random() * 0.3; // 0.85 to 1.15
@@ -284,8 +296,12 @@ async function distributeMileageAcrossDays(
     businessMiles = roundMiles(businessMiles * variation);
 
     // Ensure we don't exceed total targets
-    const remainingPersonal = roundMiles(totalPersonalMiles - totalPersonalAssigned);
-    const remainingBusiness = roundMiles(targetBusinessMiles - totalBusinessAssigned);
+    const remainingPersonal = roundMiles(
+      totalPersonalMiles - totalPersonalAssigned
+    );
+    const remainingBusiness = roundMiles(
+      targetBusinessMiles - totalBusinessAssigned
+    );
 
     if (totalPersonalAssigned + personalMiles > totalPersonalMiles) {
       personalMiles = remainingPersonal;
@@ -313,15 +329,23 @@ async function distributeMileageAcrossDays(
   }
 
   // If we have any remaining miles due to rounding, add them to the last workday
-  const remainingPersonal = roundMiles(totalPersonalMiles - totalPersonalAssigned);
-  const remainingBusiness = roundMiles(targetBusinessMiles - totalBusinessAssigned);
+  const remainingPersonal = roundMiles(
+    totalPersonalMiles - totalPersonalAssigned
+  );
+  const remainingBusiness = roundMiles(
+    targetBusinessMiles - totalBusinessAssigned
+  );
 
   if (remainingPersonal > 0 || remainingBusiness > 0) {
     // Find the last workday
     for (let i = dailyTargets.length - 1; i >= 0; i--) {
       if (dailyTargets[i].isWorkday) {
-        dailyTargets[i].targetMiles = roundMiles(dailyTargets[i].targetMiles + remainingPersonal + remainingBusiness);
-        dailyTargets[i].targetBusinessMiles = roundMiles(dailyTargets[i].targetBusinessMiles + remainingBusiness);
+        dailyTargets[i].targetMiles = roundMiles(
+          dailyTargets[i].targetMiles + remainingPersonal + remainingBusiness
+        );
+        dailyTargets[i].targetBusinessMiles = roundMiles(
+          dailyTargets[i].targetBusinessMiles + remainingBusiness
+        );
         break;
       }
     }

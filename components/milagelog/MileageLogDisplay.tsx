@@ -30,7 +30,7 @@ import {
 } from "@tabler/icons-react";
 
 import { useMediaQuery } from "@mantine/hooks";
-import type { MileageEntry } from "@/types/mileage";
+import type { MileageEntry } from "@/utils/mileageGenerator";
 import { getRandomBusinessPurpose } from "@/utils/mileageUtils";
 
 interface MileageLogDisplayProps {
@@ -109,10 +109,6 @@ export function MileageLogDisplay({
           <Text size="sm">{parseFloat(entry.end_mileage.toFixed(1))}</Text>
         </Group>
         <Divider my="xs" />
-        <Text size="sm" c="dimmed">
-          Location:
-        </Text>
-        <Text size="sm">{entry.location}</Text>
         <Text size="sm" c="dimmed" mt="xs">
           Purpose:
         </Text>
@@ -386,7 +382,6 @@ export function MileageLogDisplay({
                   <TableTh>Start</TableTh>
                   <TableTh>End</TableTh>
                   <TableTh>Miles</TableTh>
-                  <TableTh>Location</TableTh>
                   <TableTh>Purpose</TableTh>
                   <TableTh>Type</TableTh>
                 </TableTr>
@@ -405,7 +400,6 @@ export function MileageLogDisplay({
                       {parseFloat(entry.end_mileage.toFixed(1))}
                     </TableTd>
                     <TableTd>{parseFloat(entry.miles.toFixed(1))}</TableTd>
-                    <TableTd>{entry.location}</TableTd>
                     <TableTd>{entry.purpose}</TableTd>
                     <TableTd>{entry.type}</TableTd>
                   </TableTr>

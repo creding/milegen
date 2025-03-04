@@ -4,7 +4,7 @@ import { useState } from "react";
 import { notifications } from "@mantine/notifications";
 import { generateOrganicMileageLog } from "@/app/actions/generateOrganicMileageLog";
 import { saveMileageLog as saveMileageLogApi } from "@/app/actions/saveMileageLog";
-import type { MileageEntry, MileageLog } from "@/types/mileage";
+import type { MileageLog } from "@/utils/mileageGenerator";
 import { MileageLogDisplay } from "@/components/milagelog/MileageLogDisplay";
 import { PrintMilageLog } from "@/components/milagelog/PrintMilageLog";
 import { IconCheck, IconDeviceFloppy, IconX } from "@tabler/icons-react";

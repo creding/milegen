@@ -1,6 +1,6 @@
 "use client";
 
-import { MileageLog } from "@/types/mileage";
+import { MileageLog } from "@/utils/mileageGenerator";
 import { Button } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
 import { IconPrinter } from "@tabler/icons-react";
@@ -472,7 +472,7 @@ export const printMileageLog = (log: MileageLog) => {
                     const purpose = entry.purpose;
                     const type = entry.type;
                     // Use the location field from the MileageEntry or generate one
-                    const location = entry.location || "Not specified";
+                    const location = "Not specified";
 
                     return `
                     <tr>
