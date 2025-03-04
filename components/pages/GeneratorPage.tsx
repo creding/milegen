@@ -2,12 +2,16 @@
 
 import { useState } from "react";
 import { notifications } from "@mantine/notifications";
-import { generateOrganicMileageLog } from "@/app/actions/generateOrganicMileageLog";
 import { saveMileageLog as saveMileageLogApi } from "@/app/actions/saveMileageLog";
 import type { MileageLog } from "@/app/actions/mileageGenerator";
 import { MileageLogDisplay } from "@/components/milagelog/MileageLogDisplay";
 import { PrintMilageLog } from "@/components/milagelog/PrintMilageLog";
-import { IconCheck, IconDeviceFloppy, IconX } from "@tabler/icons-react";
+import {
+  IconCheck,
+  IconDeviceFloppy,
+  IconX,
+  IconRefresh,
+} from "@tabler/icons-react";
 import {
   Button,
   Card,
@@ -16,6 +20,7 @@ import {
   Title,
   Stack,
   Text,
+  LoadingOverlay,
 } from "@mantine/core";
 import { MileageForm } from "@/components/milagelog/MileageForm";
 import { User } from "@supabase/supabase-js";
@@ -46,55 +51,17 @@ export const GeneratorPage = ({
   const [totalPersonalMiles, setTotalPersonalMiles] = useState("0");
   const [entryCount, setEntryCount] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [showForm, setShowForm] = useState(true);
 
   const handleGenerateMileageLog = async () => {
     const start = parseInt(startMileage);
     const end = parseInt(endMileage);
-    const totalMiles = end - start;
     const personalMiles = parseInt(totalPersonalMiles) || 0;
 
-    console.log("Starting handleGenerateMileageLog with values:", {
-      start,
-      end,
-      totalMiles,
-      personalMiles,
-      vehicle,
-      businessType,
-      startDate,
-      endDate,
-      subscriptionStatus,
-      entryCount,
-    });
-
-    if (isNaN(totalMiles) || totalMiles <= 0) {
-      console.log(
-        "Invalid mileage input:",
-        startMileage,
-        endMileage,
-        totalMiles
-      );
-      notifications.show({
-        title: "Invalid Input",
-        message: "Please enter valid starting and ending odometer readings.",
-        color: "red",
-        icon: <IconX />,
-      });
-      return;
-    }
+    setIsGenerating(true);
 
     try {
-      console.log("Calling generateOrganicMileageLog with params:", {
-        startMileage: start,
-        endMileage: end,
-        startDate,
-        endDate,
-        totalPersonalMiles: personalMiles,
-        vehicle,
-        businessType,
-        subscriptionStatus: subscriptionStatus || "inactive",
-        currentEntryCount: entryCount,
-      });
-
       const result = await generateMileageLogFromForm({
         startMileage: start,
         endMileage: end,
@@ -106,14 +73,13 @@ export const GeneratorPage = ({
         subscriptionStatus: subscriptionStatus || "inactive",
         currentEntryCount: entryCount,
       });
-
-      console.log("generateOrganicMileageLog result:", result);
       if (result) {
         setMileageLog(result);
         setEntryCount((prevCount) => prevCount + result.log_entries.length);
+        setShowForm(false);
+        setIsGenerating(false);
       }
     } catch (error: unknown) {
-      console.error("Error generating mileage log:", error);
       if (error instanceof Error) {
         notifications.show({
           title: "Error",
@@ -123,8 +89,15 @@ export const GeneratorPage = ({
           color: "red",
           icon: <IconX />,
         });
+        setShowForm(true);
       }
     }
+  };
+
+  const handleNewLog = () => {
+    resetForm();
+    setMileageLog(undefined);
+    setShowForm(true);
   };
 
   const resetForm = () => {
@@ -192,34 +165,37 @@ export const GeneratorPage = ({
 
   return (
     <Container size="xl" mt={20} py="xl" px={isMobile ? "xs" : "md"}>
-      <Card withBorder>
-        <Stack gap="md" mb="md">
-          <Title order={2}>Generate Mileage Log</Title>
-          <Text c="dimmed" size="sm">
-            Fill out the form to generate a mileage log.
-          </Text>
-        </Stack>
-        <MileageForm
-          startMileage={startMileage}
-          endMileage={endMileage}
-          startDate={startDate}
-          endDate={endDate}
-          totalPersonalMiles={totalPersonalMiles}
-          vehicle={vehicle}
-          businessType={businessType}
-          subscriptionStatus={subscriptionStatus}
-          entryCount={entryCount}
-          onStartMileageChange={setStartMileage}
-          onEndMileageChange={setEndMileage}
-          onStartDateChange={setStartDate}
-          onEndDateChange={setEndDate}
-          onTotalPersonalMilesChange={setTotalPersonalMiles}
-          onVehicleChange={setVehicle}
-          onBusinessTypeChange={setBusinessType}
-          onGenerate={handleGenerateMileageLog}
-          onReset={resetForm}
-        />
-      </Card>
+      {showForm ? (
+        <Card withBorder pos="relative">
+          <LoadingOverlay visible={isGenerating} overlayProps={{ blur: 2 }} />
+          <Stack gap="md" mb="md">
+            <Title order={2}>Generate Mileage Log</Title>
+            <Text c="dimmed" size="sm">
+              Fill out the form to generate a mileage log.
+            </Text>
+          </Stack>
+          <MileageForm
+            startMileage={startMileage}
+            endMileage={endMileage}
+            startDate={startDate}
+            endDate={endDate}
+            totalPersonalMiles={totalPersonalMiles}
+            vehicle={vehicle}
+            businessType={businessType}
+            subscriptionStatus={subscriptionStatus}
+            entryCount={entryCount}
+            onStartMileageChange={setStartMileage}
+            onEndMileageChange={setEndMileage}
+            onStartDateChange={setStartDate}
+            onEndDateChange={setEndDate}
+            onTotalPersonalMilesChange={setTotalPersonalMiles}
+            onVehicleChange={setVehicle}
+            onBusinessTypeChange={setBusinessType}
+            onGenerate={handleGenerateMileageLog}
+            onReset={resetForm}
+          />
+        </Card>
+      ) : null}
 
       {mileageLog && mileageLog.log_entries.length > 0 && (
         <Card withBorder mt="md" mb="md">
@@ -230,22 +206,39 @@ export const GeneratorPage = ({
             {isMobile ? (
               <Stack w="100%" mt="sm">
                 <PrintMilageLog log={mileageLog} />
-                {user && (
+                <Group grow>
+                  {user && (
+                    <Button
+                      leftSection={<IconDeviceFloppy />}
+                      onClick={saveMileageLog}
+                      disabled={isSaving}
+                      variant="gradient"
+                      size={isMobile ? "md" : "sm"}
+                    >
+                      {isSaving ? "Saving..." : "Save Log"}
+                    </Button>
+                  )}
                   <Button
-                    leftSection={<IconDeviceFloppy />}
-                    onClick={saveMileageLog}
-                    disabled={isSaving}
-                    fullWidth
-                    variant="gradient"
+                    leftSection={<IconRefresh />}
+                    onClick={handleNewLog}
                     size={isMobile ? "md" : "sm"}
+                    variant="light"
                   >
-                    {isSaving ? "Saving..." : "Save Log"}
+                    Generate New Log
                   </Button>
-                )}
+                </Group>
               </Stack>
             ) : (
               <Group justify="flex-end" mt="md" mb="md">
                 <PrintMilageLog log={mileageLog} />
+                <Button
+                  leftSection={<IconRefresh />}
+                  onClick={handleNewLog}
+                  size={isMobile ? "md" : "sm"}
+                  variant="light"
+                >
+                  Generate New Log
+                </Button>
                 {user && (
                   <Button
                     leftSection={<IconDeviceFloppy />}
@@ -261,51 +254,18 @@ export const GeneratorPage = ({
             )}
           </Group>
           <MileageLogDisplay
-            startDate={new Date(mileageLog.start_date)}
-            endDate={new Date(mileageLog.end_date)}
+            startDate={startDate}
+            endDate={endDate}
             totalMileage={mileageLog.total_mileage}
             totalBusinessMiles={mileageLog.total_business_miles}
             totalPersonalMiles={mileageLog.total_personal_miles}
-            startMileage={Number(mileageLog.start_mileage)}
-            endMileage={Number(mileageLog.end_mileage)}
+            startMileage={mileageLog.start_mileage}
+            endMileage={mileageLog.end_mileage}
             businessDeductionRate={mileageLog.business_deduction_rate}
             businessDeductionAmount={mileageLog.business_deduction_amount}
             vehicleInfo={mileageLog.vehicle_info}
             mileageLog={mileageLog.log_entries}
           />
-
-          {isMobile ? (
-            <Stack w="100%" mt="xl">
-              <PrintMilageLog log={mileageLog} />
-              {user && (
-                <Button
-                  leftSection={<IconDeviceFloppy />}
-                  onClick={saveMileageLog}
-                  disabled={isSaving}
-                  fullWidth
-                  variant="gradient"
-                  size={isMobile ? "md" : "sm"}
-                >
-                  {isSaving ? "Saving..." : "Save Log"}
-                </Button>
-              )}
-            </Stack>
-          ) : (
-            <Group justify="flex-end" mt="md" mb="md">
-              <PrintMilageLog log={mileageLog} />
-              {user && (
-                <Button
-                  variant="gradient"
-                  leftSection={<IconDeviceFloppy />}
-                  onClick={saveMileageLog}
-                  disabled={isSaving}
-                  size={isMobile ? "md" : "sm"}
-                >
-                  {isSaving ? "Saving..." : "Save Log"}
-                </Button>
-              )}
-            </Group>
-          )}
         </Card>
       )}
     </Container>

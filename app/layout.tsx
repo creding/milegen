@@ -4,7 +4,7 @@ import "./print.css";
 import type { ReactNode } from "react";
 import { MantineProvider } from "@mantine/core";
 import { Notifications } from "@mantine/notifications";
-
+import { Analytics } from "@vercel/analytics/react";
 import "@mantine/core/styles.css";
 import "@mantine/notifications/styles.css";
 import "@mantine/dates/styles.css";
@@ -33,6 +33,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <main>{children}</main>
           <Footer />
         </MantineProvider>
+        <Analytics />
       </body>
     </html>
   );
