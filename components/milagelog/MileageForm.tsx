@@ -11,11 +11,13 @@ import {
   Box,
   Text,
   Flex,
+  Select,
 } from "@mantine/core";
 import { IconInfoCircle } from "@tabler/icons-react";
 import { useMediaQuery } from "@mantine/hooks";
 import { useForm, isNotEmpty } from "@mantine/form";
 import { CustomInputWrapper } from "../form/CustomInputWrapper";
+import { BUSINESS_TYPES } from "@/utils/mileageUtils";
 
 interface MileageFormProps {
   startMileage: string;
@@ -24,8 +26,7 @@ interface MileageFormProps {
   endDate: Date;
   totalPersonalMiles: string;
   vehicle: string;
-  location: string;
-  businessPurpose: string;
+  businessType: string;
   subscriptionStatus: string;
   entryCount: number;
   onStartMileageChange: (value: string) => void;
@@ -34,8 +35,7 @@ interface MileageFormProps {
   onEndDateChange: (value: Date) => void;
   onTotalPersonalMilesChange: (value: string) => void;
   onVehicleChange: (value: string) => void;
-  onLocationChange: (value: string) => void;
-  onBusinessPurposeChange: (value: string) => void;
+  onBusinessTypeChange: (value: string) => void;
   onGenerate: () => void;
   onReset: () => void;
 }
@@ -47,8 +47,7 @@ interface FormValues {
   endDate: Date;
   totalPersonalMiles: string;
   vehicle: string;
-  location: string;
-  businessPurpose: string;
+  businessType: string;
 }
 
 const MAX_FREE_ENTRIES = 5;
@@ -60,8 +59,7 @@ export function MileageForm({
   endDate,
   totalPersonalMiles,
   vehicle,
-  location,
-  businessPurpose,
+  businessType,
   subscriptionStatus,
   entryCount,
   onStartMileageChange,
@@ -70,8 +68,7 @@ export function MileageForm({
   onEndDateChange,
   onTotalPersonalMilesChange,
   onVehicleChange,
-  onLocationChange,
-  onBusinessPurposeChange,
+  onBusinessTypeChange,
   onGenerate,
   onReset,
 }: MileageFormProps) {
@@ -85,8 +82,7 @@ export function MileageForm({
       endDate,
       totalPersonalMiles,
       vehicle,
-      location,
-      businessPurpose,
+      businessType,
     },
     validate: {
       startMileage: (value: string) => {
@@ -110,8 +106,7 @@ export function MileageForm({
         return null;
       },
       vehicle: isNotEmpty("Vehicle is required"),
-      location: isNotEmpty("Location is required"),
-      businessPurpose: isNotEmpty("Business purpose is required"),
+      businessType: isNotEmpty("Business type is required"),
     },
   });
 
@@ -121,8 +116,7 @@ export function MileageForm({
     onEndMileageChange(values.endMileage);
     onTotalPersonalMilesChange(values.totalPersonalMiles);
     onVehicleChange(values.vehicle);
-    onLocationChange(values.location);
-    onBusinessPurposeChange(values.businessPurpose);
+    onBusinessTypeChange(values.businessType);
   };
 
   // Handle date changes separately since they're not string values
@@ -147,6 +141,12 @@ export function MileageForm({
     form.reset();
     onReset();
   };
+
+  // Create business type options for the select dropdown
+  const businessTypeOptions = BUSINESS_TYPES.map((type) => ({
+    value: type.name,
+    label: type.name,
+  }));
 
   return (
     <Box p="md">
@@ -306,6 +306,25 @@ export function MileageForm({
           </CustomInputWrapper>
 
           <CustomInputWrapper
+            label="Business Type"
+            required
+            error={form.errors.businessType}
+          >
+            <Select
+              placeholder="Select business type"
+              data={businessTypeOptions}
+              {...form.getInputProps("businessType")}
+              onChange={(value) => {
+                if (value) {
+                  form.setFieldValue("businessType", value);
+                  onBusinessTypeChange(value);
+                }
+              }}
+              error={null} // Hide default error
+            />
+          </CustomInputWrapper>
+
+          <CustomInputWrapper
             label="Vehicle"
             required
             error={form.errors.vehicle}
@@ -316,39 +335,6 @@ export function MileageForm({
               onChange={(e) => {
                 form.setFieldValue("vehicle", e.target.value);
                 onVehicleChange(e.target.value);
-              }}
-              error={null} // Hide default error
-            />
-          </CustomInputWrapper>
-
-          <CustomInputWrapper
-            label="Location"
-            required
-            error={form.errors.location}
-          >
-            <TextInput
-              placeholder="Enter location"
-              {...form.getInputProps("location")}
-              onChange={(e) => {
-                form.setFieldValue("location", e.target.value);
-                onLocationChange(e.target.value);
-              }}
-              error={null} // Hide default error
-            />
-          </CustomInputWrapper>
-
-          <CustomInputWrapper
-            label="Business Purpose"
-            required
-            error={form.errors.businessPurpose}
-          >
-            <Textarea
-              placeholder="Enter business purpose"
-              rows={isMobile ? 3 : 4}
-              {...form.getInputProps("businessPurpose")}
-              onChange={(e) => {
-                form.setFieldValue("businessPurpose", e.target.value);
-                onBusinessPurposeChange(e.target.value);
               }}
               error={null} // Hide default error
             />

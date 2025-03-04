@@ -20,6 +20,8 @@ import {
   isWorkday,
   getRandomInt,
   getRandomBusinessPurpose,
+  getRandomPersonalPurpose,
+  BUSINESS_TYPES,
 } from "@/utils/mileageUtils";
 
 // Generate a distribution of trips across the date range
@@ -27,7 +29,8 @@ function generateDailyDistribution(
   dates: Date[],
   totalBusinessMiles: number,
   totalPersonalMiles: number,
-  startMileage: number
+  startMileage: number,
+  businessType?: string
 ): DailyMileageDistribution[] {
   // Verify we have valid dates to work with
   if (dates.length === 0) {
@@ -168,7 +171,7 @@ function generateDailyDistribution(
             startMileage: tripStartMileage,
             endMileage: tripEndMileage,
             miles: tripMiles,
-            purpose: getRandomBusinessPurpose(),
+            purpose: getRandomBusinessPurpose(businessType),
           });
 
           currentMileage = tripEndMileage;
@@ -207,7 +210,7 @@ function generateDailyDistribution(
             startMileage: tripStartMileage,
             endMileage: tripEndMileage,
             miles: tripMiles,
-            purpose: "Personal Visit",
+            purpose: getRandomPersonalPurpose(),
           });
 
           currentMileage = tripEndMileage;
@@ -289,7 +292,7 @@ function generateDailyDistribution(
           startMileage: tripStartMileage,
           endMileage: tripEndMileage,
           miles: 0.1,
-          purpose: getRandomBusinessPurpose(),
+          purpose: getRandomBusinessPurpose(businessType),
         });
         day.totalBusinessMiles = roundToOneDecimal(
           day.totalBusinessMiles + 0.1
@@ -327,7 +330,7 @@ function generateDailyDistribution(
           startMileage: tripStartMileage,
           endMileage: tripEndMileage,
           miles: 0.1,
-          purpose: "Personal Visit",
+          purpose: getRandomPersonalPurpose(),
         });
         day.totalPersonalMiles = roundToOneDecimal(
           day.totalPersonalMiles + 0.1
@@ -346,69 +349,45 @@ function generateDailyDistribution(
 // Convert daily distributions to MileageEntry objects
 function convertToMileageEntries(
   distributions: DailyMileageDistribution[],
-  location: string,
-  vehicle: string
+  vehicle: string,
+  businessType?: string
 ): MileageEntryType[] {
   const entries: MileageEntryType[] = [];
-  let entryId = 1; // Add a unique ID counter
 
+  // Process each day's distribution
   for (const day of distributions) {
-    // Format date for display (MM/DD/YYYY)
     const date = day.date;
-    const month = date.getMonth() + 1;
-    const dayOfMonth = date.getDate();
-    const year = date.getFullYear();
-    const formattedDate = `${month}/${dayOfMonth}/${year}`;
 
-    // Check if this is January 1st
-    if (month === 1 && dayOfMonth === 1) {
-      continue; // Skip this day entirely
-    }
-
-    // Check if this is a holiday
-    const dateStr = date.toISOString().split("T")[0];
-    const yearHolidays = HOLIDAYS[year as keyof typeof HOLIDAYS] || [];
-    if (yearHolidays.includes(dateStr)) {
-      continue; // Skip this day entirely
-    }
-
-    // Add business trips
+    // Process business trips
     for (const trip of day.businessTrips) {
       entries.push({
-        id: `${formattedDate}-${entryId++}`,
-        date: formattedDate,
-        vehicle: vehicle,
-        startMileage: roundToOneDecimal(trip.startMileage),
-        endMileage: roundToOneDecimal(trip.endMileage),
-        totalMiles: roundToOneDecimal(trip.miles),
-        businessMiles: roundToOneDecimal(trip.miles),
-        personalMiles: 0,
-        location: location,
-        businessPurpose: trip.purpose,
-        recordedAt: new Date().toISOString(),
+        date: new Date(date),
+        start_mileage: trip.startMileage,
+        end_mileage: trip.endMileage,
+        miles: trip.miles,
+        purpose: trip.purpose,
+        type: "business",
+        vehicle_info: vehicle,
+        business_type: businessType,
       });
     }
 
-    // Add personal trips
+    // Process personal trips
     for (const trip of day.personalTrips) {
       entries.push({
-        id: `${formattedDate}-${entryId++}`,
-        date: formattedDate,
-        vehicle: vehicle,
-        startMileage: roundToOneDecimal(trip.startMileage),
-        endMileage: roundToOneDecimal(trip.endMileage),
-        totalMiles: roundToOneDecimal(trip.miles),
-        businessMiles: 0,
-        personalMiles: roundToOneDecimal(trip.miles),
-        location: location,
-        businessPurpose: "Personal",
-        recordedAt: new Date().toISOString(),
+        date: new Date(date),
+        start_mileage: trip.startMileage,
+        end_mileage: trip.endMileage,
+        miles: trip.miles,
+        purpose: trip.purpose,
+        type: "personal",
+        vehicle_info: vehicle,
       });
     }
   }
 
-  // Sort entries by date and then by starting mileage
-  entries.sort((a, b) => {
+  // Sort entries by date and start_mileage
+  return entries.sort((a, b) => {
     const dateA = new Date(a.date).getTime();
     const dateB = new Date(b.date).getTime();
 
@@ -416,10 +395,8 @@ function convertToMileageEntries(
       return dateA - dateB;
     }
 
-    return a.startMileage - b.startMileage;
+    return a.start_mileage - b.start_mileage;
   });
-
-  return entries;
 }
 
 export async function generateOrganicMileageLog({
@@ -428,149 +405,101 @@ export async function generateOrganicMileageLog({
   startDate,
   endDate,
   totalPersonalMiles,
-  location,
   vehicle,
-  businessPurpose,
+  businessType,
   subscriptionStatus,
   currentEntryCount,
 }: MileageParams): Promise<{
   mileageLog: MileageLog;
 }> {
-  // Check subscription limits
-  if (
-    subscriptionStatus !== "active" &&
-    currentEntryCount >= MAX_FREE_ENTRIES
-  ) {
-    throw new Error(
-      `Free tier limited to ${MAX_FREE_ENTRIES} entries. Please subscribe for unlimited entries.`
-    );
-  }
+  console.log("Starting generateOrganicMileageLog with params:", {
+    startMileage,
+    endMileage,
+    startDate,
+    endDate,
+    totalPersonalMiles,
+    vehicle,
+    businessType,
+    subscriptionStatus,
+    currentEntryCount,
+  });
 
   // Validate inputs
   if (!startDate || !endDate) {
     throw new Error("Start and end dates are required");
   }
 
-  // Ensure dates are properly formatted
-  const formattedStartDate = new Date(startDate);
-  const formattedEndDate = new Date(endDate);
-
+  // Check subscription status for entry limits
   if (
-    isNaN(formattedStartDate.getTime()) ||
-    isNaN(formattedEndDate.getTime())
+    subscriptionStatus !== "active" &&
+    currentEntryCount >= MAX_FREE_ENTRIES
   ) {
-    throw new Error("Invalid date format");
+    throw new Error(
+      "You have reached the maximum number of free entries. Please subscribe to generate more mileage logs."
+    );
   }
 
-  if (formattedStartDate > formattedEndDate) {
-    throw new Error("Start date must be before end date");
-  }
-
-  // Parse and round input values to ensure consistent precision
-  const parsedStartMileage = parseFloat(startMileage.toString());
-  const parsedEndMileage = parseFloat(endMileage.toString());
-  const parsedPersonalMiles = parseFloat(totalPersonalMiles.toString());
-
-  const totalMiles = roundToOneDecimal(parsedEndMileage - parsedStartMileage);
-
+  // Calculate total miles
+  const totalMiles = endMileage - startMileage;
   if (totalMiles <= 0) {
     throw new Error("End mileage must be greater than start mileage");
   }
 
-  if (parsedPersonalMiles >= totalMiles) {
+  // Ensure personal miles doesn't exceed total miles
+  if (totalPersonalMiles > totalMiles) {
     throw new Error("Personal miles cannot exceed total miles");
   }
 
   // Calculate business miles
-  const totalBusinessMiles = roundToOneDecimal(
-    totalMiles - parsedPersonalMiles
-  );
+  const totalBusinessMiles = totalMiles - totalPersonalMiles;
 
-  // Get all dates in range
-  const allDates = getAllDatesInRange(formattedStartDate, formattedEndDate);
-
-  if (allDates.length === 0) {
-    throw new Error("No valid workdays found in the selected date range");
+  // Get all dates in the range
+  const dates = getAllDatesInRange(startDate, endDate);
+  if (dates.length === 0) {
+    throw new Error("No valid dates in the selected range");
   }
 
-  // Generate daily distribution of miles
-  const mileageDistribution = generateDailyDistribution(
-    allDates,
+  // Generate daily mileage distribution
+  const dailyDistributions = generateDailyDistribution(
+    dates,
     totalBusinessMiles,
     totalPersonalMiles,
-    parsedStartMileage
+    startMileage,
+    businessType
   );
 
-  // Convert to MileageEntry objects
-  const logEntries = convertToMileageEntries(
-    mileageDistribution,
-    location,
-    vehicle
+  // Convert to mileage entries
+  const mileageEntries = convertToMileageEntries(
+    dailyDistributions,
+    vehicle,
+    businessType
   );
 
   // Calculate business deduction
-  const year = formattedStartDate.getFullYear();
-  const businessDeductionRate = getBusinessMileageRate(year);
-  const businessDeduction = roundToTwoDecimals(
+  const businessDeductionRate = getBusinessMileageRate(startDate.getFullYear());
+  const businessDeductionAmount = roundToTwoDecimals(
     totalBusinessMiles * businessDeductionRate
   );
 
-  // Verify total mileage is preserved
-  const totalLogMiles = logEntries.reduce(
-    (sum, entry) => sum + entry.totalMiles,
-    0
-  );
-  const expectedTotalMiles = parsedEndMileage - parsedStartMileage;
-
-  if (Math.abs(totalLogMiles - expectedTotalMiles) > 1) {
-    console.warn(
-      `Warning: Total miles in log (${totalLogMiles}) differs from expected miles (${expectedTotalMiles})`
-    );
-    // We'll adjust the last entry to match the expected total if needed
-    if (logEntries.length > 0) {
-      const lastEntry = logEntries[logEntries.length - 1];
-      const difference = expectedTotalMiles - totalLogMiles;
-
-      // Update the last entry to account for the difference
-      lastEntry.totalMiles = roundToOneDecimal(
-        lastEntry.totalMiles + difference
-      );
-      lastEntry.endMileage = roundToOneDecimal(
-        lastEntry.startMileage + lastEntry.totalMiles
-      );
-
-      // Update business or personal miles based on the entry type
-      if (lastEntry.businessMiles > 0) {
-        lastEntry.businessMiles = roundToOneDecimal(
-          lastEntry.businessMiles + difference
-        );
-      } else {
-        lastEntry.personalMiles = roundToOneDecimal(
-          lastEntry.personalMiles + difference
-        );
-      }
-    }
-  }
-
-  // Create the final mileage log
+  // Create mileage log
   const mileageLog: MileageLog = {
-    year: year,
-    start_date: formattedStartDate.toISOString().split("T")[0],
-    end_date: formattedEndDate.toISOString().split("T")[0],
-    start_mileage: parsedStartMileage,
-    end_mileage: parsedEndMileage,
+    start_date: startDate.toISOString(),
+    end_date: endDate.toISOString(),
+    start_mileage: startMileage,
+    end_mileage: endMileage,
     total_mileage: totalMiles,
     total_business_miles: totalBusinessMiles,
-    total_personal_miles: parsedPersonalMiles,
+    total_personal_miles: totalPersonalMiles,
     business_deduction_rate: businessDeductionRate,
-    business_deduction_amount: businessDeduction,
-    vehicle_info: {
-      name: vehicle,
-    },
-    log_entries: logEntries,
+    business_deduction_amount: businessDeductionAmount,
+    vehicle_info: vehicle,
+    log_entries: mileageEntries,
+    business_type: businessType,
   };
 
-  revalidatePath("/generator");
+  console.log("Generated mileage log with entries:", mileageEntries.length);
+
+  // Return the generated mileage log
   return {
     mileageLog,
   };

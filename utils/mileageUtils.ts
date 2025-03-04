@@ -1,6 +1,110 @@
 // Business trip purposes - weighted to make "Client Visit" more common
 import { HOLIDAYS } from "./constants";
 
+export interface BusinessType {
+  name: string;
+  purposes: string[];
+}
+
+export const BUSINESS_TYPES: BusinessType[] = [
+  {
+    name: "Consulting",
+    purposes: [
+      "Client Visit",
+      "Client Visit",
+      "Client Visit",
+      "Client Meeting",
+      "Business Lunch",
+      "Conference",
+      "Site Inspection",
+      "Sales Presentation",
+      "Project Planning",
+    ],
+  },
+  {
+    name: "Real Estate",
+    purposes: [
+      "Property Showing",
+      "Property Showing",
+      "Property Inspection",
+      "Client Meeting",
+      "Open House",
+      "Listing Appointment",
+      "Market Research",
+      "Property Appraisal",
+    ],
+  },
+  {
+    name: "Healthcare",
+    purposes: [
+      "Patient Visit",
+      "Patient Visit",
+      "Medical Conference",
+      "Supply Pickup",
+      "Training Session",
+      "Facility Inspection",
+      "Professional Meeting",
+    ],
+  },
+  {
+    name: "Food Delivery",
+    purposes: [
+      "Food Delivery",
+      "Food Delivery",
+      "Food Delivery",
+      "Restaurant Pickup",
+      "Customer Delivery",
+      "Supply Pickup",
+    ],
+  },
+  {
+    name: "Rideshare",
+    purposes: [
+      "Passenger Pickup",
+      "Passenger Pickup",
+      "Passenger Dropoff",
+      "Airport Transfer",
+      "Event Transportation",
+    ],
+  },
+  {
+    name: "Courier",
+    purposes: [
+      "Package Delivery",
+      "Package Delivery",
+      "Package Pickup",
+      "Warehouse Visit",
+      "Distribution Center",
+      "Express Delivery",
+    ],
+  },
+  {
+    name: "Sales",
+    purposes: [
+      "Sales Call",
+      "Sales Call",
+      "Client Presentation",
+      "Product Demo",
+      "Trade Show",
+      "Client Meeting",
+      "Networking Event",
+    ],
+  },
+  {
+    name: "Construction",
+    purposes: [
+      "Job Site Visit",
+      "Job Site Visit",
+      "Material Pickup",
+      "Client Meeting",
+      "Supplier Visit",
+      "Inspection",
+      "Bid Presentation",
+    ],
+  },
+];
+
+// Legacy business purposes array for backward compatibility
 export const BUSINESS_PURPOSES = [
   "Client Visit",
   "Client Visit",
@@ -13,15 +117,29 @@ export const BUSINESS_PURPOSES = [
   "Site Inspection",
 ];
 
+// Personal trip purposes
+export const PERSONAL_PURPOSES = [
+  "Personal Visit",
+  "Shopping",
+  "Grocery Shopping",
+  "Medical Appointment",
+  "Gym",
+  "Restaurant",
+  "Entertainment",
+  "Family Visit",
+  "Vacation",
+  "School Pickup",
+  "Errands",
+];
+
 export interface MileageParams {
   startMileage: number;
   endMileage: number;
   startDate: Date | null;
   endDate: Date | null;
   totalPersonalMiles: number;
-  location: string;
   vehicle: string;
-  businessPurpose: string;
+  businessType?: string;
   subscriptionStatus: string;
   currentEntryCount: number;
 }
@@ -142,9 +260,21 @@ export function getRandomMileage(min: number, max: number): number {
   return roundToOneDecimal(Math.random() * (max - min) + min);
 }
 
-// Get a random business purpose
-export function getRandomBusinessPurpose(): string {
-  return BUSINESS_PURPOSES[
-    Math.floor(Math.random() * BUSINESS_PURPOSES.length)
-  ];
+// Get a random business purpose based on business type
+export function getRandomBusinessPurpose(businessType?: string): string {
+  if (!businessType) {
+    return BUSINESS_PURPOSES[Math.floor(Math.random() * BUSINESS_PURPOSES.length)];
+  }
+  
+  const type = BUSINESS_TYPES.find(t => t.name === businessType);
+  if (!type) {
+    return BUSINESS_PURPOSES[Math.floor(Math.random() * BUSINESS_PURPOSES.length)];
+  }
+  
+  return type.purposes[Math.floor(Math.random() * type.purposes.length)];
+}
+
+// Get a random personal purpose
+export function getRandomPersonalPurpose(): string {
+  return PERSONAL_PURPOSES[Math.floor(Math.random() * PERSONAL_PURPOSES.length)];
 }

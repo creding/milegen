@@ -41,8 +41,7 @@ export const GeneratorPage = ({
   });
   const [mileageLog, setMileageLog] = useState<MileageLog | null>(null);
   const [vehicle, setVehicle] = useState("");
-  const [location, setLocation] = useState("");
-  const [businessPurpose, setBusinessPurpose] = useState("");
+  const [businessType, setBusinessType] = useState("");
   const [totalPersonalMiles, setTotalPersonalMiles] = useState("0");
   const [entryCount, setEntryCount] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
@@ -59,8 +58,7 @@ export const GeneratorPage = ({
       totalMiles,
       personalMiles,
       vehicle,
-      location,
-      businessPurpose,
+      businessType,
       startDate,
       endDate,
       subscriptionStatus,
@@ -90,9 +88,8 @@ export const GeneratorPage = ({
         startDate,
         endDate,
         totalPersonalMiles: personalMiles,
-        location,
         vehicle,
-        businessPurpose,
+        businessType,
         subscriptionStatus: subscriptionStatus || "inactive",
         currentEntryCount: entryCount,
       });
@@ -103,9 +100,8 @@ export const GeneratorPage = ({
         startDate,
         endDate,
         totalPersonalMiles: personalMiles,
-        location,
         vehicle,
-        businessPurpose,
+        businessType,
         subscriptionStatus: subscriptionStatus || "inactive",
         currentEntryCount: entryCount,
       });
@@ -138,8 +134,7 @@ export const GeneratorPage = ({
     setEndDate(new Date(new Date().getFullYear() - 1, 11, 31));
     setTotalPersonalMiles("0");
     setVehicle("");
-    setLocation("");
-    setBusinessPurpose("");
+    setBusinessType("");
   };
 
   const saveMileageLog = async () => {
@@ -211,8 +206,7 @@ export const GeneratorPage = ({
           endDate={endDate}
           totalPersonalMiles={totalPersonalMiles}
           vehicle={vehicle}
-          location={location}
-          businessPurpose={businessPurpose}
+          businessType={businessType}
           subscriptionStatus={subscriptionStatus}
           entryCount={entryCount}
           onStartMileageChange={setStartMileage}
@@ -221,8 +215,7 @@ export const GeneratorPage = ({
           onEndDateChange={setEndDate}
           onTotalPersonalMilesChange={setTotalPersonalMiles}
           onVehicleChange={setVehicle}
-          onLocationChange={setLocation}
-          onBusinessPurposeChange={setBusinessPurpose}
+          onBusinessTypeChange={setBusinessType}
           onGenerate={handleGenerateMileageLog}
           onReset={resetForm}
         />

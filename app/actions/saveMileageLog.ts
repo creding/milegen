@@ -42,7 +42,8 @@ export async function saveMileageLog(
       total_personal_miles: Number(mileageLog.total_personal_miles),
       business_deduction_rate: businessDeductionRate,
       business_deduction_amount: businessDeductionAmount,
-      vehicle_info: mileageLog.vehicle_info || { name: "My Vehicle" },
+      vehicle_info: mileageLog.vehicle_info || "My Vehicle",
+      business_type: mileageLog.business_type || "General Business",
       log_entries: mileageLog.log_entries,
     };
 
