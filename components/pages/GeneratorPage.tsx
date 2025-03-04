@@ -20,6 +20,7 @@ import {
 import { MileageForm } from "@/components/milagelog/MileageForm";
 import { User } from "@supabase/supabase-js";
 import { useMediaQuery } from "@mantine/hooks";
+import { generateMileageLogFromForm } from "@/utils/mileageGenerator";
 
 export const GeneratorPage = ({
   user,
@@ -39,7 +40,7 @@ export const GeneratorPage = ({
     const lastYear = new Date().getFullYear() - 1;
     return new Date(lastYear, 11, 31);
   });
-  const [mileageLog, setMileageLog] = useState<MileageLog | null>(null);
+  const [mileageLog, setMileageLog] = useState<MileageLog>();
   const [vehicle, setVehicle] = useState("");
   const [businessType, setBusinessType] = useState("");
   const [totalPersonalMiles, setTotalPersonalMiles] = useState("0");
@@ -94,7 +95,7 @@ export const GeneratorPage = ({
         currentEntryCount: entryCount,
       });
 
-      const result = await generateOrganicMileageLog({
+      const result = await generateMileageLogFromForm({
         startMileage: start,
         endMileage: end,
         startDate,
@@ -107,11 +108,10 @@ export const GeneratorPage = ({
       });
 
       console.log("generateOrganicMileageLog result:", result);
-
-      setMileageLog(result.mileageLog);
-      setEntryCount(
-        (prevCount) => prevCount + result.mileageLog.log_entries.length
-      );
+      if (result) {
+        setMileageLog(result);
+        setEntryCount((prevCount) => prevCount + result.log_entries.length);
+      }
     } catch (error: unknown) {
       console.error("Error generating mileage log:", error);
       if (error instanceof Error) {
