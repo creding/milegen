@@ -31,7 +31,6 @@ import {
 
 import { useMediaQuery } from "@mantine/hooks";
 import type { MileageEntry } from "@/app/actions/mileageGenerator";
-import { getRandomBusinessPurpose } from "@/utils/mileageUtils";
 
 interface MileageLogDisplayProps {
   startDate: Date;
