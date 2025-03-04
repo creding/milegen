@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { notifications } from "@mantine/notifications";
-import { generateOrganicMileageLog } from "@/app/actions/generateOrganicMileageLog";
 import { saveMileageLog as saveMileageLogApi } from "@/app/actions/saveMileageLog";
 import type { MileageLog } from "@/app/actions/mileageGenerator";
 import { MileageLogDisplay } from "@/components/milagelog/MileageLogDisplay";
