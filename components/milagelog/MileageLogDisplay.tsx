@@ -2,7 +2,6 @@
 
 import {
   Group,
-  Table,
   Text,
   TableThead,
   TableTr,
@@ -15,9 +14,9 @@ import {
   ScrollArea,
   Title,
   Divider,
-  Button,
   Paper,
   ThemeIcon,
+  Table,
 } from "@mantine/core";
 import {
   IconCar,
@@ -31,7 +30,8 @@ import {
 } from "@tabler/icons-react";
 
 import { useMediaQuery } from "@mantine/hooks";
-import type { MileageEntry } from "@/types/mileage";
+import type { MileageEntry } from "@/app/actions/mileageGenerator";
+import { getRandomBusinessPurpose } from "@/utils/mileageUtils";
 
 interface MileageLogDisplayProps {
   startDate: Date;
@@ -43,9 +43,7 @@ interface MileageLogDisplayProps {
   endMileage: number;
   businessDeductionRate?: number;
   businessDeductionAmount?: number;
-  vehicleInfo?: {
-    name: string;
-  };
+  vehicleInfo: string;
   mileageLog: MileageEntry[];
   logId?: string;
   userId?: string;
@@ -84,13 +82,6 @@ export function MileageLogDisplay({
 
   if (mileageLog.length > 0) {
     console.log("First mileage log entry:", mileageLog[0]);
-    console.log("First entry types:", {
-      startMileage: typeof mileageLog[0].startMileage,
-      endMileage: typeof mileageLog[0].endMileage,
-      totalMiles: typeof mileageLog[0].totalMiles,
-      personalMiles: typeof mileageLog[0].personalMiles,
-      businessMiles: typeof mileageLog[0].businessMiles,
-    });
   }
 
   const MobileLogEntry = ({ entry }: { entry: MileageEntry }) => (
@@ -103,47 +94,37 @@ export function MileageLogDisplay({
           <Text size="sm" c="dimmed">
             Vehicle:
           </Text>
-          <Text size="sm">{entry.vehicle}</Text>
+          <Text size="sm">{entry.vehicle_info || vehicleInfo}</Text>
         </Group>
         <Group justify="apart">
           <Text size="sm" c="dimmed">
             Starting Mileage:
           </Text>
-          <Text size="sm">{parseFloat(entry.startMileage.toFixed(1))}</Text>
+          <Text size="sm">{parseFloat(entry.start_mileage.toFixed(1))}</Text>
         </Group>
         <Group justify="apart">
           <Text size="sm" c="dimmed">
             Ending Mileage:
           </Text>
-          <Text size="sm">{parseFloat(entry.endMileage.toFixed(1))}</Text>
+          <Text size="sm">{parseFloat(entry.end_mileage.toFixed(1))}</Text>
         </Group>
         <Divider my="xs" />
-        <Text size="sm" c="dimmed">
-          Location:
-        </Text>
-        <Text size="sm">{entry.location}</Text>
         <Text size="sm" c="dimmed" mt="xs">
-          Business Purpose:
+          Purpose:
         </Text>
-        <Text size="sm">{entry.businessPurpose}</Text>
+        <Text size="sm">{entry.purpose}</Text>
         <Divider my="xs" />
         <Group justify="apart">
           <Text size="sm" c="dimmed">
             Total Miles:
           </Text>
-          <Text size="sm">{parseFloat(entry.totalMiles.toFixed(1))} miles</Text>
+          <Text size="sm">{parseFloat(entry.miles.toFixed(1))} miles</Text>
         </Group>
         <Group justify="apart">
           <Text size="sm" c="dimmed">
-            Business Miles:
+            Type:
           </Text>
-          <Text size="sm">{parseFloat(entry.businessMiles.toFixed(1))} miles</Text>
-        </Group>
-        <Group justify="apart">
-          <Text size="sm" c="dimmed">
-            Personal Miles:
-          </Text>
-          <Text size="sm">{parseFloat(entry.personalMiles.toFixed(1))} miles</Text>
+          <Text size="sm">{entry.type}</Text>
         </Group>
       </Stack>
     </Card>
@@ -163,7 +144,7 @@ export function MileageLogDisplay({
                 <Text fw={500} c="dimmed">
                   Vehicle:
                 </Text>
-                <Text fw={600}>{vehicleInfo?.name || "Not specified"}</Text>
+                <Text fw={600}>{vehicleInfo || "Not specified"}</Text>
               </Group>
 
               <Group justify="apart">
@@ -197,41 +178,50 @@ export function MileageLogDisplay({
                 <Text fw={500} c="dimmed">
                   Total Mileage:
                 </Text>
-                <Text fw={600}>{parseFloat(totalMileage.toFixed(1))} miles</Text>
+                <Text fw={600}>
+                  {parseFloat(totalMileage.toFixed(1))} miles
+                </Text>
               </Group>
               <Group justify="apart">
                 <Text fw={500} c="dimmed">
-                  Business Miles:
+                  Business Mileage:
                 </Text>
-                <Text fw={600} c="blue">
+                <Text fw={600}>
                   {parseFloat(totalBusinessMiles.toFixed(1))} miles
                 </Text>
               </Group>
               <Group justify="apart">
                 <Text fw={500} c="dimmed">
-                  Personal Miles:
-                </Text>
-                <Text fw={600}>{parseFloat(totalPersonalMiles.toFixed(1))} miles</Text>
-              </Group>
-
-              <Divider my="xs" label="Tax Deduction" labelPosition="center" />
-
-              <Group justify="apart">
-                <Text fw={500} c="dimmed">
-                  Business Deduction Rate:
+                  Personal Mileage:
                 </Text>
                 <Text fw={600}>
-                  ${businessDeductionRate?.toFixed(2) || "0.00"}/mile
+                  {parseFloat(totalPersonalMiles.toFixed(1))} miles
                 </Text>
               </Group>
-              <Group justify="apart">
-                <Text fw={500} c="dimmed">
-                  Business Deduction Amount:
-                </Text>
-                <Text fw={700} c="green">
-                  ${businessDeductionAmount?.toFixed(2) || "0.00"}
-                </Text>
-              </Group>
+
+              {businessDeductionRate && businessDeductionAmount && (
+                <>
+                  <Divider
+                    my="xs"
+                    label="Tax Deduction"
+                    labelPosition="center"
+                  />
+                  <Group justify="apart">
+                    <Text fw={500} c="dimmed">
+                      Rate:
+                    </Text>
+                    <Text fw={600}>
+                      ${businessDeductionRate.toFixed(2)}/mile
+                    </Text>
+                  </Group>
+                  <Group justify="apart">
+                    <Text fw={500} c="dimmed">
+                      Deduction:
+                    </Text>
+                    <Text fw={600}>${businessDeductionAmount.toFixed(2)}</Text>
+                  </Group>
+                </>
+              )}
             </Stack>
           </Paper>
         ) : (
@@ -251,7 +241,7 @@ export function MileageLogDisplay({
                     <Text size="xs" c="dimmed">
                       Vehicle
                     </Text>
-                    <Text fw={600}>{vehicleInfo?.name || "Not specified"}</Text>
+                    <Text fw={600}>{vehicleInfo || "Not specified"}</Text>
                   </Stack>
                 </Group>
 
@@ -277,7 +267,9 @@ export function MileageLogDisplay({
                     <Text size="xs" c="dimmed">
                       Total Mileage
                     </Text>
-                    <Text fw={600}>{parseFloat(totalMileage.toFixed(1))} miles</Text>
+                    <Text fw={600}>
+                      {parseFloat(totalMileage.toFixed(1))} miles
+                    </Text>
                   </Stack>
                 </Group>
               </Stack>
@@ -292,7 +284,8 @@ export function MileageLogDisplay({
                       Odometer Reading
                     </Text>
                     <Text fw={600}>
-                      {parseFloat(startMileage.toFixed(1))} → {parseFloat(endMileage.toFixed(1))}
+                      {parseFloat(startMileage.toFixed(1))} →{" "}
+                      {parseFloat(endMileage.toFixed(1))}
                     </Text>
                   </Stack>
                 </Group>
@@ -304,7 +297,9 @@ export function MileageLogDisplay({
                     <Text size="xs" c="dimmed">
                       Personal Miles
                     </Text>
-                    <Text fw={600}>{parseFloat(totalPersonalMiles.toFixed(1))} miles</Text>
+                    <Text fw={600}>
+                      {parseFloat(totalPersonalMiles.toFixed(1))} miles
+                    </Text>
                   </Stack>
                 </Group>
                 <Group>
@@ -320,7 +315,9 @@ export function MileageLogDisplay({
                     <Text size="xs" c="dimmed">
                       Business Miles
                     </Text>
-                    <Text fw={600}>{parseFloat(totalBusinessMiles.toFixed(1))} miles</Text>
+                    <Text fw={600}>
+                      {parseFloat(totalBusinessMiles.toFixed(1))} miles
+                    </Text>
                   </Stack>
                 </Group>
               </Stack>
@@ -369,48 +366,47 @@ export function MileageLogDisplay({
       </Group>
 
       {isMobile ? (
-        <Box>
-          <Title order={3} size="h4" mb="md">
-            Mileage Log Entries
-          </Title>
-          <Stack>
-            {mileageLog.map((entry) => (
-              <MobileLogEntry key={entry.date.toString()} entry={entry} />
-            ))}
-          </Stack>
-        </Box>
+        <Stack>
+          {mileageLog.map((entry, index) => (
+            <MobileLogEntry key={index} entry={entry} />
+          ))}
+        </Stack>
       ) : (
         <ScrollArea>
-          <Table striped highlightOnHover>
-            <TableThead>
-              <TableTr>
-                <TableTh>Date</TableTh>
-                <TableTh>Vehicle</TableTh>
-                <TableTh>Odometer Start</TableTh>
-                <TableTh>Odometer End</TableTh>
-                <TableTh>Total Miles</TableTh>
-                <TableTh>Business Miles</TableTh>
-                <TableTh>Personal Miles</TableTh>
-                <TableTh>Location</TableTh>
-                <TableTh>Purpose</TableTh>
-              </TableTr>
-            </TableThead>
-            <TableTbody>
-              {mileageLog.map((entry) => (
-                <TableTr key={entry.id || `${entry.date}-${entry.startMileage}-${entry.endMileage}`}>
-                  <TableTd>{new Date(entry.date).toLocaleDateString()}</TableTd>
-                  <TableTd>{entry.vehicle}</TableTd>
-                  <TableTd>{parseFloat(entry.startMileage.toFixed(1))}</TableTd>
-                  <TableTd>{parseFloat(entry.endMileage.toFixed(1))}</TableTd>
-                  <TableTd>{parseFloat(entry.totalMiles.toFixed(1))}</TableTd>
-                  <TableTd>{parseFloat(entry.businessMiles.toFixed(1))}</TableTd>
-                  <TableTd>{parseFloat(entry.personalMiles.toFixed(1))}</TableTd>
-                  <TableTd>{entry.location}</TableTd>
-                  <TableTd>{entry.businessPurpose}</TableTd>
+          <Box maw="100%">
+            <Table striped highlightOnHover withTableBorder>
+              <TableThead>
+                <TableTr>
+                  <TableTh>Date</TableTh>
+                  <TableTh>Vehicle</TableTh>
+                  <TableTh>Start</TableTh>
+                  <TableTh>End</TableTh>
+                  <TableTh>Miles</TableTh>
+                  <TableTh>Purpose</TableTh>
+                  <TableTh>Type</TableTh>
                 </TableTr>
-              ))}
-            </TableTbody>
-          </Table>
+              </TableThead>
+              <TableTbody>
+                {mileageLog.map((entry, index) => (
+                  <TableTr key={index}>
+                    <TableTd>
+                      {new Date(entry.date).toLocaleDateString()}
+                    </TableTd>
+                    <TableTd>{entry.vehicle_info || vehicleInfo}</TableTd>
+                    <TableTd>
+                      {parseFloat(entry.start_mileage.toFixed(1))}
+                    </TableTd>
+                    <TableTd>
+                      {parseFloat(entry.end_mileage.toFixed(1))}
+                    </TableTd>
+                    <TableTd>{parseFloat(entry.miles.toFixed(1))}</TableTd>
+                    <TableTd>{entry.purpose}</TableTd>
+                    <TableTd>{entry.type}</TableTd>
+                  </TableTr>
+                ))}
+              </TableTbody>
+            </Table>
+          </Box>
         </ScrollArea>
       )}
     </Stack>

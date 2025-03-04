@@ -4,7 +4,7 @@ import { useState } from "react";
 import { notifications } from "@mantine/notifications";
 import { generateOrganicMileageLog } from "@/app/actions/generateOrganicMileageLog";
 import { saveMileageLog as saveMileageLogApi } from "@/app/actions/saveMileageLog";
-import type { MileageEntry, MileageLog } from "@/types/mileage";
+import type { MileageLog } from "@/app/actions/mileageGenerator";
 import { MileageLogDisplay } from "@/components/milagelog/MileageLogDisplay";
 import { PrintMilageLog } from "@/components/milagelog/PrintMilageLog";
 import { IconCheck, IconDeviceFloppy, IconX } from "@tabler/icons-react";
@@ -20,6 +20,7 @@ import {
 import { MileageForm } from "@/components/milagelog/MileageForm";
 import { User } from "@supabase/supabase-js";
 import { useMediaQuery } from "@mantine/hooks";
+import { generateMileageLogFromForm } from "@/app/actions/mileageGenerator";
 
 export const GeneratorPage = ({
   user,
@@ -39,10 +40,9 @@ export const GeneratorPage = ({
     const lastYear = new Date().getFullYear() - 1;
     return new Date(lastYear, 11, 31);
   });
-  const [mileageLog, setMileageLog] = useState<MileageLog | null>(null);
+  const [mileageLog, setMileageLog] = useState<MileageLog>();
   const [vehicle, setVehicle] = useState("");
-  const [location, setLocation] = useState("");
-  const [businessPurpose, setBusinessPurpose] = useState("");
+  const [businessType, setBusinessType] = useState("");
   const [totalPersonalMiles, setTotalPersonalMiles] = useState("0");
   const [entryCount, setEntryCount] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
@@ -59,8 +59,7 @@ export const GeneratorPage = ({
       totalMiles,
       personalMiles,
       vehicle,
-      location,
-      businessPurpose,
+      businessType,
       startDate,
       endDate,
       subscriptionStatus,
@@ -90,32 +89,29 @@ export const GeneratorPage = ({
         startDate,
         endDate,
         totalPersonalMiles: personalMiles,
-        location,
         vehicle,
-        businessPurpose,
+        businessType,
         subscriptionStatus: subscriptionStatus || "inactive",
         currentEntryCount: entryCount,
       });
 
-      const result = await generateOrganicMileageLog({
+      const result = await generateMileageLogFromForm({
         startMileage: start,
         endMileage: end,
         startDate,
         endDate,
         totalPersonalMiles: personalMiles,
-        location,
         vehicle,
-        businessPurpose,
+        businessType,
         subscriptionStatus: subscriptionStatus || "inactive",
         currentEntryCount: entryCount,
       });
 
       console.log("generateOrganicMileageLog result:", result);
-
-      setMileageLog(result.mileageLog);
-      setEntryCount(
-        (prevCount) => prevCount + result.mileageLog.log_entries.length
-      );
+      if (result) {
+        setMileageLog(result);
+        setEntryCount((prevCount) => prevCount + result.log_entries.length);
+      }
     } catch (error: unknown) {
       console.error("Error generating mileage log:", error);
       if (error instanceof Error) {
@@ -138,8 +134,7 @@ export const GeneratorPage = ({
     setEndDate(new Date(new Date().getFullYear() - 1, 11, 31));
     setTotalPersonalMiles("0");
     setVehicle("");
-    setLocation("");
-    setBusinessPurpose("");
+    setBusinessType("");
   };
 
   const saveMileageLog = async () => {
@@ -211,8 +206,7 @@ export const GeneratorPage = ({
           endDate={endDate}
           totalPersonalMiles={totalPersonalMiles}
           vehicle={vehicle}
-          location={location}
-          businessPurpose={businessPurpose}
+          businessType={businessType}
           subscriptionStatus={subscriptionStatus}
           entryCount={entryCount}
           onStartMileageChange={setStartMileage}
@@ -221,8 +215,7 @@ export const GeneratorPage = ({
           onEndDateChange={setEndDate}
           onTotalPersonalMilesChange={setTotalPersonalMiles}
           onVehicleChange={setVehicle}
-          onLocationChange={setLocation}
-          onBusinessPurposeChange={setBusinessPurpose}
+          onBusinessTypeChange={setBusinessType}
           onGenerate={handleGenerateMileageLog}
           onReset={resetForm}
         />

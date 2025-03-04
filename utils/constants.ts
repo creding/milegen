@@ -96,22 +96,22 @@ export const HOLIDAYS = {
     "2030-11-28",
     "2030-12-25",
   ],
-}
+};
 
 // Standard business mileage deduction rates by year (dollars per mile)
 // Source: IRS standard mileage rates
 export const BUSINESS_MILEAGE_RATES = {
   2020: 0.575, // 57.5 cents per mile
-  2021: 0.56,  // 56 cents per mile
+  2021: 0.56, // 56 cents per mile
   2022: 0.585, // 58.5 cents per mile for first half, 62.5 cents per mile for second half (using lower value for safety)
   2023: 0.655, // 65.5 cents per mile
-  2024: 0.67,  // 67 cents per mile
-  2025: 0.67,  // Using 2024 rate as placeholder until IRS announces 2025 rate
-  2026: 0.67,  // Using 2024 rate as placeholder until IRS announces 2026 rate
-  2027: 0.67,  // Using 2024 rate as placeholder until IRS announces 2027 rate
-  2028: 0.67,  // Using 2024 rate as placeholder until IRS announces 2028 rate
-  2029: 0.67,  // Using 2024 rate as placeholder until IRS announces 2029 rate
-  2030: 0.67,  // Using 2024 rate as placeholder until IRS announces 2030 rate
+  2024: 0.67, // 67 cents per mile
+  2025: 0.67, // Using 2024 rate as placeholder until IRS announces 2025 rate
+  2026: 0.67, // Using 2024 rate as placeholder until IRS announces 2026 rate
+  2027: 0.67, // Using 2024 rate as placeholder until IRS announces 2027 rate
+  2028: 0.67, // Using 2024 rate as placeholder until IRS announces 2028 rate
+  2029: 0.67, // Using 2024 rate as placeholder until IRS announces 2029 rate
+  2030: 0.67, // Using 2024 rate as placeholder until IRS announces 2030 rate
 };
 
 // Gets the business mileage rate for a given year
@@ -120,9 +120,13 @@ export function getBusinessMileageRate(year: number): number {
   if (year in BUSINESS_MILEAGE_RATES) {
     return BUSINESS_MILEAGE_RATES[year as keyof typeof BUSINESS_MILEAGE_RATES];
   }
-  
+
   // If the year is not found, use the most recent year's rate
   const years = Object.keys(BUSINESS_MILEAGE_RATES).map(Number);
   const mostRecentYear = Math.max(...years);
-  return BUSINESS_MILEAGE_RATES[mostRecentYear as keyof typeof BUSINESS_MILEAGE_RATES];
+  return BUSINESS_MILEAGE_RATES[
+    mostRecentYear as keyof typeof BUSINESS_MILEAGE_RATES
+  ];
 }
+
+export const MAX_FREE_ENTRIES = 10;
