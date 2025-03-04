@@ -4,7 +4,7 @@ import { useState } from "react";
 import { notifications } from "@mantine/notifications";
 import { generateOrganicMileageLog } from "@/app/actions/generateOrganicMileageLog";
 import { saveMileageLog as saveMileageLogApi } from "@/app/actions/saveMileageLog";
-import type { MileageLog } from "@/utils/mileageGenerator";
+import type { MileageLog } from "@/app/actions/mileageGenerator";
 import { MileageLogDisplay } from "@/components/milagelog/MileageLogDisplay";
 import { PrintMilageLog } from "@/components/milagelog/PrintMilageLog";
 import { IconCheck, IconDeviceFloppy, IconX } from "@tabler/icons-react";
@@ -20,7 +20,7 @@ import {
 import { MileageForm } from "@/components/milagelog/MileageForm";
 import { User } from "@supabase/supabase-js";
 import { useMediaQuery } from "@mantine/hooks";
-import { generateMileageLogFromForm } from "@/utils/mileageGenerator";
+import { generateMileageLogFromForm } from "@/app/actions/mileageGenerator";
 
 export const GeneratorPage = ({
   user,

@@ -30,7 +30,7 @@ import {
 } from "@tabler/icons-react";
 
 import { useMediaQuery } from "@mantine/hooks";
-import type { MileageEntry } from "@/utils/mileageGenerator";
+import type { MileageEntry } from "@/app/actions/mileageGenerator";
 import { getRandomBusinessPurpose } from "@/utils/mileageUtils";
 
 interface MileageLogDisplayProps {

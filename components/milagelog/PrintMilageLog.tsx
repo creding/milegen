@@ -1,6 +1,6 @@
 "use client";
 
-import { MileageLog } from "@/utils/mileageGenerator";
+import { MileageLog } from "@/app/actions/mileageGenerator";
 import { Button } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
 import { IconPrinter } from "@tabler/icons-react";

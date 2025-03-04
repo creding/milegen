@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import type { MileageLog } from "@/utils/mileageGenerator";
+import type { MileageLog } from "@/app/actions/mileageGenerator";
 import { createClient } from "@/lib/supabaseServerClient";
 import { getBusinessMileageRate } from "@/utils/constants";
 
