@@ -21,10 +21,11 @@ export async function saveMileageLog(
 
     // Get the year from the log start date
     const year = new Date(mileageLog.start_date).getFullYear();
-    
+
     // Get the appropriate business deduction rate for the year
-    const businessDeductionRate = mileageLog.business_deduction_rate || getBusinessMileageRate(year);
-    
+    const businessDeductionRate =
+      mileageLog.business_deduction_rate || getBusinessMileageRate(year);
+
     // Calculate the business deduction amount
     const totalBusinessMiles = Number(mileageLog.total_business_miles);
     const businessDeductionAmount = totalBusinessMiles * businessDeductionRate;
@@ -32,7 +33,7 @@ export async function saveMileageLog(
     // Ensure all numeric values are properly converted
     const preparedLog = {
       user_id: user.id,
-      year: Number(mileageLog.year || year),
+      year: Number(year),
       start_date: mileageLog.start_date,
       end_date: mileageLog.end_date,
       start_mileage: Number(mileageLog.start_mileage),
@@ -43,7 +44,6 @@ export async function saveMileageLog(
       business_deduction_rate: businessDeductionRate,
       business_deduction_amount: businessDeductionAmount,
       vehicle_info: mileageLog.vehicle_info || "My Vehicle",
-      business_type: mileageLog.business_type || "General Business",
       log_entries: mileageLog.log_entries,
     };
 
@@ -60,16 +60,16 @@ export async function saveMileageLog(
     }
 
     revalidatePath("/saved-logs");
-    return { 
-      success: true, 
-      message: "Mileage log saved successfully", 
-      logId: data.id 
+    return {
+      success: true,
+      message: "Mileage log saved successfully",
+      logId: data.id,
     };
   } catch (error) {
     console.error("Error saving mileage log:", error);
-    return { 
-      success: false, 
-      message: "Failed to save mileage log. Please try again." 
+    return {
+      success: false,
+      message: "Failed to save mileage log. Please try again.",
     };
   }
 }

@@ -84,34 +84,6 @@ export function MileageLogDisplay({
     console.log("First mileage log entry:", mileageLog[0]);
   }
 
-  // Helper function to get location based on business type
-  const getLocation = (entry: MileageEntry) => {
-    if ("location" in entry) {
-      return entry.location;
-    }
-
-    // Generate a generic location based on purpose
-    const purpose = entry.purpose || "";
-
-    if (purpose.includes("Client")) {
-      return "Client Office";
-    } else if (purpose.includes("Meeting")) {
-      return "Business Meeting";
-    } else if (purpose.includes("Conference")) {
-      return "Conference Center";
-    } else if (purpose.includes("Site")) {
-      return "Project Site";
-    } else if (purpose.includes("Property")) {
-      return "Property Location";
-    } else if (purpose.includes("Delivery")) {
-      return "Customer Address";
-    } else if (purpose.includes("Pickup")) {
-      return "Pickup Location";
-    } else {
-      return "Business Location";
-    }
-  };
-
   const MobileLogEntry = ({ entry }: { entry: MileageEntry }) => (
     <Card shadow="sm" p="md" radius="md" withBorder mb="sm">
       <Text fw={700} mb="xs">
@@ -140,7 +112,7 @@ export function MileageLogDisplay({
         <Text size="sm" c="dimmed">
           Location:
         </Text>
-        <Text size="sm">{getLocation(entry)}</Text>
+        <Text size="sm">{entry.location}</Text>
         <Text size="sm" c="dimmed" mt="xs">
           Purpose:
         </Text>
@@ -433,7 +405,7 @@ export function MileageLogDisplay({
                       {parseFloat(entry.end_mileage.toFixed(1))}
                     </TableTd>
                     <TableTd>{parseFloat(entry.miles.toFixed(1))}</TableTd>
-                    <TableTd>{getLocation(entry)}</TableTd>
+                    <TableTd>{entry.location}</TableTd>
                     <TableTd>{entry.purpose}</TableTd>
                     <TableTd>{entry.type}</TableTd>
                   </TableTr>

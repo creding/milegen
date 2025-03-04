@@ -9,27 +9,6 @@ interface PrintMilageLogProps {
   log: MileageLog;
 }
 
-// Helper function to get location based on purpose
-const getLocation = (purpose: string) => {
-  if (purpose.includes("Client")) {
-    return "Client Office";
-  } else if (purpose.includes("Meeting")) {
-    return "Business Meeting";
-  } else if (purpose.includes("Conference")) {
-    return "Conference Center";
-  } else if (purpose.includes("Site")) {
-    return "Project Site";
-  } else if (purpose.includes("Property")) {
-    return "Property Location";
-  } else if (purpose.includes("Delivery")) {
-    return "Customer Address";
-  } else if (purpose.includes("Pickup")) {
-    return "Pickup Location";
-  } else {
-    return "Business Location";
-  }
-};
-
 // Export a reusable function to print mileage logs
 export const printMileageLog = (log: MileageLog) => {
   const printContent = `
@@ -292,7 +271,9 @@ export const printMileageLog = (log: MileageLog) => {
                     </div>
                     <div class="summary-content">
                       <div class="summary-label">Vehicle</div>
-                      <div class="summary-value">${log.vehicle_info || "Not specified"}</div>
+                      <div class="summary-value">${
+                        log.vehicle_info || "Not specified"
+                      }</div>
                     </div>
                   </div>
                   
@@ -331,7 +312,9 @@ export const printMileageLog = (log: MileageLog) => {
                     </div>
                     <div class="summary-content">
                       <div class="summary-label">Total Mileage</div>
-                      <div class="summary-value">${log.total_mileage.toFixed(1)} miles</div>
+                      <div class="summary-value">${log.total_mileage.toFixed(
+                        1
+                      )} miles</div>
                     </div>
                   </div>
                 </div>
@@ -352,7 +335,9 @@ export const printMileageLog = (log: MileageLog) => {
                     <div class="summary-content">
                       <div class="summary-label">Odometer Reading</div>
                       <div class="summary-value">
-                        ${log.start_mileage.toFixed(1)} → ${log.end_mileage.toFixed(1)}
+                        ${log.start_mileage.toFixed(
+                          1
+                        )} → ${log.end_mileage.toFixed(1)}
                       </div>
                     </div>
                   </div>
@@ -370,7 +355,9 @@ export const printMileageLog = (log: MileageLog) => {
                     </div>
                     <div class="summary-content">
                       <div class="summary-label">Personal Miles</div>
-                      <div class="summary-value">${log.total_personal_miles.toFixed(1)} miles</div>
+                      <div class="summary-value">${log.total_personal_miles.toFixed(
+                        1
+                      )} miles</div>
                     </div>
                   </div>
                   
@@ -388,7 +375,9 @@ export const printMileageLog = (log: MileageLog) => {
                     </div>
                     <div class="summary-content">
                       <div class="summary-label">Business Miles</div>
-                      <div class="summary-value">${log.total_business_miles.toFixed(1)} miles</div>
+                      <div class="summary-value">${log.total_business_miles.toFixed(
+                        1
+                      )} miles</div>
                     </div>
                   </div>
                 </div>
@@ -407,7 +396,9 @@ export const printMileageLog = (log: MileageLog) => {
                     </div>
                     <div class="summary-content">
                       <div class="summary-label">Deduction Rate</div>
-                      <div class="summary-value">$${log.business_deduction_rate?.toFixed(2) || "0.00"}/mile</div>
+                      <div class="summary-value">$${
+                        log.business_deduction_rate?.toFixed(2) || "0.00"
+                      }/mile</div>
                     </div>
                   </div>
                   
@@ -416,7 +407,7 @@ export const printMileageLog = (log: MileageLog) => {
                       <i>
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                           <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                          <path d="M5 21v-16a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v16l-3 -2l-2 2l-2 -2l-2 2l-2 -2l-3 2"></path>
+                          <path d="M5 21v-16a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v16l-3 -2l-2 2l-2 -2l-2 2l-2 -2l-3 2"></path>
                           <path d="M14 8h-2.5a1.5 1.5 0 0 0 0 3h1a1.5 1.5 0 0 1 0 3h-2.5"></path>
                           <path d="M12 7v1m0 8v1"></path>
                         </svg>
@@ -448,7 +439,9 @@ export const printMileageLog = (log: MileageLog) => {
                     </div>
                     <div class="summary-content">
                       <div class="summary-label">Business Type</div>
-                      <div class="summary-value">${log.business_type || "Not specified"}</div>
+                      <div class="summary-value">${
+                        log.business_type || "Not specified"
+                      }</div>
                     </div>
                   </div>
                 </div>
@@ -478,11 +471,8 @@ export const printMileageLog = (log: MileageLog) => {
                     const miles = entry.miles.toFixed(1);
                     const purpose = entry.purpose;
                     const type = entry.type;
-                    // Generate location based on purpose if not available
-                    const location =
-                      "location" in entry
-                        ? entry.location
-                        : getLocation(purpose);
+                    // Use the location field from the MileageEntry or generate one
+                    const location = entry.location || "Not specified";
 
                     return `
                     <tr>

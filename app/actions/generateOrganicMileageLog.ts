@@ -23,6 +23,7 @@ import {
   getRandomPersonalPurpose,
   BUSINESS_TYPES,
 } from "@/utils/mileageUtils";
+import { generateSmartLocation } from "@/utils/locationUtils";
 
 // Generate a distribution of trips across the date range
 function generateDailyDistribution(
@@ -360,6 +361,15 @@ function convertToMileageEntries(
 
     // Process business trips
     for (const trip of day.businessTrips) {
+      // Generate a smart location based on purpose, miles, and business type
+      const location = generateSmartLocation(
+        trip.purpose,
+        trip.miles,
+        "business",
+        businessType,
+        date
+      );
+
       entries.push({
         date: new Date(date),
         start_mileage: trip.startMileage,
@@ -369,11 +379,21 @@ function convertToMileageEntries(
         type: "business",
         vehicle_info: vehicle,
         business_type: businessType,
+        location: location,
       });
     }
 
     // Process personal trips
     for (const trip of day.personalTrips) {
+      // Generate a smart location for personal trips
+      const location = generateSmartLocation(
+        trip.purpose,
+        trip.miles,
+        "personal",
+        undefined,
+        date
+      );
+
       entries.push({
         date: new Date(date),
         start_mileage: trip.startMileage,
@@ -382,6 +402,7 @@ function convertToMileageEntries(
         purpose: trip.purpose,
         type: "personal",
         vehicle_info: vehicle,
+        location: location,
       });
     }
   }

@@ -7,6 +7,7 @@ export interface MileageEntry {
   type: 'business' | 'personal';
   vehicle_info: string;
   business_type?: string;
+  location?: string;
 }
 
 export interface MileageLog {
