@@ -298,17 +298,51 @@ export function getRandomMileage(min: number, max: number): number {
 }
 
 // Get a random business purpose based on business type
-export function getRandomBusinessPurpose(businessType?: string): string {
-  if (!businessType) {
-    return BUSINESS_PURPOSES[Math.floor(Math.random() * BUSINESS_PURPOSES.length)];
+export function getRandomBusinessPurpose(businessType?: string, date?: Date): string {
+  // If a business type is provided, get purposes specific to that type
+  if (businessType) {
+    const businessTypeObj = BUSINESS_TYPES.find(
+      (type) => type.name === businessType
+    );
+    if (businessTypeObj && businessTypeObj.purposes.length > 0) {
+      // Select a random purpose from the business type
+      return businessTypeObj.purposes[
+        Math.floor(Math.random() * businessTypeObj.purposes.length)
+      ];
+    }
   }
-  
-  const type = BUSINESS_TYPES.find(t => t.name === businessType);
-  if (!type) {
-    return BUSINESS_PURPOSES[Math.floor(Math.random() * BUSINESS_PURPOSES.length)];
+
+  // Seasonal business purposes
+  if (date) {
+    const month = date.getMonth();
+    
+    // Tax season (January - April)
+    if (month >= 0 && month <= 3) {
+      // 20% chance of tax-related purposes during tax season
+      if (Math.random() < 0.2) {
+        return "Tax Preparation";
+      }
+    }
+    
+    // Summer conference season (May - August)
+    if (month >= 4 && month <= 7) {
+      // 15% chance of conference during summer
+      if (Math.random() < 0.15) {
+        return "Conference";
+      }
+    }
+    
+    // End of year planning (October - December)
+    if (month >= 9 && month <= 11) {
+      // 15% chance of planning meetings at end of year
+      if (Math.random() < 0.15) {
+        return "Project Planning";
+      }
+    }
   }
-  
-  return type.purposes[Math.floor(Math.random() * type.purposes.length)];
+
+  // Fallback to general business purposes
+  return BUSINESS_PURPOSES[Math.floor(Math.random() * BUSINESS_PURPOSES.length)];
 }
 
 // Get a random personal purpose

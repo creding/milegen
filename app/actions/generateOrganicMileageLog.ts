@@ -141,83 +141,24 @@ function generateDailyDistribution(
     const businessTrips: TripEntry[] = [];
     const personalTrips: TripEntry[] = [];
 
-    // Distribute business miles into 1-4 trips
-    if (dayBusinessMiles > 0) {
-      let businessMilesLeft = dayBusinessMiles;
-      const numBusinessTrips = getRandomInt(
-        1,
-        Math.min(4, Math.ceil(dayBusinessMiles / 5))
-      );
+    // Generate business trips
+    const { trips: businessTripEntries, totalMiles: businessTripMiles } = generateBusinessTrips(
+      date,
+      dayBusinessMiles,
+      currentMileage,
+      businessType
+    );
+    businessTrips.push(...businessTripEntries);
+    currentMileage = roundToOneDecimal(currentMileage + businessTripMiles);
 
-      for (let i = 0; i < numBusinessTrips; i++) {
-        let tripMiles: number;
-
-        if (i === numBusinessTrips - 1) {
-          // Last trip gets all remaining miles
-          tripMiles = roundToOneDecimal(businessMilesLeft);
-        } else {
-          // Random portion of remaining miles (between 20-60%)
-          const portion = 0.2 + Math.random() * 0.4;
-          tripMiles = roundToOneDecimal(businessMilesLeft * portion);
-          businessMilesLeft = roundToOneDecimal(businessMilesLeft - tripMiles);
-        }
-
-        if (tripMiles > 0) {
-          const tripStartMileage = roundToOneDecimal(currentMileage);
-          const tripEndMileage = roundToOneDecimal(
-            tripStartMileage + tripMiles
-          );
-
-          businessTrips.push({
-            startMileage: tripStartMileage,
-            endMileage: tripEndMileage,
-            miles: tripMiles,
-            purpose: getRandomBusinessPurpose(businessType),
-          });
-
-          currentMileage = tripEndMileage;
-        }
-      }
-    }
-
-    // Distribute personal miles into 1-2 trips
-    if (dayPersonalMiles > 0) {
-      let personalMilesLeft = dayPersonalMiles;
-      const numPersonalTrips = getRandomInt(
-        1,
-        Math.min(2, Math.ceil(dayPersonalMiles / 5))
-      );
-
-      for (let i = 0; i < numPersonalTrips; i++) {
-        let tripMiles: number;
-
-        if (i === numPersonalTrips - 1) {
-          // Last trip gets all remaining miles
-          tripMiles = roundToOneDecimal(personalMilesLeft);
-        } else {
-          // Random portion of remaining miles (between 30-70%)
-          const portion = 0.3 + Math.random() * 0.4;
-          tripMiles = roundToOneDecimal(personalMilesLeft * portion);
-          personalMilesLeft = roundToOneDecimal(personalMilesLeft - tripMiles);
-        }
-
-        if (tripMiles > 0) {
-          const tripStartMileage = roundToOneDecimal(currentMileage);
-          const tripEndMileage = roundToOneDecimal(
-            tripStartMileage + tripMiles
-          );
-
-          personalTrips.push({
-            startMileage: tripStartMileage,
-            endMileage: tripEndMileage,
-            miles: tripMiles,
-            purpose: getWeightedPersonalPurpose(date),
-          });
-
-          currentMileage = tripEndMileage;
-        }
-      }
-    }
+    // Generate personal trips
+    const { trips: personalTripEntries, totalMiles: personalTripMiles } = generatePersonalTrips(
+      date,
+      dayPersonalMiles,
+      currentMileage
+    );
+    personalTrips.push(...personalTripEntries);
+    currentMileage = roundToOneDecimal(currentMileage + personalTripMiles);
 
     // Interleave business and personal trips for more natural ordering
     if (businessTrips.length > 0 && personalTrips.length > 0) {
@@ -345,6 +286,171 @@ function generateDailyDistribution(
   }
 
   return dailyDistributions;
+}
+
+// Generate a trip mileage based on purpose
+function generatePurposeBasedMileage(purpose: string, type: 'business' | 'personal'): number {
+  // Define purpose-specific distance ranges
+  const purposeDistanceRanges: Record<string, {min: number, max: number}> = {
+    // Personal purposes
+    "Vacation": { min: 50, max: 500 },
+    "Family Visit": { min: 10, max: 200 },
+    "Entertainment": { min: 5, max: 50 },
+    "Commuting": { min: 5, max: 30 },
+    "School Drop-off/Pick-up": { min: 1, max: 10 },
+    "Grocery Shopping": { min: 1, max: 8 },
+    "Shopping": { min: 3, max: 20 },
+    "Medical Appointment": { min: 2, max: 25 },
+    "Gym/Fitness": { min: 1, max: 10 },
+    "Restaurant": { min: 2, max: 15 },
+    "Errands": { min: 1, max: 10 },
+    "Religious Activity": { min: 2, max: 15 },
+    "Volunteer Work": { min: 3, max: 20 },
+    "Home Improvement": { min: 2, max: 15 },
+    "Pet Care": { min: 1, max: 10 },
+    "Hobby": { min: 3, max: 25 },
+    "Personal Visit": { min: 3, max: 30 },
+    
+    // Business purposes
+    "Conference": { min: 15, max: 300 },
+    "Client Visit": { min: 5, max: 50 },
+    "Client Meeting": { min: 5, max: 50 },
+    "Business Lunch": { min: 3, max: 20 },
+    "Site Inspection": { min: 10, max: 60 },
+    "Sales Presentation": { min: 5, max: 50 },
+    "Project Planning": { min: 5, max: 30 },
+    "Property Showing": { min: 5, max: 30 },
+    "Property Inspection": { min: 5, max: 30 },
+    "Medical Conference": { min: 20, max: 300 },
+    "Patient Visit": { min: 5, max: 40 },
+    "Food Delivery": { min: 2, max: 15 },
+    "Passenger Pickup": { min: 2, max: 20 },
+    "Package Delivery": { min: 3, max: 25 },
+    "Sales Call": { min: 5, max: 50 },
+    "Job Site Visit": { min: 10, max: 60 },
+    "Material Pickup": { min: 5, max: 30 },
+    "Tax Preparation": { min: 5, max: 40 }
+  };
+  
+  // Get the appropriate distance range for this purpose
+  const range = purposeDistanceRanges[purpose] || {
+    min: type === 'business' ? 5 : 2,
+    max: type === 'business' ? 30 : 15
+  };
+  
+  // Generate mileage within the appropriate range with some variation
+  const baseMileage = getRandomInt(range.min, range.max);
+  
+  // Add some randomness but keep within realistic bounds
+  const variation = 0.8 + Math.random() * 0.4; // 80-120% variation
+  return roundToOneDecimal(baseMileage * variation);
+}
+
+// Generate business trips for a day
+function generateBusinessTrips(
+  date: Date,
+  targetMiles: number,
+  currentMileage: number,
+  businessType?: string
+): { trips: TripEntry[]; totalMiles: number } {
+  const trips: TripEntry[] = [];
+  let totalMiles = 0;
+  let remainingMiles = targetMiles;
+
+  // Generate 1-3 business trips for this day
+  const numTrips = Math.min(
+    getRandomInt(1, 3),
+    Math.ceil(targetMiles / 5) // At least 5 miles per trip on average
+  );
+
+  for (let i = 0; i < numTrips && remainingMiles > 0; i++) {
+    // Generate a purpose first
+    const purpose = getRandomBusinessPurpose(businessType, date);
+    
+    // Generate a realistic mileage based on the purpose
+    let tripMiles = generatePurposeBasedMileage(purpose, 'business');
+    
+    // Adjust if needed to stay within remaining miles
+    if (tripMiles > remainingMiles) {
+      tripMiles = remainingMiles;
+    }
+    
+    // Ensure minimum trip distance
+    if (tripMiles < 0.5) {
+      tripMiles = 0.5;
+    }
+    
+    tripMiles = roundToOneDecimal(tripMiles);
+    
+    const tripStartMileage = roundToOneDecimal(currentMileage);
+    const tripEndMileage = roundToOneDecimal(tripStartMileage + tripMiles);
+
+    trips.push({
+      startMileage: tripStartMileage,
+      endMileage: tripEndMileage,
+      miles: tripMiles,
+      purpose: purpose,
+    });
+
+    totalMiles = roundToOneDecimal(totalMiles + tripMiles);
+    remainingMiles = roundToOneDecimal(remainingMiles - tripMiles);
+    currentMileage = tripEndMileage;
+  }
+
+  return { trips, totalMiles };
+}
+
+// Generate personal trips for a day
+function generatePersonalTrips(
+  date: Date,
+  targetMiles: number,
+  currentMileage: number
+): { trips: TripEntry[]; totalMiles: number } {
+  const trips: TripEntry[] = [];
+  let totalMiles = 0;
+  let remainingMiles = targetMiles;
+
+  // Generate 1-2 personal trips for this day
+  const numTrips = Math.min(
+    getRandomInt(1, 2),
+    Math.ceil(targetMiles / 5) // At least 5 miles per trip on average
+  );
+
+  for (let i = 0; i < numTrips && remainingMiles > 0; i++) {
+    // Generate a purpose first
+    const purpose = getWeightedPersonalPurpose(date);
+    
+    // Generate a realistic mileage based on the purpose
+    let tripMiles = generatePurposeBasedMileage(purpose, 'personal');
+    
+    // Adjust if needed to stay within remaining miles
+    if (tripMiles > remainingMiles) {
+      tripMiles = remainingMiles;
+    }
+    
+    // Ensure minimum trip distance
+    if (tripMiles < 0.5) {
+      tripMiles = 0.5;
+    }
+    
+    tripMiles = roundToOneDecimal(tripMiles);
+    
+    const tripStartMileage = roundToOneDecimal(currentMileage);
+    const tripEndMileage = roundToOneDecimal(tripStartMileage + tripMiles);
+
+    trips.push({
+      startMileage: tripStartMileage,
+      endMileage: tripEndMileage,
+      miles: tripMiles,
+      purpose: purpose,
+    });
+
+    totalMiles = roundToOneDecimal(totalMiles + tripMiles);
+    remainingMiles = roundToOneDecimal(remainingMiles - tripMiles);
+    currentMileage = tripEndMileage;
+  }
+
+  return { trips, totalMiles };
 }
 
 // Convert daily distributions to MileageEntry objects
