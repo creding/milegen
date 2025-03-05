@@ -102,7 +102,7 @@ export const Footer = async () => {
                   <Group gap="xs">
                     <IconMail size={16} color="#3498db" />
                     <Text c="gray.5" size="sm">
-                      support@milegen.com
+                      support@milegen.us
                     </Text>
                   </Group>
                 </Stack>

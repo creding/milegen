@@ -138,7 +138,7 @@ export default function PrivacyPolicyPage() {
         </Title>
         <Text mb="xl">
           If you have any questions about this Privacy Policy, please contact us
-          at support@milegen.com.
+          at support@milegen.us.
         </Text>
       </Container>
     </Box>
