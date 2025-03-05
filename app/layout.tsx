@@ -12,7 +12,7 @@ import { Nav } from "@/components/layout/Nav";
 import { Footer } from "@/components/layout/Footer";
 import { theme } from "@/theme/theme";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-
+import { GoogleAnalytics } from "@next/third-parties/google";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
@@ -36,6 +36,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         </MantineProvider>
         <SpeedInsights />
         <Analytics />
+        <GoogleAnalytics gaId="G-P9624TGV6Q" />
       </body>
     </html>
   );
