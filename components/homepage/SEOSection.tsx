@@ -31,7 +31,7 @@ export function SEOSection() {
           {/* Main Content Section */}
           <Grid gutter={40}>
             <GridCol span={{ base: 12, md: 6 }}>
-              <Paper p="xl" radius="md" withBorder shadow="sm">
+              <Paper p="xl" radius="md" withBorder shadow="sm" h="100%">
                 <Stack>
                   <Group>
                     <ThemeIcon
@@ -90,7 +90,7 @@ export function SEOSection() {
             </GridCol>
 
             <GridCol span={{ base: 12, md: 6 }}>
-              <Paper p="xl" radius="md" withBorder shadow="sm">
+              <Paper p="xl" radius="md" withBorder shadow="sm" h="100%">
                 <Stack>
                   <Group>
                     <ThemeIcon

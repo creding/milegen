@@ -1,12 +1,16 @@
 import Link from "next/link";
-import { Group, Stack, Pill } from "@mantine/core";
+import { Group, Stack, Anchor, Box, Button } from "@mantine/core";
 import { SignoutButton } from "@/components/ui/SignoutButton";
 import { createClient } from "@/lib/supabaseServerClient";
 import { checkSubscriptionStatus } from "@/app/actions/checkSubscriptionStatus";
 import { Logo } from "./Logo";
 import { LoginButton } from "@/components/auth/LoginButton";
 import { SignupButton } from "@/components/auth/SignupButton";
-import { IconUser } from "@tabler/icons-react";
+import { AccountButton } from "@/components/ui/AccountButton";
+import classes from "./nav.module.css";
+import { MobileNav } from "@/components/layout/MobileNav"; // Import client component
+import { IconCrown } from "@tabler/icons-react";
+
 export async function Nav() {
   const supabase = await createClient();
 
@@ -16,40 +20,38 @@ export async function Nav() {
   const subscriptionStatus = await checkSubscriptionStatus();
 
   return (
-    <nav className="fixed top-0 w-full z-50 bg-white shadow-md no-print">
-      <Stack px={20} py={10}>
+    <Box component="header" className={classes.header}>
+      <Stack px={20} py={10} h={60}>
         <Group justify="space-between">
           <Logo />
-          <Group gap={20}>
+
+          {/* Main Navigation (Server-Rendered) */}
+          <Group gap={20} className={classes.mainNav}>
             {user ? (
               <>
-                <Link
-                  href="/generator"
-                  className="text-sm font-medium hover:text-gray-600 transition-colors"
-                >
+                <Anchor component={Link} href="/generator">
                   Generate Log
-                </Link>
-                <Link
-                  href="/saved-logs"
-                  className="text-sm font-medium hover:text-gray-600 transition-colors"
-                >
-                  Saved Logs
-                </Link>
-                <Link
-                  href="/account"
-                  className="text-sm font-medium hover:text-gray-600 transition-colors"
-                >
-                  <Group gap={3}>
-                    <IconUser size={16} />
-                    Account
-                    {subscriptionStatus === "active" && (
-                      <Pill variant="light" c="green">
-                        Subscribed
-                      </Pill>
-                    )}
-                  </Group>
-                </Link>
+                </Anchor>
+                {subscriptionStatus === "active" && (
+                  <Anchor component={Link} href="/saved-logs">
+                    Saved Logs
+                  </Anchor>
+                )}
+
+                <AccountButton subscriptionStatus={subscriptionStatus} />
                 <SignoutButton />
+                {subscriptionStatus !== "active" && (
+                  <Button
+                    component={Link}
+                    href="/subscribe"
+                    variant="gradient"
+                    gradient={{ from: "blue", to: "cyan" }}
+                    leftSection={<IconCrown size="1rem" />}
+                    size="sm"
+                  >
+                    Subscribe
+                  </Button>
+                )}
               </>
             ) : (
               <>
@@ -58,8 +60,9 @@ export async function Nav() {
               </>
             )}
           </Group>
+          <MobileNav user={user} subscriptionStatus={subscriptionStatus} />
         </Group>
       </Stack>
-    </nav>
+    </Box>
   );
 }

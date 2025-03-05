@@ -1,18 +1,12 @@
 "use client";
 
 import { DatePickerInput } from "@mantine/dates";
-import Link from "next/link";
-import {
-  Title,
-  Text,
-  Alert,
-  TextInput,
-  Textarea,
-  Group,
-  Button,
-  Stack,
-} from "@mantine/core";
-import { IconInfoCircle } from "@tabler/icons-react";
+import { TextInput, Group, Button, Stack, Box, Select } from "@mantine/core";
+import { useMediaQuery } from "@mantine/hooks";
+import { useForm, isNotEmpty } from "@mantine/form";
+import { CustomInputWrapper } from "../form/CustomInputWrapper";
+import { BUSINESS_TYPES } from "@/utils/mileageUtils";
+import { SubscriptionAlert } from "../subscription/SubscriptionAlert";
 
 interface MileageFormProps {
   startMileage: string;
@@ -20,22 +14,32 @@ interface MileageFormProps {
   startDate: Date;
   endDate: Date;
   totalPersonalMiles: string;
-  destination: string;
-  businessPurpose: string;
-  subscriptionStatus: string | null;
+  vehicle: string;
+  businessType: string;
+  subscriptionStatus: string;
   entryCount: number;
   onStartMileageChange: (value: string) => void;
   onEndMileageChange: (value: string) => void;
-  onStartDateChange: (date: Date) => void;
-  onEndDateChange: (date: Date) => void;
+  onStartDateChange: (value: Date) => void;
+  onEndDateChange: (value: Date) => void;
   onTotalPersonalMilesChange: (value: string) => void;
-  onDestinationChange: (value: string) => void;
-  onBusinessPurposeChange: (value: string) => void;
+  onVehicleChange: (value: string) => void;
+  onBusinessTypeChange: (value: string) => void;
   onGenerate: () => void;
   onReset: () => void;
 }
 
-const MAX_FREE_ENTRIES = 10;
+interface FormValues {
+  startMileage: string;
+  endMileage: string;
+  startDate: Date;
+  endDate: Date;
+  totalPersonalMiles: string;
+  vehicle: string;
+  businessType: string;
+}
+
+const MAX_FREE_ENTRIES = 5;
 
 export function MileageForm({
   startMileage,
@@ -43,8 +47,8 @@ export function MileageForm({
   startDate,
   endDate,
   totalPersonalMiles,
-  destination,
-  businessPurpose,
+  vehicle,
+  businessType,
   subscriptionStatus,
   entryCount,
   onStartMileageChange,
@@ -52,112 +56,308 @@ export function MileageForm({
   onStartDateChange,
   onEndDateChange,
   onTotalPersonalMilesChange,
-  onDestinationChange,
-  onBusinessPurposeChange,
+  onVehicleChange,
+  onBusinessTypeChange,
   onGenerate,
   onReset,
 }: MileageFormProps) {
+  const isMobile = useMediaQuery("(max-width: 768px)");
+
+  const form = useForm<FormValues>({
+    initialValues: {
+      startMileage,
+      endMileage,
+      startDate,
+      endDate,
+      totalPersonalMiles,
+      vehicle,
+      businessType,
+    },
+    validate: {
+      startMileage: (value: string) => {
+        if (!isNotEmpty(value)) return "Starting mileage is required";
+        if (!/^\d+$/.test(value)) return "Must be a number";
+        return null;
+      },
+      endMileage: (value: string, values: FormValues) => {
+        if (!isNotEmpty(value)) return "Ending mileage is required";
+        if (!/^\d+$/.test(value)) return "Must be a number";
+        if (parseInt(value) <= parseInt(values.startMileage))
+          return "Must be greater than starting mileage";
+        return null;
+      },
+      totalPersonalMiles: (value: string, values: FormValues) => {
+        if (!isNotEmpty(value)) return "Personal miles is required";
+        if (!/^\d+$/.test(value)) return "Must be a number";
+        const totalMiles =
+          parseInt(values.endMileage) - parseInt(values.startMileage);
+        if (parseInt(value) > totalMiles) return "Cannot exceed total mileage";
+        return null;
+      },
+      vehicle: isNotEmpty("Vehicle is required"),
+      businessType: isNotEmpty("Business type is required"),
+    },
+  });
+
+  // Handle date changes separately since they're not string values
+  const handleStartDateChange = (date: Date) => {
+    form.setFieldValue("startDate", date);
+    onStartDateChange(date);
+  };
+
+  const handleEndDateChange = (date: Date) => {
+    form.setFieldValue("endDate", date);
+    onEndDateChange(date);
+  };
+
+  const handleSubmit = () => {
+    const validation = form.validate();
+    if (!validation.hasErrors) {
+      onGenerate();
+    }
+  };
+
+  const handleReset = () => {
+    form.reset();
+    onReset();
+  };
+
+  // Create business type options for the select dropdown
+  const businessTypeOptions = BUSINESS_TYPES.map((type) => ({
+    value: type.name,
+    label: type.name,
+  }));
+
   return (
-    <Stack>
-      <Stack gap={2}>
-        <Title order={2}>Generate Mileage Log with Milegen</Title>
-        <Text c="dimmed" size="sm">
-          Enter your mileage information for the selected date range
-        </Text>
-      </Stack>
-      {subscriptionStatus !== "active" && (
-        <Alert
-          icon={<IconInfoCircle />}
-          title="Unlock Full Mileage Log Features!"
-          color="blue"
-          mb="lg"
-        >
-          <Text mb="sm">
-            Upgrade to our premium plan for unlimited entries, advanced
-            customization, detailed reporting, and priority support.
-          </Text>
-          <Button
-            component={Link}
-            href="/subscribe"
-            variant="filled"
-            color="blue"
+    <Box p="md">
+      {subscriptionStatus !== "active" && <SubscriptionAlert mb="md" />}
+
+      <form onSubmit={form.onSubmit(handleSubmit)}>
+        <Stack gap={isMobile ? "xs" : "md"}>
+          {isMobile ? (
+            <Stack>
+              <CustomInputWrapper
+                label="Starting Odometer Reading"
+                required
+                error={form.errors.startMileage}
+              >
+                <TextInput
+                  placeholder="Enter starting mileage"
+                  {...form.getInputProps("startMileage")}
+                  onChange={(e) => {
+                    form.setFieldValue("startMileage", e.target.value);
+                    onStartMileageChange(e.target.value);
+                  }}
+                  error={null} // Hide default error
+                />
+              </CustomInputWrapper>
+              <CustomInputWrapper
+                label="Ending Odometer Reading"
+                required
+                error={form.errors.endMileage}
+              >
+                <TextInput
+                  placeholder="Enter ending mileage"
+                  {...form.getInputProps("endMileage")}
+                  onChange={(e) => {
+                    form.setFieldValue("endMileage", e.target.value);
+                    onEndMileageChange(e.target.value);
+                  }}
+                  error={null} // Hide default error
+                />
+              </CustomInputWrapper>
+            </Stack>
+          ) : (
+            <Group grow>
+              <CustomInputWrapper
+                label="Starting Odometer Reading"
+                required
+                error={form.errors.startMileage}
+              >
+                <TextInput
+                  placeholder="Enter starting mileage"
+                  {...form.getInputProps("startMileage")}
+                  onChange={(e) => {
+                    form.setFieldValue("startMileage", e.target.value);
+                    onStartMileageChange(e.target.value);
+                  }}
+                  error={null} // Hide default error
+                />
+              </CustomInputWrapper>
+              <CustomInputWrapper
+                label="Ending Odometer Reading"
+                required
+                error={form.errors.endMileage}
+              >
+                <TextInput
+                  placeholder="Enter ending mileage"
+                  {...form.getInputProps("endMileage")}
+                  onChange={(e) => {
+                    form.setFieldValue("endMileage", e.target.value);
+                    onEndMileageChange(e.target.value);
+                  }}
+                  error={null} // Hide default error
+                />
+              </CustomInputWrapper>
+            </Group>
+          )}
+
+          {isMobile ? (
+            <Stack>
+              <CustomInputWrapper
+                label="Start Date"
+                required
+                error={form.errors.startDate}
+              >
+                <DatePickerInput
+                  placeholder="Select start date"
+                  value={startDate}
+                  onChange={(date) => date && handleStartDateChange(date)}
+                  error={null} // Hide default error
+                />
+              </CustomInputWrapper>
+              <CustomInputWrapper
+                label="End Date"
+                required
+                error={form.errors.endDate}
+              >
+                <DatePickerInput
+                  placeholder="Select end date"
+                  value={endDate}
+                  onChange={(date) => date && handleEndDateChange(date)}
+                  minDate={startDate}
+                  error={null} // Hide default error
+                />
+              </CustomInputWrapper>
+            </Stack>
+          ) : (
+            <Group grow>
+              <CustomInputWrapper
+                label="Start Date"
+                required
+                error={form.errors.startDate}
+              >
+                <DatePickerInput
+                  placeholder="Select start date"
+                  value={startDate}
+                  onChange={(date) => date && handleStartDateChange(date)}
+                  error={null} // Hide default error
+                />
+              </CustomInputWrapper>
+              <CustomInputWrapper
+                label="End Date"
+                required
+                error={form.errors.endDate}
+              >
+                <DatePickerInput
+                  placeholder="Select end date"
+                  value={endDate}
+                  onChange={(date) => date && handleEndDateChange(date)}
+                  minDate={startDate}
+                  error={null} // Hide default error
+                />
+              </CustomInputWrapper>
+            </Group>
+          )}
+
+          <CustomInputWrapper
+            label="Personal Miles"
+            error={form.errors.totalPersonalMiles}
           >
-            Upgrade Now for $9.99/Year
-          </Button>
-        </Alert>
-      )}
+            <TextInput
+              placeholder="Enter personal miles"
+              {...form.getInputProps("totalPersonalMiles")}
+              onChange={(e) => {
+                form.setFieldValue("totalPersonalMiles", e.target.value);
+                onTotalPersonalMilesChange(e.target.value);
+              }}
+              error={null} // Hide default error
+            />
+          </CustomInputWrapper>
 
-      <Stack>
-        <Group grow>
-          <TextInput
-            label="Starting Odometer Reading"
-            type="number"
-            value={startMileage}
-            onChange={(e) => onStartMileageChange(e.target.value)}
+          <CustomInputWrapper
+            label="Business Type"
             required
-          />
-          <TextInput
-            label="Ending Odometer Reading"
-            type="number"
-            value={endMileage}
-            onChange={(e) => onEndMileageChange(e.target.value)}
-            required
-          />
-          <TextInput
-            label="Total Personal Miles"
-            type="number"
-            value={totalPersonalMiles}
-            onChange={(e) => onTotalPersonalMilesChange(e.target.value)}
-            min={0}
-            step="any"
-            required
-          />
-        </Group>
-
-        <Group grow>
-          <DatePickerInput
-            value={startDate}
-            onChange={(date) => date && onStartDateChange(date)}
-            maxDate={endDate}
-            label="Start Date"
-          />
-          <DatePickerInput
-            value={endDate}
-            onChange={(date) => date && onEndDateChange(date)}
-            minDate={startDate}
-            label="End Date"
-          />
-        </Group>
-
-        <TextInput
-          label="Default Destination"
-          placeholder="e.g., Client office, Job site"
-          value={destination}
-          onChange={(e) => onDestinationChange(e.target.value)}
-        />
-
-        <Textarea
-          label="Default Business Purpose"
-          placeholder="e.g., Client meeting, Project work"
-          value={businessPurpose}
-          onChange={(e) => onBusinessPurposeChange(e.target.value)}
-          rows={3}
-        />
-
-        <Group justify="space-between">
-          <Button
-            onClick={onGenerate}
-            disabled={
-              subscriptionStatus !== "active" && entryCount >= MAX_FREE_ENTRIES
-            }
+            error={form.errors.businessType}
           >
-            Generate Log
-          </Button>
-          <Button onClick={onReset} variant="light" color="gray">
-            Reset
-          </Button>
-        </Group>
-      </Stack>
-    </Stack>
+            <Select
+              placeholder="Select business type"
+              data={businessTypeOptions}
+              {...form.getInputProps("businessType")}
+              onChange={(value) => {
+                if (value) {
+                  form.setFieldValue("businessType", value);
+                  onBusinessTypeChange(value);
+                }
+              }}
+              error={null} // Hide default error
+            />
+          </CustomInputWrapper>
+
+          <CustomInputWrapper
+            label="Vehicle"
+            required
+            error={form.errors.vehicle}
+          >
+            <TextInput
+              placeholder="Enter vehicle"
+              {...form.getInputProps("vehicle")}
+              onChange={(e) => {
+                form.setFieldValue("vehicle", e.target.value);
+                onVehicleChange(e.target.value);
+              }}
+              error={null} // Hide default error
+            />
+          </CustomInputWrapper>
+
+          {isMobile ? (
+            <Stack gap="xs" mt="sm">
+              <Button
+                variant="gradient"
+                type="submit"
+                disabled={
+                  subscriptionStatus !== "active" &&
+                  entryCount >= MAX_FREE_ENTRIES
+                }
+                fullWidth
+                size="md"
+              >
+                Generate Log
+              </Button>
+              <Button
+                onClick={handleReset}
+                variant="light"
+                color="gray"
+                fullWidth
+                size="md"
+              >
+                Reset
+              </Button>
+            </Stack>
+          ) : (
+            <Group justify="flex-end" mt="md">
+              <Button
+                variant="light"
+                color="gray"
+                onClick={handleReset}
+                size={isMobile ? "md" : "sm"}
+              >
+                Reset
+              </Button>
+              {subscriptionStatus === "active" && (
+                <Button
+                  variant="gradient"
+                  size={isMobile ? "md" : "sm"}
+                  type="submit"
+                  disabled={entryCount >= MAX_FREE_ENTRIES}
+                >
+                  Generate Log
+                </Button>
+              )}
+            </Group>
+          )}
+        </Stack>
+      </form>
+    </Box>
   );
 }

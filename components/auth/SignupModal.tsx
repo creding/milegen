@@ -11,7 +11,6 @@ import {
   Anchor,
   Alert,
   ModalTitle,
-  Title,
   ModalRoot,
   ModalBody,
   ModalContent,

@@ -2,18 +2,22 @@
 
 import { createClient } from "@/lib/supabaseServerClient";
 import { stripe } from "@/lib/stripe";
-import { redirect } from "next/navigation";
 
-export type CheckoutSessionResult = {
-  error: string;
-} | {
-  sessionId: string;
-};
+export type CheckoutSessionResult =
+  | { url: string }
+  | {
+      error: string;
+    }
+  | {
+      sessionId: string;
+    };
 
 export async function createCheckoutSessionAction(): Promise<CheckoutSessionResult> {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) {
       return { error: "User not found" };
@@ -30,8 +34,8 @@ export async function createCheckoutSessionAction(): Promise<CheckoutSessionResu
           quantity: 1,
         },
       ],
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/subscribe`,
+      success_url: `${process.env.NEXT_PUBLIC_VERCEL_URL}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_VERCEL_URL}/subscribe`,
       metadata: {
         userId: user.id,
       },
@@ -41,11 +45,14 @@ export async function createCheckoutSessionAction(): Promise<CheckoutSessionResu
       return { error: "Failed to create checkout session" };
     }
 
-    redirect(session.url);
+    return { url: session.url };
   } catch (err) {
     console.error("Error creating checkout session:", err);
     return {
-      error: err instanceof Error ? err.message : "Failed to create checkout session",
+      error:
+        err instanceof Error
+          ? err.message
+          : "Failed to create checkout session",
     };
   }
 }

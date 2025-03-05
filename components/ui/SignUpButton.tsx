@@ -1,20 +1,10 @@
 import Link from "next/link";
-import { Button } from "@mantine/core";
+import { Anchor } from "@mantine/core";
 
-interface SignUpButtonProps {
-  variant?: "default" | "outline" | "white";
-  className?: string;
-}
-
-export function SignUpButton({
-  variant = "default",
-  className = "",
-}: SignUpButtonProps) {
+export function SignUpButton() {
   return (
-    <Link href="/?signup=true">
-      <Button size="lg" variant={variant} className={className}>
-        Sign Up
-      </Button>
-    </Link>
+    <Anchor component={Link} href="/?signup=true">
+      Sign Up
+    </Anchor>
   );
 }

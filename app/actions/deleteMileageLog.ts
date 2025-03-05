@@ -8,7 +8,7 @@ const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
 const supabase = createClient(supabaseUrl, supabaseServiceRoleKey)
 
-export async function deleteMileageLog(logId: number, userId: string): Promise<{ success: boolean; message: string }> {
+export async function deleteMileageLog(logId: string, userId: string): Promise<{ success: boolean; message: string }> {
   try {
     const { error } = await supabase.from("mileage_logs").delete().eq("id", logId).eq("user_id", userId)
 
@@ -21,4 +21,3 @@ export async function deleteMileageLog(logId: number, userId: string): Promise<{
     return { success: false, message: "Failed to delete mileage log. Please try again." }
   }
 }
-

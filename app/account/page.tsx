@@ -41,10 +41,10 @@ export default async function Page() {
             <Group>
               <Text fw={500}>Subscription Status:</Text>
               <Badge
-                color={subscriptionStatus === "active" ? "green" : "red"}
                 variant="light"
+                color={subscriptionStatus === "active" ? "green" : "red"}
               >
-                {subscriptionStatus === "active" ? "Active" : "Inactive"}
+                {subscriptionStatus === "active" ? "Subscribed" : "Inactive"}
               </Badge>
             </Group>
             <ManageSubscriptionButton />

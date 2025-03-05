@@ -9,7 +9,7 @@ export function ManageSubscriptionButton() {
   };
 
   return (
-    <Button onClick={handleManageSubscription} fullWidth>
+    <Button variant="gradient" onClick={handleManageSubscription} fullWidth>
       Manage Subscription
     </Button>
   );

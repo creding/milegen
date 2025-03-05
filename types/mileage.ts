@@ -1,33 +1,28 @@
 export interface MileageEntry {
-  date: string;
-  startMileage: string;
-  endMileage: string;
-  milesDriven: string;
-  businessMiles: string;
-  destination: string;
-  businessPurpose: string;
-  recordedAt?: string; // Timestamp when the entry was created
-  notes?: string; // Additional notes or circumstances
-  attachments?: string[]; // URLs to any attached receipts or documentation
+  date: Date;
+  start_mileage: number;
+  end_mileage: number;
+  miles: number;
+  purpose: string;
+  type: "business" | "personal";
+  vehicle_info: string;
+  business_type?: string;
+  location?: string;
 }
 
 export interface MileageLog {
-  id: number;
-  user_id: string;
-  year: string;
   start_date: string;
   end_date: string;
-  start_mileage: string;
-  end_mileage: string;
+  start_mileage: number;
+  end_mileage: number;
   total_mileage: number;
-  total_personal_miles: string;
+  total_business_miles: number;
+  total_personal_miles: number;
+  business_deduction_rate: number;
+  business_deduction_amount: number;
+  vehicle_info: string;
   log_entries: MileageEntry[];
-  created_at: string;
-  last_modified_at?: string; // Track when the log was last modified
-  vehicle_info?: {
-    make?: string;
-    model?: string;
-    year?: string;
-    vin?: string;
-  }; // Optional vehicle information for better record keeping
+  business_type: string;
+  id?: string;
+  user_id?: string;
 }

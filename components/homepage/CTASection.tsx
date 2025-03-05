@@ -136,10 +136,7 @@ export function CTASection() {
                     size="lg"
                     radius="md"
                     fullWidth
-                    style={{
-                      backgroundColor: "#3498db",
-                      transition: "all 0.3s ease",
-                    }}
+                    variant="gradient"
                     component={Link}
                     href="/?signup=true"
                     rightSection={<IconChevronRight size="1rem" />}
