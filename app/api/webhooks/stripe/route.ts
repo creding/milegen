@@ -6,8 +6,16 @@ import { createClient } from "@/lib/supabaseServerClient";
 
 const relevantEvents = new Set([
   "checkout.session.completed",
-  "customer.subscription.updated",
+  "customer.created",
+  "customer.deleted",
+  "customer.subscription.created",
   "customer.subscription.deleted",
+  "customer.subscription.paused",
+  "customer.subscription.pending_update_applied",
+  "customer.subscription.pending_update_expired",
+  "customer.subscription.resumed",
+  "customer.subscription.trial_will_end",
+  "customer.subscription.updated",
 ]);
 
 export async function POST(req: Request) {
