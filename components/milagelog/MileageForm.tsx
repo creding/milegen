@@ -344,16 +344,15 @@ export function MileageForm({
               >
                 Reset
               </Button>
-              {subscriptionStatus === "active" && (
-                <Button
-                  variant="gradient"
-                  size={isMobile ? "md" : "sm"}
-                  type="submit"
-                  disabled={entryCount >= MAX_FREE_ENTRIES}
-                >
-                  Generate Log
-                </Button>
-              )}
+
+              <Button
+                variant="gradient"
+                size={isMobile ? "md" : "sm"}
+                type="submit"
+                disabled={entryCount >= MAX_FREE_ENTRIES}
+              >
+                Generate Log
+              </Button>
             </Group>
           )}
         </Stack>
