@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     title: "MileGen - IRS-Compliant Mileage Logs in Minutes",
     description:
       "Generate IRS-compliant mileage logs in minutes. Maximize tax deductions and protect yourself from audits.",
-    url: "https://milegen.com",
+    url: "https://milegen.us",
     siteName: "MileGen",
     locale: "en_US",
     type: "website",
