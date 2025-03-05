@@ -1,8 +1,10 @@
 import { MileageLogDisplay } from "@/components/milagelog/MileageLogDisplay";
-import type { MileageLog } from "@/types/mileage";
+import type { MileageLog } from "@/app/actions/mileageGenerator";
 import { createClient } from "@/lib/supabaseServerClient";
-import { Card, Container, Title, Text, Group } from "@mantine/core";
+import { Card, Container, Title, Text, Group, Button } from "@mantine/core";
 import { PrintMilageLog } from "@/components/milagelog/PrintMilageLog";
+import { DownloadSpreadsheet } from "@/components/milagelog/DownloadSpreadsheet";
+import { IconFileDownload } from "@tabler/icons-react";
 
 type SSRParams = {
   id: string;
@@ -34,27 +36,12 @@ export default async function Page({ params }: { params: Promise<SSRParams> }) {
   }
 
   return (
-    <Container size="xl" py="xl" mt={80}>
+    <Container size="xl" py="xl">
       <Card withBorder>
         <Group justify="space-between" mb="md">
           <Title order={2}>Mileage Log Details</Title>
-          <PrintMilageLog log={log} />
         </Group>
-        <MileageLogDisplay
-          startDate={new Date(log.start_date)}
-          endDate={new Date(log.end_date)}
-          totalMileage={log.total_mileage}
-          totalBusinessMiles={log.total_business_miles}
-          totalPersonalMiles={log.total_personal_miles}
-          startMileage={Number(log.start_mileage)}
-          endMileage={Number(log.end_mileage)}
-          businessDeductionRate={log.business_deduction_rate}
-          businessDeductionAmount={log.business_deduction_amount}
-          vehicleInfo={log.vehicle_info}
-          mileageLog={log.log_entries}
-          logId={log.id}
-          userId={log.user_id}
-        />
+        <MileageLogDisplay log={log} />
       </Card>
     </Container>
   );
