@@ -404,29 +404,28 @@ async function generateTripsForDay(
 export async function generateMileageLogFromForm(
   params: MileageGeneratorParams
 ): Promise<MileageLog> {
-  // Validate input
-  if (!params.startDate || !params.endDate) {
-    throw new Error("Start and end dates are required");
-  }
+  const startDate = new Date(params.startDate);
+  const endDate = new Date(params.endDate);
 
-  if (params.endMileage <= params.startMileage) {
-    throw new Error("End mileage must be greater than start mileage");
-  }
-
-  if (params.totalPersonalMiles >= params.endMileage - params.startMileage) {
-    throw new Error("Personal miles cannot exceed total miles");
-  }
-
-  // Generate daily distributions
   const log = await generateMileageLog(
-    params.startDate,
-    params.endDate,
+    startDate,
+    endDate,
     params.startMileage,
     params.endMileage,
-    params.businessType || "Other",
+    params.businessType || "General Business",
     params.vehicle,
     params.totalPersonalMiles
   );
+
+  if (params.subscriptionStatus !== "active") {
+    const totalEntries = log.log_entries.length;
+    log.log_entries = log.log_entries.slice(0, 10);
+    if (totalEntries > 10) {
+      log.log_entries[9].purpose += ` (${
+        totalEntries - 10
+      } more entries available with subscription)`;
+    }
+  }
 
   return log;
 }

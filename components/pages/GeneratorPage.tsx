@@ -208,15 +208,17 @@ export const GeneratorPage = ({
                 >
                   New
                 </Button>
-                <Button
-                  loading={isSaving}
-                  variant="light"
-                  leftSection={<IconDeviceFloppy size={20} />}
-                  onClick={saveMileageLog}
-                  size={isMobile ? "md" : "sm"}
-                >
-                  Save
-                </Button>
+                {subscriptionStatus === "active" && (
+                  <Button
+                    loading={isSaving}
+                    variant="light"
+                    leftSection={<IconDeviceFloppy size={20} />}
+                    onClick={saveMileageLog}
+                    size={isMobile ? "md" : "sm"}
+                  >
+                    Save
+                  </Button>
+                )}
               </Group>
             </Group>
             <MileageLogDisplay log={mileageLog} />

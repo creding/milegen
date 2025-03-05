@@ -15,6 +15,7 @@ import {
 import { IconAlertCircle, IconCheck } from "@tabler/icons-react";
 import { createCheckoutSessionAction } from "@/app/actions/createCheckoutSession";
 import { SubscribeButton } from "@/components/subscription/SubscribeButton";
+import { redirect } from "next/navigation";
 
 export const SubscribePage = () => {
   const [error, setError] = useState("");
@@ -73,6 +74,9 @@ export const SubscribePage = () => {
               const result = await createCheckoutSessionAction();
               if ("error" in result) {
                 setError(result.error);
+              }
+              if ("url" in result) {
+                redirect(result.url);
               }
             }}
           >

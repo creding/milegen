@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Group, Stack, Anchor, Box } from "@mantine/core";
+import { Group, Stack, Anchor, Box, Button } from "@mantine/core";
 import { SignoutButton } from "@/components/ui/SignoutButton";
 import { createClient } from "@/lib/supabaseServerClient";
 import { checkSubscriptionStatus } from "@/app/actions/checkSubscriptionStatus";
@@ -9,6 +9,7 @@ import { SignupButton } from "@/components/auth/SignupButton";
 import { AccountButton } from "@/components/ui/AccountButton";
 import classes from "./nav.module.css";
 import { MobileNav } from "@/components/layout/MobileNav"; // Import client component
+import { IconCrown } from "@tabler/icons-react";
 
 export async function Nav() {
   const supabase = await createClient();
@@ -31,11 +32,26 @@ export async function Nav() {
                 <Anchor component={Link} href="/generator">
                   Generate Log
                 </Anchor>
-                <Anchor component={Link} href="/saved-logs">
-                  Saved Logs
-                </Anchor>
+                {subscriptionStatus === "active" && (
+                  <Anchor component={Link} href="/saved-logs">
+                    Saved Logs
+                  </Anchor>
+                )}
+
                 <AccountButton subscriptionStatus={subscriptionStatus} />
                 <SignoutButton />
+                {subscriptionStatus !== "active" && (
+                  <Button
+                    component={Link}
+                    href="/subscribe"
+                    variant="gradient"
+                    gradient={{ from: "blue", to: "cyan" }}
+                    leftSection={<IconCrown size="1rem" />}
+                    size="sm"
+                  >
+                    Subscribe
+                  </Button>
+                )}
               </>
             ) : (
               <>

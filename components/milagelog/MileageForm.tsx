@@ -12,12 +12,15 @@ import {
   Text,
   Flex,
   Select,
+  List,
 } from "@mantine/core";
-import { IconInfoCircle } from "@tabler/icons-react";
+import Link from "next/link";
+import { IconInfoCircle, IconCrown, IconCheck } from "@tabler/icons-react";
 import { useMediaQuery } from "@mantine/hooks";
 import { useForm, isNotEmpty } from "@mantine/form";
 import { CustomInputWrapper } from "../form/CustomInputWrapper";
 import { BUSINESS_TYPES } from "@/utils/mileageUtils";
+import { SubscriptionAlert } from "../subscription/SubscriptionAlert";
 
 interface MileageFormProps {
   startMileage: string;
@@ -150,16 +153,8 @@ export function MileageForm({
 
   return (
     <Box p="md">
-      {subscriptionStatus !== "active" && entryCount >= MAX_FREE_ENTRIES && (
-        <Alert
-          icon={<IconInfoCircle size="1rem" />}
-          title="Subscription Required"
-          color="yellow"
-          mb="md"
-        >
-          You have reached the maximum number of free entries. Please subscribe
-          to generate more mileage logs.
-        </Alert>
+      {subscriptionStatus !== "active" && (
+        <SubscriptionAlert mb="md" />
       )}
 
       <form onSubmit={form.onSubmit(handleSubmit)}>
@@ -374,17 +369,16 @@ export function MileageForm({
               >
                 Reset
               </Button>
-              <Button
-                variant="gradient"
-                size={isMobile ? "md" : "sm"}
-                type="submit"
-                disabled={
-                  subscriptionStatus !== "active" &&
-                  entryCount >= MAX_FREE_ENTRIES
-                }
-              >
-                Generate Log
-              </Button>
+              {subscriptionStatus === "active" && (
+                <Button
+                  variant="gradient"
+                  size={isMobile ? "md" : "sm"}
+                  type="submit"
+                  disabled={entryCount >= MAX_FREE_ENTRIES}
+                >
+                  Generate Log
+                </Button>
+              )}
             </Group>
           )}
         </Stack>

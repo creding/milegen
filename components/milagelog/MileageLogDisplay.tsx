@@ -40,8 +40,9 @@ import { GeneratePDF } from "./GeneratePDF";
 import { useRef, useState } from "react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import { SubscriptionAlert } from "../subscription/SubscriptionAlert";
 
-export function MileageLogDisplay({ log }: { log: MileageLog }) {
+export function MileageLogDisplay({ log, subscriptionStatus }: { log: MileageLog, subscriptionStatus?: string }) {
   const isMobile = useMediaQuery("(max-width: 768px)");
   const [isDownloading, setIsDownloading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -137,14 +138,19 @@ export function MileageLogDisplay({ log }: { log: MileageLog }) {
   return (
     <div ref={pdfRef}>
       <Stack gap={isMobile ? "md" : 5}>
+        {subscriptionStatus !== "active" && (
+          <SubscriptionAlert />
+        )}
         {isMobile ? (
           <Paper p="md" radius="sm" withBorder shadow="xs" w="100%">
             <Stack gap="xs">
-              <Stack justify="flex-start">
-                <DownloadSpreadsheet log={log} />
-                <PrintMilageLog log={log} />
-                <GeneratePDF log={log} />
-              </Stack>
+              {subscriptionStatus === "active" && (
+                <Stack justify="flex-start">
+                  <DownloadSpreadsheet log={log} />
+                  <PrintMilageLog log={log} />
+                  <GeneratePDF log={log} />
+                </Stack>
+              )}
 
               <Group justify="apart">
                 <Text fw={500} c="dimmed">
@@ -235,9 +241,13 @@ export function MileageLogDisplay({ log }: { log: MileageLog }) {
           <>
             <Paper p="lg" radius="sm" withBorder shadow="xs" w="100%">
               <Group justify="flex-end" mb="xl" gap="xs">
-                <DownloadSpreadsheet log={log} />
-                <GeneratePDF log={log} />
-                <PrintMilageLog log={log} />
+                {subscriptionStatus === "active" && (
+                  <Group justify="flex-start">
+                    <DownloadSpreadsheet log={log} />
+                    <GeneratePDF log={log} />
+                    <PrintMilageLog log={log} />
+                  </Group>
+                )}
               </Group>
               <Group grow align="flex-start" gap="xs">
                 <Stack gap="md">
