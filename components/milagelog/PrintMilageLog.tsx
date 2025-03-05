@@ -520,7 +520,7 @@ export function PrintMilageLog({ log }: PrintMilageLogProps) {
     <Button
       leftSection={<IconPrinter size={16} />}
       onClick={() => printMileageLog(log)}
-      variant="light"
+      variant="transparent"
       size={isMobile ? "md" : "sm"}
       fullWidth={isMobile}
     >

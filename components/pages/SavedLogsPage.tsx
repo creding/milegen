@@ -1,7 +1,13 @@
 "use client";
 
-import { MileageLog } from "@/types/mileage";
-import { IconEye, IconPrinter, IconTrash, IconPlus, IconFileOff } from "@tabler/icons-react";
+import { MileageLog } from "@/app/actions/mileageGenerator";
+import {
+  IconEye,
+  IconPrinter,
+  IconTrash,
+  IconPlus,
+  IconFileOff,
+} from "@tabler/icons-react";
 import { deleteMileageLog } from "@/app/actions/deleteMileageLog";
 import { notifications } from "@mantine/notifications";
 import Link from "next/link";
@@ -60,14 +66,15 @@ export const SavedLogsPage = ({ logs }: { logs: MileageLog[] }) => {
           </ThemeIcon>
           <Title order={3}>No Mileage Logs Found</Title>
           <Text c="dimmed" ta="center" maw={400}>
-            You haven't created any mileage logs yet. Create your first log to track your business mileage for tax deductions.
+            You haven't created any mileage logs yet. Create your first log to
+            track your business mileage for tax deductions.
           </Text>
-          <Button 
-            component={Link} 
-            href="/generator" 
+          <Button
+            component={Link}
+            href="/generator"
             leftSection={<IconPlus size="1rem" />}
             variant="gradient"
-            gradient={{ from: 'blue', to: 'cyan' }}
+            gradient={{ from: "blue", to: "cyan" }}
             mt="md"
           >
             Create Your First Log
@@ -78,7 +85,7 @@ export const SavedLogsPage = ({ logs }: { logs: MileageLog[] }) => {
   );
 
   return (
-    <Container size="xl" py="xl" mt={20}>
+    <Container size="xl" py="xl">
       <Card withBorder>
         <Stack gap="md" mb="md">
           <Title order={2}>Saved Mileage Logs</Title>
@@ -101,8 +108,8 @@ export const SavedLogsPage = ({ logs }: { logs: MileageLog[] }) => {
               </TableTr>
             </TableThead>
             <TableTbody>
-              {logs?.map((log) => (
-                <TableTr key={log.id}>
+              {logs?.map((log, index) => (
+                <TableTr key={`${log.start_date}-${index}`}>
                   <TableTd>
                     {new Date(log.start_date).toLocaleDateString()} -{" "}
                     {new Date(log.end_date).toLocaleDateString()}
@@ -130,7 +137,9 @@ export const SavedLogsPage = ({ logs }: { logs: MileageLog[] }) => {
                         <IconPrinter size="1.125rem" />
                       </ActionIcon>
                       <ActionIcon
-                        onClick={() => handleDelete(log.id as string, log.user_id as string)}
+                        onClick={() =>
+                          handleDelete(log.id as string, log.user_id as string)
+                        }
                         variant="subtle"
                         color="red"
                         size="lg"

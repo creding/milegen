@@ -1,19 +1,16 @@
 "use client";
 
-import { useReducer, useRef, useState } from "react";
+import { useState } from "react";
 import { notifications } from "@mantine/notifications";
 import { saveMileageLog as saveMileageLogApi } from "@/app/actions/saveMileageLog";
 import type { MileageLog } from "@/app/actions/mileageGenerator";
 import { MileageLogDisplay } from "@/components/milagelog/MileageLogDisplay";
-import { PrintMilageLog } from "@/components/milagelog/PrintMilageLog";
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
+
 import {
   IconCheck,
   IconDeviceFloppy,
   IconX,
   IconRefresh,
-  IconFileDownload,
 } from "@tabler/icons-react";
 import {
   Button,
@@ -29,6 +26,7 @@ import { MileageForm } from "@/components/milagelog/MileageForm";
 import { User } from "@supabase/supabase-js";
 import { useMediaQuery } from "@mantine/hooks";
 import { generateMileageLogFromForm } from "@/app/actions/mileageGenerator";
+import { DownloadSpreadsheet } from "@/components/milagelog/DownloadSpreadsheet";
 
 export const GeneratorPage = ({
   user,
@@ -56,8 +54,7 @@ export const GeneratorPage = ({
   const [isSaving, setIsSaving] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [showForm, setShowForm] = useState(true);
-  const [isDownloading, setIsDownloading] = useState(false);
-  const pdfRef = useRef<HTMLDivElement>(null);
+
   const handleGenerateMileageLog = async () => {
     const start = parseInt(startMileage);
     const end = parseInt(endMileage);
@@ -162,47 +159,6 @@ export const GeneratorPage = ({
       setIsSaving(false);
     }
   };
-  const setDownloadingPDF = async () => {
-    setIsDownloading(true);
-    return isDownloading;
-  };
-
-  const generatePDF = async () => {
-    if (!pdfRef.current) return;
-    await setDownloadingPDF();
-    try {
-      const canvas = await html2canvas(pdfRef.current, {
-        scale: 1, // Ensures high resolution
-        useCORS: true,
-        windowWidth: pdfRef.current.scrollWidth,
-        windowHeight: pdfRef.current.scrollHeight,
-      });
-
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF("p", "mm", "a4");
-
-      const imgWidth = 210;
-      const pageHeight = 297;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let position = 0;
-
-      while (position < imgHeight) {
-        pdf.addImage(imgData, "PNG", 0, position * -1, imgWidth, imgHeight);
-        position += pageHeight;
-        if (position < imgHeight) pdf.addPage();
-      }
-
-      pdf.save("my-document.pdf");
-      setIsDownloading(false);
-    } catch (error) {
-      console.error("PDF Generation Error:", error);
-      setIsDownloading(false);
-    }
-  };
-
-  if (!user) {
-    return null;
-  }
 
   return (
     <Container size="xl" mt={20} py="xl" px={isMobile ? "xs" : "md"}>
@@ -238,96 +194,33 @@ export const GeneratorPage = ({
         </Card>
       ) : null}
 
-      {mileageLog && mileageLog.log_entries.length > 0 && (
-        <Card withBorder mt="md" mb="md">
-          <Group justify="space-between" mb="md" wrap="wrap">
-            <Title order={2} size={isMobile ? "h3" : "h2"}>
-              Mileage Log Details
-            </Title>
-            {isMobile ? (
-              <Stack w="100%" mt="sm">
-                <PrintMilageLog log={mileageLog} />
-                <Group grow>
-                  {user && (
-                    <Button
-                      leftSection={<IconDeviceFloppy />}
-                      onClick={saveMileageLog}
-                      disabled={isSaving}
-                      variant="gradient"
-                      size={isMobile ? "md" : "sm"}
-                    >
-                      {isSaving ? "Saving..." : "Save Log"}
-                    </Button>
-                  )}
-                  <Button
-                    leftSection={<IconRefresh />}
-                    onClick={handleNewLog}
-                    size={isMobile ? "md" : "sm"}
-                    variant="light"
-                  >
-                    Generate New Log
-                  </Button>
-                  <Button
-                    leftSection={<IconFileDownload />}
-                    onClick={generatePDF}
-                    loading={isDownloading}
-                    size={isMobile ? "md" : "sm"}
-                    variant="light"
-                  >
-                    Download PDF
-                  </Button>
-                </Group>
-              </Stack>
-            ) : (
-              <Group justify="flex-end" mt="md" mb="md">
+      {!showForm && mileageLog && (
+        <Card radius="md" withBorder>
+          <Stack>
+            <Group justify="space-between">
+              <Title order={2}>Generated Mileage Log</Title>
+              <Group>
                 <Button
-                  leftSection={<IconRefresh />}
+                  variant="light"
+                  leftSection={<IconRefresh size={20} />}
                   onClick={handleNewLog}
                   size={isMobile ? "md" : "sm"}
-                  variant="light"
                 >
-                  Generate New Log
+                  New
                 </Button>
-                <PrintMilageLog log={mileageLog} />
                 <Button
-                  leftSection={<IconFileDownload />}
-                  onClick={generatePDF}
-                  loading={isDownloading}
-                  size={isMobile ? "md" : "sm"}
+                  loading={isSaving}
                   variant="light"
+                  leftSection={<IconDeviceFloppy size={20} />}
+                  onClick={saveMileageLog}
+                  size={isMobile ? "md" : "sm"}
                 >
-                  Download PDF
+                  Save
                 </Button>
-
-                {user && (
-                  <Button
-                    leftSection={<IconDeviceFloppy />}
-                    onClick={saveMileageLog}
-                    disabled={isSaving}
-                    variant="light"
-                    size={isMobile ? "md" : "sm"}
-                  >
-                    {isSaving ? "Saving..." : "Save Log"}
-                  </Button>
-                )}
               </Group>
-            )}
-          </Group>
-          <div ref={pdfRef}>
-            <MileageLogDisplay
-              startDate={startDate}
-              endDate={endDate}
-              totalMileage={mileageLog.total_mileage}
-              totalBusinessMiles={mileageLog.total_business_miles}
-              totalPersonalMiles={mileageLog.total_personal_miles}
-              startMileage={mileageLog.start_mileage}
-              endMileage={mileageLog.end_mileage}
-              businessDeductionRate={mileageLog.business_deduction_rate}
-              businessDeductionAmount={mileageLog.business_deduction_amount}
-              vehicleInfo={mileageLog.vehicle_info}
-              mileageLog={mileageLog.log_entries}
-            />
-          </div>
+            </Group>
+            <MileageLogDisplay log={mileageLog} />
+          </Stack>
         </Card>
       )}
     </Container>

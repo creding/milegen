@@ -48,6 +48,8 @@ export interface MileageLog {
     business_type: string;
   }[];
   business_type: string;
+  id?: string;
+  user_id?: string;
 }
 
 export interface MileageEntry {
@@ -77,11 +79,11 @@ const CONFIG = {
   MILES_PER_TRIP: {
     business: {
       min: 2.3,
-      max: 12.7,
+      max: 25.7,
     },
     personal: {
       min: 1.8,
-      max: 25.4,
+      max: 40.4,
     },
   },
   WEEKEND_MILES_RATIO: 0.4,
@@ -200,7 +202,7 @@ async function distributeMileageAcrossDays(
   while (currentDate <= endDate) {
     const isWorkingDay = await isWorkday(currentDate);
     dates.push({ date: new Date(currentDate), isWorkday: isWorkingDay });
-    
+
     if (isWorkingDay) {
       workdays++;
     } else {
@@ -213,8 +215,12 @@ async function distributeMileageAcrossDays(
   const dailyBusinessMiles = roundMiles(targetBusinessMiles / workdays);
 
   // Distribute personal miles with more on non-workdays
-  const workdayPersonalMiles = roundMiles((totalPersonalMiles * 0.3) / workdays); // 30% on workdays
-  const nonWorkdayPersonalMiles = roundMiles((totalPersonalMiles * 0.7) / nonWorkdays); // 70% on non-workdays
+  const workdayPersonalMiles = roundMiles(
+    (totalPersonalMiles * 0.3) / workdays
+  ); // 30% on workdays
+  const nonWorkdayPersonalMiles = roundMiles(
+    (totalPersonalMiles * 0.7) / nonWorkdays
+  ); // 70% on non-workdays
 
   let totalBusinessAssigned = 0;
   let totalPersonalAssigned = 0;
@@ -226,21 +232,33 @@ async function distributeMileageAcrossDays(
 
     if (isWorkday) {
       // Workday: business miles + some personal miles
-      businessMiles = roundMiles(dailyBusinessMiles * (0.9 + Math.random() * 0.2)); // ±10% variation
-      personalMiles = roundMiles(workdayPersonalMiles * (0.8 + Math.random() * 0.4)); // ±20% variation
+      businessMiles = roundMiles(
+        dailyBusinessMiles * (0.9 + Math.random() * 0.2)
+      ); // ±10% variation
+      personalMiles = roundMiles(
+        workdayPersonalMiles * (0.8 + Math.random() * 0.4)
+      ); // ±20% variation
 
       // Ensure we don't exceed remaining miles
-      const remainingBusiness = roundMiles(targetBusinessMiles - totalBusinessAssigned);
-      const remainingPersonal = roundMiles(totalPersonalMiles - totalPersonalAssigned);
+      const remainingBusiness = roundMiles(
+        targetBusinessMiles - totalBusinessAssigned
+      );
+      const remainingPersonal = roundMiles(
+        totalPersonalMiles - totalPersonalAssigned
+      );
 
       businessMiles = Math.min(businessMiles, remainingBusiness);
       personalMiles = Math.min(personalMiles, remainingPersonal);
     } else {
       // Non-workday (weekend/holiday): only personal miles
-      personalMiles = roundMiles(nonWorkdayPersonalMiles * (0.7 + Math.random() * 0.6)); // ±30% variation
-      
+      personalMiles = roundMiles(
+        nonWorkdayPersonalMiles * (0.7 + Math.random() * 0.6)
+      ); // ±30% variation
+
       // Ensure we don't exceed remaining personal miles
-      const remainingPersonal = roundMiles(totalPersonalMiles - totalPersonalAssigned);
+      const remainingPersonal = roundMiles(
+        totalPersonalMiles - totalPersonalAssigned
+      );
       personalMiles = Math.min(personalMiles, remainingPersonal);
 
       // Randomly skip some non-workdays (20% chance)
@@ -265,15 +283,23 @@ async function distributeMileageAcrossDays(
   }
 
   // If we have any remaining miles due to rounding, add them to appropriate days
-  const remainingBusiness = roundMiles(targetBusinessMiles - totalBusinessAssigned);
-  const remainingPersonal = roundMiles(totalPersonalMiles - totalPersonalAssigned);
+  const remainingBusiness = roundMiles(
+    targetBusinessMiles - totalBusinessAssigned
+  );
+  const remainingPersonal = roundMiles(
+    totalPersonalMiles - totalPersonalAssigned
+  );
 
   if (remainingBusiness > 0) {
     // Add remaining business miles to the last workday
     for (let i = dailyTargets.length - 1; i >= 0; i--) {
       if (dailyTargets[i].isWorkday) {
-        dailyTargets[i].targetMiles = roundMiles(dailyTargets[i].targetMiles + remainingBusiness);
-        dailyTargets[i].targetBusinessMiles = roundMiles(dailyTargets[i].targetBusinessMiles + remainingBusiness);
+        dailyTargets[i].targetMiles = roundMiles(
+          dailyTargets[i].targetMiles + remainingBusiness
+        );
+        dailyTargets[i].targetBusinessMiles = roundMiles(
+          dailyTargets[i].targetBusinessMiles + remainingBusiness
+        );
         break;
       }
     }
@@ -284,7 +310,9 @@ async function distributeMileageAcrossDays(
     let added = false;
     for (let i = dailyTargets.length - 1; i >= 0; i--) {
       if (!dailyTargets[i].isWorkday) {
-        dailyTargets[i].targetMiles = roundMiles(dailyTargets[i].targetMiles + remainingPersonal);
+        dailyTargets[i].targetMiles = roundMiles(
+          dailyTargets[i].targetMiles + remainingPersonal
+        );
         added = true;
         break;
       }

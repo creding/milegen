@@ -4,7 +4,7 @@ export interface MileageEntry {
   end_mileage: number;
   miles: number;
   purpose: string;
-  type: 'business' | 'personal';
+  type: "business" | "personal";
   vehicle_info: string;
   business_type?: string;
   location?: string;
@@ -22,5 +22,7 @@ export interface MileageLog {
   business_deduction_amount: number;
   vehicle_info: string;
   log_entries: MileageEntry[];
-  business_type?: string;
+  business_type: string;
+  id?: string;
+  user_id?: string;
 }
