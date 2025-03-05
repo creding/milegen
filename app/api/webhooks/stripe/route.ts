@@ -13,23 +13,38 @@ const relevantEvents = new Set([
 export async function POST(req: Request) {
   const body = await req.text();
   const headersList = await headers();
-  const sig = headersList.get("Stripe-Signature");
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  const sig = headersList.get("stripe-signature");
+
+  if (!sig) {
+    return NextResponse.json(
+      { error: "Missing stripe-signature header" },
+      { status: 400 }
+    );
+  }
 
   let event: Stripe.Event;
 
   try {
-    if (!sig || !webhookSecret) {
+    if (!process.env.STRIPE_WEBHOOK_SECRET) {
+      throw new Error(
+        "Missing STRIPE_WEBHOOK_SECRET. Add webhook secret to environment variables"
+      );
+    }
+    event = stripe.webhooks.constructEvent(
+      body,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET
+    );
+  } catch (err) {
+    if (err instanceof Error) {
+      console.error(`Error message: ${err.message}`);
       return NextResponse.json(
-        { error: "Missing signature or webhook secret" },
+        { error: `Webhook Error: ${err.message}` },
         { status: 400 }
       );
     }
-    event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
-  } catch (err: any) {
-    console.log(`❌ Error message: ${err.message}`);
     return NextResponse.json(
-      { error: `Webhook Error: ${err.message}` },
+      { error: "Unknown webhook error" },
       { status: 400 }
     );
   }
@@ -41,17 +56,22 @@ export async function POST(req: Request) {
       switch (event.type) {
         case "checkout.session.completed": {
           const session = event.data.object as Stripe.Checkout.Session;
-          
-          if (!session?.customer || typeof session.customer !== 'string') {
-            throw new Error('Missing customer ID');
+
+          if (!session?.customer || typeof session.customer !== "string") {
+            throw new Error("Missing customer ID");
           }
 
-          if (!session?.subscription || typeof session.subscription !== 'string') {
-            throw new Error('Missing subscription ID');
+          if (
+            !session?.subscription ||
+            typeof session.subscription !== "string"
+          ) {
+            throw new Error("Missing subscription ID");
           }
 
           // Get subscription details to get current period
-          const subscription = await stripe.subscriptions.retrieve(session.subscription);
+          const subscription = await stripe.subscriptions.retrieve(
+            session.subscription
+          );
 
           // Create or update subscription record
           const { error: upsertError } = await supabase
@@ -81,7 +101,7 @@ export async function POST(req: Request) {
           const subscription = event.data.object as Stripe.Subscription;
 
           if (!subscription?.id) {
-            throw new Error('Missing subscription ID');
+            throw new Error("Missing subscription ID");
           }
 
           // Update subscription record

@@ -12,7 +12,6 @@ import {
   ModalTitle,
   ModalCloseButton,
   ModalBody,
-  Title,
   Alert,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";

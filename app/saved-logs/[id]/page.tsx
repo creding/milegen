@@ -1,10 +1,7 @@
 import { MileageLogDisplay } from "@/components/milagelog/MileageLogDisplay";
 import type { MileageLog } from "@/app/actions/mileageGenerator";
 import { createClient } from "@/lib/supabaseServerClient";
-import { Card, Container, Title, Text, Group, Button } from "@mantine/core";
-import { PrintMilageLog } from "@/components/milagelog/PrintMilageLog";
-import { DownloadSpreadsheet } from "@/components/milagelog/DownloadSpreadsheet";
-import { IconFileDownload } from "@tabler/icons-react";
+import { Card, Container, Title, Text, Group } from "@mantine/core";
 
 type SSRParams = {
   id: string;

@@ -2,7 +2,6 @@
 
 import { createClient } from "@/lib/supabaseServerClient";
 import { stripe } from "@/lib/stripe";
-import { redirect } from "next/navigation";
 
 export type CheckoutSessionResult =
   | { url: string }

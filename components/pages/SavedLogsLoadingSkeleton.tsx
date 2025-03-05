@@ -3,8 +3,6 @@
 import {
   Card,
   Container,
-  Title,
-  Text,
   Stack,
   Skeleton,
   Table,

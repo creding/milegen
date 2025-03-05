@@ -7,7 +7,6 @@ import {
   Text,
   View,
   StyleSheet,
-  BlobProvider,
   Font,
   pdf,
 } from "@react-pdf/renderer";

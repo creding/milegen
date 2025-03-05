@@ -30,7 +30,6 @@ import {
   Center,
   Paper,
   ThemeIcon,
-  Box,
 } from "@mantine/core";
 
 export const SavedLogsPage = ({ logs }: { logs: MileageLog[] }) => {
@@ -66,8 +65,8 @@ export const SavedLogsPage = ({ logs }: { logs: MileageLog[] }) => {
           </ThemeIcon>
           <Title order={3}>No Mileage Logs Found</Title>
           <Text c="dimmed" ta="center" maw={400}>
-            You haven't created any mileage logs yet. Create your first log to
-            track your business mileage for tax deductions.
+            You haven&apos;t created any mileage logs yet. Create your first log
+            to track your business mileage for tax deductions.
           </Text>
           <Button
             component={Link}

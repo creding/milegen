@@ -24,9 +24,10 @@ import {
   IconPlus,
   IconNotes,
 } from "@tabler/icons-react";
+import { User } from "@supabase/supabase-js";
 
 interface MobileNavProps {
-  user: any;
+  user: User | null;
   subscriptionStatus: string;
 }
 

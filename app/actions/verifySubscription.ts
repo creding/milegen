@@ -2,7 +2,6 @@
 
 import { createClient } from "@/lib/supabaseServerClient";
 import { stripe } from "@/lib/stripe";
-import { revalidatePath } from "next/cache";
 import type { SubscriptionVerificationResult } from "@/types/subscription";
 
 export async function verifySubscriptionAction(
@@ -56,7 +55,6 @@ export async function verifySubscriptionAction(
       stripe_customer_id: subscription.customer,
       plan_id: subscription.items.data[0].price.id,
     };
-    console.log("Upserting subscription data:", subscriptionData);
 
     try {
       const { error: upsertError } = await supabase
@@ -71,9 +69,11 @@ export async function verifySubscriptionAction(
       }
     } catch (upsertError) {
       console.error("Subscription upsert error:", upsertError);
-      throw new Error(
-        `Failed to update subscription status: ${upsertError.message}`
-      );
+      if (upsertError instanceof Error) {
+        throw new Error(
+          `Failed to update subscription status: ${upsertError.message}`
+        );
+      }
     }
 
     return { success: true };

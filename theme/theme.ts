@@ -46,7 +46,7 @@ export const theme = createTheme({
       },
       styles: {
         root: {
-          '&[data-variant="filled"]': {
+          '&[dataVariant="filled"]': {
             background: lightBlue,
             color: "white",
             fontWeight: 500,
@@ -61,7 +61,7 @@ export const theme = createTheme({
               transform: "translateY(0)",
             },
           },
-          '&[data-variant="light"]': {
+          '&[dataVariant="light"]': {
             background: "#f0f9ff",
             color: lightBlue,
             fontWeight: 500,
@@ -70,7 +70,7 @@ export const theme = createTheme({
               background: "#e0f2fe",
             },
           },
-          '&[data-variant="gradient"]': {
+          '&[dataVariant="gradient"]': {
             background: `linear-gradient(135deg, ${lightBlue} 0%, ${lightTeal} 100%)`,
             color: "white",
             fontWeight: 500,
@@ -82,7 +82,7 @@ export const theme = createTheme({
               filter: "brightness(105%)",
             },
           },
-          '&[data-variant="outline"]': {
+          '&[dataVariant="outline"]': {
             border: `2px solid ${lightBlue}`,
             color: lightBlue,
             fontWeight: 500,
@@ -116,7 +116,7 @@ export const theme = createTheme({
           borderRadius: "md",
           fontWeight: 500,
           color: lightBlue,
-          "&[data-active]": {
+          "&[dataActive]": {
             background: "#f0f9ff",
             color: lightBlue,
             "&:hover": {
@@ -133,7 +133,7 @@ export const theme = createTheme({
     Text: {
       styles: {
         root: {
-          '&[data-variant="gradient"]': {
+          '&[dataVariant="gradient"]': {
             background: `linear-gradient(135deg, ${lightBlue} 0%, ${lightTeal} 100%)`,
             backgroundClip: "text",
             WebkitBackgroundClip: "text",
@@ -162,7 +162,7 @@ export const theme = createTheme({
     },
     Input: {
       defaultProps: {
-        radius: "xl",
+        radius: "md",
       },
       styles: {
         input: {
@@ -177,7 +177,7 @@ export const theme = createTheme({
     },
     Select: {
       defaultProps: {
-        radius: "xl",
+        radius: "md",
       },
       styles: {
         input: {

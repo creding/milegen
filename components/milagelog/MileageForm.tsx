@@ -1,21 +1,7 @@
 "use client";
 
 import { DatePickerInput } from "@mantine/dates";
-import {
-  TextInput,
-  Textarea,
-  Alert,
-  Group,
-  Button,
-  Stack,
-  Box,
-  Text,
-  Flex,
-  Select,
-  List,
-} from "@mantine/core";
-import Link from "next/link";
-import { IconInfoCircle, IconCrown, IconCheck } from "@tabler/icons-react";
+import { TextInput, Group, Button, Stack, Box, Select } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
 import { useForm, isNotEmpty } from "@mantine/form";
 import { CustomInputWrapper } from "../form/CustomInputWrapper";
@@ -113,15 +99,6 @@ export function MileageForm({
     },
   });
 
-  // Sync form values with parent component
-  const handleFormChange = (values: FormValues) => {
-    onStartMileageChange(values.startMileage);
-    onEndMileageChange(values.endMileage);
-    onTotalPersonalMilesChange(values.totalPersonalMiles);
-    onVehicleChange(values.vehicle);
-    onBusinessTypeChange(values.businessType);
-  };
-
   // Handle date changes separately since they're not string values
   const handleStartDateChange = (date: Date) => {
     form.setFieldValue("startDate", date);
@@ -153,9 +130,7 @@ export function MileageForm({
 
   return (
     <Box p="md">
-      {subscriptionStatus !== "active" && (
-        <SubscriptionAlert mb="md" />
-      )}
+      {subscriptionStatus !== "active" && <SubscriptionAlert mb="md" />}
 
       <form onSubmit={form.onSubmit(handleSubmit)}>
         <Stack gap={isMobile ? "xs" : "md"}>

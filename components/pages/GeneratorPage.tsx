@@ -26,7 +26,6 @@ import { MileageForm } from "@/components/milagelog/MileageForm";
 import { User } from "@supabase/supabase-js";
 import { useMediaQuery } from "@mantine/hooks";
 import { generateMileageLogFromForm } from "@/app/actions/mileageGenerator";
-import { DownloadSpreadsheet } from "@/components/milagelog/DownloadSpreadsheet";
 
 export const GeneratorPage = ({
   user,
@@ -161,7 +160,7 @@ export const GeneratorPage = ({
   };
 
   return (
-    <Container size="xl" mt={20} py="xl" px={isMobile ? "xs" : "md"}>
+    <Container size="xl" py="xl" px={isMobile ? "xs" : "md"}>
       {showForm ? (
         <Card withBorder pos="relative">
           <LoadingOverlay visible={isGenerating} overlayProps={{ blur: 2 }} />

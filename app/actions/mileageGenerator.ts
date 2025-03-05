@@ -16,16 +16,6 @@ interface MileageGeneratorParams {
   totalPersonalMiles: number;
 }
 
-interface TripEntry {
-  startMileage: number;
-  endMileage: number;
-  miles: number;
-  purpose: string;
-  date: string;
-  startTime: string;
-  endTime: string;
-}
-
 export interface MileageLog {
   start_date: string;
   end_date: string;
@@ -90,11 +80,6 @@ const CONFIG = {
   DECIMAL_PLACES: 1,
 };
 
-// Helper functions
-async function getRandomInt(min: number, max: number): Promise<number> {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
 async function isHoliday(date: Date): Promise<boolean> {
   const year = date.getFullYear();
   const dateString = format(date, "yyyy-MM-dd");
@@ -151,8 +136,7 @@ async function generateMileageLog(
       dailyTarget.targetBusinessMiles,
       currentMileage,
       businessType,
-      vehicleInfo,
-      dailyTarget.isWorkday
+      vehicleInfo
     );
 
     entries.push(...tripsForDay);
@@ -197,7 +181,7 @@ async function distributeMileageAcrossDays(
   // Count workdays and non-workdays
   let workdays = 0;
   let nonWorkdays = 0;
-  let dates: { date: Date; isWorkday: boolean }[] = [];
+  const dates: { date: Date; isWorkday: boolean }[] = [];
 
   while (currentDate <= endDate) {
     const isWorkingDay = await isWorkday(currentDate);
@@ -333,8 +317,7 @@ async function generateTripsForDay(
   targetBusinessMiles: number,
   startMileage: number,
   businessType: string,
-  vehicleInfo: string,
-  isWorkday: boolean
+  vehicleInfo: string
 ): Promise<MileageEntry[]> {
   const trips: MileageEntry[] = [];
   let currentMileage = startMileage;

@@ -125,9 +125,7 @@ export function StepsSection() {
                     component={Link}
                     href="/?signup=true"
                     rightSection={<IconChevronRight size="1rem" />}
-                    style={{
-                      backgroundColor: "#3498db",
-                    }}
+                    variant="gradient"
                   >
                     Create Your First Log
                   </Button>

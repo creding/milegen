@@ -1,4 +1,4 @@
-import { Anchor, Chip, Group, Pill } from "@mantine/core";
+import { Anchor, Chip, Group } from "@mantine/core";
 import { IconUser } from "@tabler/icons-react";
 import Link from "next/link";
 

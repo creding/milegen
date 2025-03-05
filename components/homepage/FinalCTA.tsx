@@ -25,12 +25,7 @@ export function FinalCTA() {
           <Button
             size="xl"
             radius="md"
-            style={{
-              background: "linear-gradient(to right, #3498db, #39c0ba)",
-              boxShadow: "0 4px 14px rgba(0, 0, 0, 0.15)",
-              transition: "all 0.2s ease",
-              fontSize: "1.2rem",
-            }}
+            variant="gradient"
             component={Link}
             href="/?signup=true"
             rightSection={<IconChevronRight size="1.2rem" />}

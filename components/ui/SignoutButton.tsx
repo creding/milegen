@@ -1,7 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabaseBrowserClient";
-import { Anchor, Button } from "@mantine/core";
+import { Anchor } from "@mantine/core";
 import { useRouter } from "next/navigation";
 
 export function SignoutButton() {
