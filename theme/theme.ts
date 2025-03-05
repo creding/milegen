@@ -1,26 +1,39 @@
 import { createTheme, MantineColorsTuple } from "@mantine/core";
 
-// Define our brand colors
-const brandBlue = "#3498db";
-const brandTeal = "#39c0ba";
+// Light, modern color palette
+const lightBlue = "#66abdb"; // Light blue from our gradient
+const lightTeal = "#66c0bd"; // Light teal from our gradient
 
-// Create a custom teal color tuple
 const teal: MantineColorsTuple = [
-  "#e6fcfa",
-  "#ccf9f6",
-  "#99f3ed",
-  "#66ede4",
-  "#33e7db",
-  "#1ae3d5",
-  "#00dfcf",
-  "#00b2a6",
-  "#00867d",
-  "#005953",
+  "#f0fdfa",
+  "#ccfbf1",
+  "#99f6e4",
+  "#66c0bd", // Our light teal
+  "#2dd4bf",
+  "#14b8a6",
+  "#0d9488",
+  "#0f766e",
+  "#115e59",
+  "#134e4a",
+];
+
+const blue: MantineColorsTuple = [
+  "#f0f9ff",
+  "#e0f2fe",
+  "#bae6fd",
+  "#66abdb", // Our light blue
+  "#38bdf8",
+  "#0ea5e9",
+  "#0284c7",
+  "#0369a1",
+  "#075985",
+  "#0c4a6e",
 ];
 
 export const theme = createTheme({
-  primaryColor: "teal",
+  primaryColor: "blue",
   colors: {
+    blue,
     teal,
   },
   defaultRadius: "md",
@@ -33,92 +46,161 @@ export const theme = createTheme({
       },
       styles: {
         root: {
-          '&[dataVariant="gradient"]': {
-            background: "linear-gradient(45deg, #3498db, #39c0ba)",
+          '&[data-variant="filled"]': {
+            background: lightBlue,
             color: "white",
-            fontWeight: 600,
-            boxShadow: "0 4px 14px rgba(0, 0, 0, 0.15)",
-            transition: "transform 0.2s, box-shadow 0.2s",
+            fontWeight: 500,
+            boxShadow: "0 2px 10px rgba(102, 171, 219, 0.3)",
+            transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
             "&:hover": {
-              transform: "translateY(-2px)",
-              boxShadow: "0 6px 18px rgba(0, 0, 0, 0.2)",
+              background: "#5499c9",
+              transform: "translateY(-1px)",
+              boxShadow: "0 4px 20px rgba(102, 171, 219, 0.4)",
+            },
+            "&:active": {
+              transform: "translateY(0)",
             },
           },
-          '&[dataVariant="outlineBrand"]': {
-            border: `1px solid ${brandTeal}`,
-            color: brandTeal,
-            fontWeight: 600,
-            transition:
-              "transform 0.2s, box-shadow 0.2s, background-color 0.2s",
+          '&[data-variant="light"]': {
+            background: "#f0f9ff",
+            color: lightBlue,
+            fontWeight: 500,
+            transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
             "&:hover": {
-              transform: "translateY(-2px)",
-              boxShadow: "0 6px 18px rgba(0, 0, 0, 0.1)",
-              backgroundColor: "rgba(57, 192, 186, 0.1)",
-              borderColor: brandTeal,
+              background: "#e0f2fe",
             },
           },
+          '&[data-variant="gradient"]': {
+            background: `linear-gradient(135deg, ${lightBlue} 0%, ${lightTeal} 100%)`,
+            color: "white",
+            fontWeight: 500,
+            boxShadow: "0 2px 10px rgba(102, 171, 219, 0.2)",
+            transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+            "&:hover": {
+              transform: "translateY(-1px)",
+              boxShadow: "0 4px 20px rgba(102, 171, 219, 0.3)",
+              filter: "brightness(105%)",
+            },
+          },
+          '&[data-variant="outline"]': {
+            border: `2px solid ${lightBlue}`,
+            color: lightBlue,
+            fontWeight: 500,
+            transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+            "&:hover": {
+              background: "#f0f9ff",
+            },
+          },
+        },
+      },
+    },
+    Card: {
+      defaultProps: {
+        radius: "lg",
+        p: "xl",
+      },
+      styles: {
+        root: {
+          backgroundColor: "white",
+          transition: "transform 0.2s ease, box-shadow 0.2s ease",
+          "&:hover": {
+            transform: "translateY(-2px)",
+            boxShadow: "0 8px 30px rgba(102, 171, 219, 0.1)",
+          },
+        },
+      },
+    },
+    NavLink: {
+      styles: {
+        root: {
+          borderRadius: "md",
+          fontWeight: 500,
+          color: lightBlue,
+          "&[data-active]": {
+            background: "#f0f9ff",
+            color: lightBlue,
+            "&:hover": {
+              background: "#e0f2fe",
+            },
+          },
+          "&:hover": {
+            background: "#f0f9ff",
+          },
+          transition: "all 0.2s ease",
         },
       },
     },
     Text: {
       styles: {
         root: {
-          '&[dataVariant="gradient"]': {
-            background: "linear-gradient(45deg, #3498db, #39c0ba)",
+          '&[data-variant="gradient"]': {
+            background: `linear-gradient(135deg, ${lightBlue} 0%, ${lightTeal} 100%)`,
             backgroundClip: "text",
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent",
-            transition: "transform 0.2s",
-            "&:hover": {
-              transform: "translateY(-1px)",
-            },
+          },
+        },
+      },
+    },
+    Paper: {
+      defaultProps: {
+        radius: "lg",
+        p: "xl",
+        withBorder: true,
+      },
+      styles: {
+        root: {
+          border: "1px solid #e0f2fe",
+          backgroundColor: "white",
+          transition: "transform 0.2s ease, box-shadow 0.2s ease",
+          "&:hover": {
+            transform: "translateY(-2px)",
+            boxShadow: "0 8px 30px rgba(102, 171, 219, 0.1)",
+          },
+        },
+      },
+    },
+    Input: {
+      defaultProps: {
+        radius: "xl",
+      },
+      styles: {
+        input: {
+          border: "2px solid #e0f2fe",
+          transition: "all 0.2s ease",
+          "&:focus": {
+            borderColor: lightBlue,
+            boxShadow: "0 0 0 3px #e0f2fe",
+          },
+        },
+      },
+    },
+    Select: {
+      defaultProps: {
+        radius: "xl",
+      },
+      styles: {
+        input: {
+          border: "2px solid #e0f2fe",
+          transition: "all 0.2s ease",
+          "&:focus": {
+            borderColor: lightBlue,
+            boxShadow: "0 0 0 3px #e0f2fe",
           },
         },
       },
     },
     Anchor: {
-      defaultProps: {
-        color: brandBlue,
-      },
       styles: {
         root: {
-          background: "linear-gradient(45deg, #3498db, #39c0ba)",
-          backgroundClip: "text",
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
-          transition: "transform 0.2s",
-          "&:hover": {
-            textDecoration: "none",
-            transform: "translateY(-1px)",
-          },
-        },
-      },
-    },
-    NavLink: {
-      defaultProps: {
-        color: brandTeal,
-      },
-      styles: {
-        root: {
-          "&[dataActive]": {
-            background: "linear-gradient(45deg, #3498db, #39c0ba)",
-            color: "white",
-          },
-          "&:hover": {
-            background: "linear-gradient(45deg, #3498db, #39c0ba)",
-            color: "white",
-          },
-          transition: "all 0.2s",
-        },
-        label: {
+          color: lightBlue,
           fontWeight: 500,
+          transition: "all 0.2s ease",
+          "&:hover": {
+            color: "#5499c9",
+            textDecoration: "none",
+          },
         },
-      },
-    },
-    ThemeIcon: {
-      defaultProps: {
-        variant: "light",
-        color: "teal",
       },
     },
   },

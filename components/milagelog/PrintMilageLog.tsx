@@ -521,7 +521,6 @@ export function PrintMilageLog({ log }: PrintMilageLogProps) {
       leftSection={<IconPrinter size={16} />}
       onClick={() => printMileageLog(log)}
       variant="light"
-      color="blue"
       size={isMobile ? "md" : "sm"}
       fullWidth={isMobile}
     >

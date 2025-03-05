@@ -1,16 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useReducer, useRef, useState } from "react";
 import { notifications } from "@mantine/notifications";
 import { saveMileageLog as saveMileageLogApi } from "@/app/actions/saveMileageLog";
 import type { MileageLog } from "@/app/actions/mileageGenerator";
 import { MileageLogDisplay } from "@/components/milagelog/MileageLogDisplay";
 import { PrintMilageLog } from "@/components/milagelog/PrintMilageLog";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 import {
   IconCheck,
   IconDeviceFloppy,
   IconX,
   IconRefresh,
+  IconFileDownload,
 } from "@tabler/icons-react";
 import {
   Button,
@@ -53,7 +56,8 @@ export const GeneratorPage = ({
   const [isSaving, setIsSaving] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [showForm, setShowForm] = useState(true);
-
+  const [isDownloading, setIsDownloading] = useState(false);
+  const pdfRef = useRef<HTMLDivElement>(null);
   const handleGenerateMileageLog = async () => {
     const start = parseInt(startMileage);
     const end = parseInt(endMileage);
@@ -158,6 +162,43 @@ export const GeneratorPage = ({
       setIsSaving(false);
     }
   };
+  const setDownloadingPDF = async () => {
+    setIsDownloading(true);
+    return isDownloading;
+  };
+
+  const generatePDF = async () => {
+    if (!pdfRef.current) return;
+    await setDownloadingPDF();
+    try {
+      const canvas = await html2canvas(pdfRef.current, {
+        scale: 1, // Ensures high resolution
+        useCORS: true,
+        windowWidth: pdfRef.current.scrollWidth,
+        windowHeight: pdfRef.current.scrollHeight,
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+
+      const imgWidth = 210;
+      const pageHeight = 297;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let position = 0;
+
+      while (position < imgHeight) {
+        pdf.addImage(imgData, "PNG", 0, position * -1, imgWidth, imgHeight);
+        position += pageHeight;
+        if (position < imgHeight) pdf.addPage();
+      }
+
+      pdf.save("my-document.pdf");
+      setIsDownloading(false);
+    } catch (error) {
+      console.error("PDF Generation Error:", error);
+      setIsDownloading(false);
+    }
+  };
 
   if (!user) {
     return null;
@@ -226,11 +267,19 @@ export const GeneratorPage = ({
                   >
                     Generate New Log
                   </Button>
+                  <Button
+                    leftSection={<IconFileDownload />}
+                    onClick={generatePDF}
+                    loading={isDownloading}
+                    size={isMobile ? "md" : "sm"}
+                    variant="light"
+                  >
+                    Download PDF
+                  </Button>
                 </Group>
               </Stack>
             ) : (
               <Group justify="flex-end" mt="md" mb="md">
-                <PrintMilageLog log={mileageLog} />
                 <Button
                   leftSection={<IconRefresh />}
                   onClick={handleNewLog}
@@ -239,12 +288,23 @@ export const GeneratorPage = ({
                 >
                   Generate New Log
                 </Button>
+                <PrintMilageLog log={mileageLog} />
+                <Button
+                  leftSection={<IconFileDownload />}
+                  onClick={generatePDF}
+                  loading={isDownloading}
+                  size={isMobile ? "md" : "sm"}
+                  variant="light"
+                >
+                  Download PDF
+                </Button>
+
                 {user && (
                   <Button
                     leftSection={<IconDeviceFloppy />}
                     onClick={saveMileageLog}
                     disabled={isSaving}
-                    variant="gradient"
+                    variant="light"
                     size={isMobile ? "md" : "sm"}
                   >
                     {isSaving ? "Saving..." : "Save Log"}
@@ -253,19 +313,21 @@ export const GeneratorPage = ({
               </Group>
             )}
           </Group>
-          <MileageLogDisplay
-            startDate={startDate}
-            endDate={endDate}
-            totalMileage={mileageLog.total_mileage}
-            totalBusinessMiles={mileageLog.total_business_miles}
-            totalPersonalMiles={mileageLog.total_personal_miles}
-            startMileage={mileageLog.start_mileage}
-            endMileage={mileageLog.end_mileage}
-            businessDeductionRate={mileageLog.business_deduction_rate}
-            businessDeductionAmount={mileageLog.business_deduction_amount}
-            vehicleInfo={mileageLog.vehicle_info}
-            mileageLog={mileageLog.log_entries}
-          />
+          <div ref={pdfRef}>
+            <MileageLogDisplay
+              startDate={startDate}
+              endDate={endDate}
+              totalMileage={mileageLog.total_mileage}
+              totalBusinessMiles={mileageLog.total_business_miles}
+              totalPersonalMiles={mileageLog.total_personal_miles}
+              startMileage={mileageLog.start_mileage}
+              endMileage={mileageLog.end_mileage}
+              businessDeductionRate={mileageLog.business_deduction_rate}
+              businessDeductionAmount={mileageLog.business_deduction_amount}
+              vehicleInfo={mileageLog.vehicle_info}
+              mileageLog={mileageLog.log_entries}
+            />
+          </div>
         </Card>
       )}
     </Container>
