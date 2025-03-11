@@ -35,7 +35,7 @@ export function HeroSection() {
                   lineHeight: 1.1,
                 }}
               >
-                Effortless Mileage Logging. Unlimited Logs.
+                Simplify Your Mileage Tracking
               </Title>
               <Text
                 style={{
@@ -45,31 +45,30 @@ export function HeroSection() {
                   lineHeight: 1.2,
                 }}
               >
-                Just $9.99/Year.
+                Try it Now for Free
               </Text>
               <Text
                 size="md"
                 c="white"
                 style={{ fontSize: "1rem", maxWidth: "80%" }}
               >
-                Simplify your mileage tracking with Milegen. Built with modern
-                technology for a seamless experience.
+                Create a log with up to 10 entries. Subscribe to unlock full
+                access, including save, download, and print features.
               </Text>
             </Stack>
           </GridCol>
 
           <GridCol span={{ base: 12, md: 5 }}>
             <PriceCard
-              price="$9.99"
-              period="per year"
+              price="Start Free"
               features={[
-                "Unlimited Mileage Logs",
-                "Save, Print, & Download",
-                "Full Access",
+                "IRS-Compliant Logs",
+                "Instant Preview",
+                "No Credit Card Required",
               ]}
-              ctaText="Subscribe Now"
+              ctaText="Create Your First Log"
               ctaLink="/?signup=true"
-              footerText="Secure payment • Instant access"
+              footerText="Subscribe to unlock all features"
             />
           </GridCol>
         </Grid>

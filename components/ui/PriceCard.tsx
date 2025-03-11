@@ -13,7 +13,6 @@ import Link from "next/link";
 
 interface PriceCardProps {
   price: string;
-  period: string;
   features: string[];
   ctaText: string;
   ctaLink: string;
@@ -23,7 +22,6 @@ interface PriceCardProps {
 
 export function PriceCard({
   price,
-  period,
   features,
   ctaText,
   ctaLink,
@@ -70,10 +68,7 @@ export function PriceCard({
 
       <Box p="xl">
         <Stack align="center" gap="xs" mb="md">
-          <Text c="dimmed" size="sm" tt="uppercase" fw={500}>
-            Annual Plan
-          </Text>
-          <Group align="baseline" gap={5}>
+          <Group align="center" gap={5}>
             <Text
               variant="gradient"
               style={{
@@ -84,9 +79,6 @@ export function PriceCard({
             >
               {price}
             </Text>
-            <Text c="dimmed" size="lg" fw={500}>
-              /{period}
-            </Text>
           </Group>
         </Stack>
 
@@ -95,11 +87,7 @@ export function PriceCard({
         <Stack gap="sm" mb="xl">
           {features.map((feature, index) => (
             <Group key={index} gap="xs" align="flex-start">
-              <ThemeIcon
-                size={22}
-                radius="xl"
-                style={{ marginTop: 2 }}
-              >
+              <ThemeIcon size={22} radius="xl" style={{ marginTop: 2 }}>
                 <IconCheck size={14} />
               </ThemeIcon>
               <Text size="sm">{feature}</Text>
@@ -107,12 +95,7 @@ export function PriceCard({
           ))}
         </Stack>
 
-        <Button
-          variant="gradient"
-          component={Link}
-          href={ctaLink}
-          fullWidth
-        >
+        <Button variant="gradient" component={Link} href={ctaLink} fullWidth>
           {ctaText}
         </Button>
 
