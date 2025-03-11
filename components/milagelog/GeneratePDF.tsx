@@ -217,26 +217,28 @@ const MileageLogPDF = ({ log }: { log: MileageLog }) => (
 export function GeneratePDF({ log }: GeneratePDFProps) {
   const [opened, setOpened] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const isMobile = useMediaQuery("(max-width: 768px)");
+
   const downloadPDF = async () => {
+    if (loading) return;
+    setLoading(true);
+    setError(null);
+
     try {
-      console.log("Starting PDF generation...");
       const doc = <MileageLogPDF log={log} />;
-      console.log("Created PDF component");
-
       const blob = await pdf(doc).toBlob();
-      console.log("Generated PDF blob");
-
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
       link.download = `mileage-log-${log.start_date}-${log.end_date}.pdf`;
       link.click();
       URL.revokeObjectURL(url);
-      console.log("PDF downloaded successfully");
     } catch (err) {
       console.error("Error generating PDF:", err);
       setError(err instanceof Error ? err.message : "Failed to generate PDF");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -247,8 +249,10 @@ export function GeneratePDF({ log }: GeneratePDFProps) {
         size={isMobile ? "md" : "sm"}
         leftSection={<IconFileDownload size={16} />}
         onClick={downloadPDF}
+        loading={loading}
+        disabled={loading}
       >
-        Download PDF
+        {loading ? "Generating PDF..." : "Download PDF"}
       </Button>
 
       <Modal
@@ -272,8 +276,10 @@ export function GeneratePDF({ log }: GeneratePDFProps) {
             gradient={{ from: "blue", to: "cyan" }}
             leftSection={<IconFileDownload size={16} />}
             onClick={downloadPDF}
+            loading={loading}
+            disabled={loading}
           >
-            Download PDF
+            {loading ? "Generating PDF..." : "Download PDF"}
           </Button>
         </Stack>
       </Modal>
