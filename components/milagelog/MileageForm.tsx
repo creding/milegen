@@ -17,7 +17,6 @@ interface MileageFormProps {
   vehicle: string;
   businessType: string;
   subscriptionStatus: string;
-  entryCount: number;
   onStartMileageChange: (value: string) => void;
   onEndMileageChange: (value: string) => void;
   onStartDateChange: (value: Date) => void;
@@ -39,8 +38,6 @@ interface FormValues {
   businessType: string;
 }
 
-const MAX_FREE_ENTRIES = 5;
-
 export function MileageForm({
   startMileage,
   endMileage,
@@ -50,7 +47,6 @@ export function MileageForm({
   vehicle,
   businessType,
   subscriptionStatus,
-  entryCount,
   onStartMileageChange,
   onEndMileageChange,
   onStartDateChange,
@@ -312,16 +308,7 @@ export function MileageForm({
 
           {isMobile ? (
             <Stack gap="xs" mt="sm">
-              <Button
-                variant="gradient"
-                type="submit"
-                disabled={
-                  subscriptionStatus !== "active" &&
-                  entryCount >= MAX_FREE_ENTRIES
-                }
-                fullWidth
-                size="md"
-              >
+              <Button variant="gradient" type="submit" fullWidth size="md">
                 Generate Log
               </Button>
               <Button
@@ -349,7 +336,6 @@ export function MileageForm({
                 variant="gradient"
                 size={isMobile ? "md" : "sm"}
                 type="submit"
-                disabled={entryCount >= MAX_FREE_ENTRIES}
               >
                 Generate Log
               </Button>

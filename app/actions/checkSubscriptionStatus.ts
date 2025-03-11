@@ -22,7 +22,6 @@ export async function checkSubscriptionStatus() {
       .single();
 
     if (error) {
-      console.error("Supabase Error: ", error);
       return null;
     }
 

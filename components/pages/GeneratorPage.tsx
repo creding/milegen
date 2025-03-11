@@ -179,7 +179,6 @@ export const GeneratorPage = ({
             vehicle={vehicle}
             businessType={businessType}
             subscriptionStatus={subscriptionStatus}
-            entryCount={entryCount}
             onStartMileageChange={setStartMileage}
             onEndMileageChange={setEndMileage}
             onStartDateChange={setStartDate}
@@ -220,7 +219,10 @@ export const GeneratorPage = ({
                 )}
               </Group>
             </Group>
-            <MileageLogDisplay log={mileageLog} />
+            <MileageLogDisplay
+              log={mileageLog}
+              subscriptionStatus={subscriptionStatus}
+            />
           </Stack>
         </Card>
       )}
