@@ -68,7 +68,7 @@ export function HeroSection() {
               ]}
               ctaText="Create Your First Log"
               ctaLink="/?signup=true"
-              footerText="Subscribe to unlock all features"
+              footerText="Subscribe for $9.99/yr to unlock all features"
             />
           </GridCol>
         </Grid>
