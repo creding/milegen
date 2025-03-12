@@ -17,8 +17,6 @@ export async function saveMileageLog(
       throw new Error("User is not logged in");
     }
 
-    console.log("Saving mileage log:", mileageLog);
-
     // Get the year from the log start date
     const year = new Date(mileageLog.start_date).getFullYear();
 
@@ -44,15 +42,33 @@ export async function saveMileageLog(
       business_deduction_rate: businessDeductionRate,
       business_deduction_amount: businessDeductionAmount,
       vehicle_info: mileageLog.vehicle_info || "My Vehicle",
-      log_entries: mileageLog.log_entries,
+      // log_entries will be saved separately in the mileage_log_entries table
+      log_entries: mileageLog.log_entries, // Keep this temporarily for the RPC function
     };
 
-    // Insert the mileage log with all fields
-    const { data, error } = await supabase
-      .from("mileage_logs")
-      .insert(preparedLog)
-      .select("id")
-      .single();
+    // Start a transaction to save both log and entries
+    const { data, error } = await supabase.rpc(
+      "save_mileage_log_with_entries",
+      {
+        log_data: {
+          user_id: preparedLog.user_id,
+          year: preparedLog.year,
+          start_date: preparedLog.start_date,
+          end_date: preparedLog.end_date,
+          start_mileage: preparedLog.start_mileage,
+          end_mileage: preparedLog.end_mileage,
+          total_mileage: preparedLog.total_mileage,
+          total_business_miles: preparedLog.total_business_miles,
+          total_personal_miles: preparedLog.total_personal_miles,
+          business_deduction_rate: preparedLog.business_deduction_rate,
+          business_deduction_amount: preparedLog.business_deduction_amount,
+          vehicle_info: preparedLog.vehicle_info,
+          // Set log_entries to empty array since we're using the new table
+          log_entries: [],
+        },
+        entries_data: preparedLog.log_entries,
+      }
+    );
 
     if (error) {
       console.error("Database error:", error);
@@ -63,7 +79,7 @@ export async function saveMileageLog(
     return {
       success: true,
       message: "Mileage log saved successfully",
-      logId: data.id,
+      logId: data,
     };
   } catch (error) {
     console.error("Error saving mileage log:", error);

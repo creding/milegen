@@ -27,19 +27,11 @@ export interface MileageLog {
   business_deduction_rate: number;
   business_deduction_amount: number;
   vehicle_info: string;
-  log_entries: {
-    date: Date;
-    start_mileage: number;
-    end_mileage: number;
-    miles: number;
-    purpose: string;
-    type: string;
-    vehicle_info: string;
-    business_type: string;
-  }[];
   business_type: string;
   id?: string;
   user_id?: string;
+  // Keep log_entries temporarily for generation
+  log_entries?: MileageEntry[];
 }
 
 export interface MileageEntry {
@@ -51,6 +43,9 @@ export interface MileageEntry {
   end_mileage: number;
   vehicle_info: string;
   business_type: string;
+  location?: string;
+  log_id?: string;
+  id?: string;
 }
 
 interface DailyMileage {
@@ -150,7 +145,8 @@ async function generateMileageLog(
     )
   );
 
-  return {
+  // Create the log object
+  const log: MileageLog = {
     start_date: startDate.toISOString().split("T")[0],
     end_date: endDate.toISOString().split("T")[0],
     start_mileage: startMileage,
@@ -163,9 +159,12 @@ async function generateMileageLog(
       getBusinessMileageRate(new Date().getFullYear()) * totalBusinessMiles
     ),
     vehicle_info: vehicleInfo,
-    log_entries: entries,
     business_type: businessType,
+    // Keep entries for saving to the new table
+    log_entries: entries,
   };
+
+  return log;
 }
 
 async function distributeMileageAcrossDays(
@@ -384,9 +383,17 @@ async function generateTripsForDay(
   return trips;
 }
 
+import { saveMileageLog } from "./saveMileageLog";
+
+export interface GenerateLogResult {
+  logId?: string;
+  success: boolean;
+  message?: string;
+}
+
 export async function generateMileageLogFromForm(
   params: MileageGeneratorParams
-): Promise<MileageLog> {
+): Promise<GenerateLogResult> {
   const startDate = new Date(params.startDate);
   const endDate = new Date(params.endDate);
 
@@ -400,15 +407,36 @@ export async function generateMileageLogFromForm(
     params.totalPersonalMiles
   );
 
+  // Ensure log_entries exists
+  if (!log.log_entries) {
+    log.log_entries = [];
+    return { success: false, message: "Failed to generate log entries." };
+  }
+
   if (params.subscriptionStatus !== "active") {
     const totalEntries = log.log_entries.length;
-    log.log_entries = log.log_entries.slice(0, 10);
+    const limitedEntries = log.log_entries.slice(0, 10);
     if (totalEntries > 10) {
-      log.log_entries[9].purpose += ` (${
+      limitedEntries[9].purpose += ` (${
         totalEntries - 10
       } more entries available with subscription)`;
     }
+    log.log_entries = limitedEntries;
   }
 
-  return log;
+  try {
+    // Save the generated log
+    const saveResult = await saveMileageLog(log);
+    return {
+      logId: saveResult.logId,
+      success: saveResult.success,
+      message: saveResult.message,
+    };
+  } catch (error) {
+    console.error("Error saving generated log:", error);
+    return {
+      success: false,
+      message: "Generated log but failed to save. Please try again.",
+    };
+  }
 }

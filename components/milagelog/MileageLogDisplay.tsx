@@ -17,6 +17,8 @@ import {
   Paper,
   ThemeIcon,
   Table,
+  Select,
+  Pagination,
 } from "@mantine/core";
 import {
   IconCar,
@@ -30,6 +32,8 @@ import {
 } from "@tabler/icons-react";
 
 import { useMediaQuery } from "@mantine/hooks";
+import { useMemo } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import type { MileageEntry, MileageLog } from "@/app/actions/mileageGenerator";
 import { DownloadSpreadsheet } from "./DownloadSpreadsheet";
 import { PrintMilageLog } from "./PrintMilageLog";
@@ -40,15 +44,47 @@ export function MileageLogDisplay({
   log,
   subscriptionStatus,
 }: {
-  log: MileageLog;
+  log: MileageLog & {
+    pagination?: {
+      currentPage: number;
+      pageSize: number;
+      totalEntries: number;
+      totalPages: number;
+    };
+  };
   subscriptionStatus?: string;
 }) {
   const isMobile = useMediaQuery("(max-width: 768px)");
-  if (log.log_entries.length > 0) {
-    console.log("First mileage log entry:", log.log_entries[0]);
-  }
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
-  const MobileLogEntry = ({ entry }: { entry: MileageEntry }) => (
+  // Memoize entries to avoid unnecessary re-renders
+  const entries = useMemo(() => log.log_entries || [], [log.log_entries]);
+  const pagination = log.pagination;
+
+  // Handle page change
+  const handlePageChange = (newPage: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('page', newPage.toString());
+    router.push(`${pathname}?${params.toString()}`);
+  };
+
+  // Handle page size change
+  const handlePageSizeChange = (newSize: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('pageSize', newSize.toString());
+    params.set('page', '1'); // Reset to first page when changing page size
+    router.push(`${pathname}?${params.toString()}`);
+  };
+
+  // Helper function to get vehicle info for an entry
+const getVehicleInfo = (entry: MileageEntry) => {
+  // During migration, entry.vehicle_info might be undefined
+  return entry.vehicle_info || log.vehicle_info || "Not specified";
+};
+
+const MobileLogEntry = ({ entry }: { entry: MileageEntry }) => (
     <Card shadow="sm" p="md" radius="md" withBorder mb="sm">
       <Text fw={700} mb="xs">
         {new Date(entry.date).toLocaleDateString()}
@@ -58,7 +94,7 @@ export function MileageLogDisplay({
           <Text size="sm" c="dimmed">
             Vehicle:
           </Text>
-          <Text size="sm">{entry.vehicle_info || log.vehicle_info}</Text>
+          <Text size="sm">{getVehicleInfo(entry)}</Text>
         </Group>
         <Group justify="apart">
           <Text size="sm" c="dimmed">
@@ -94,9 +130,52 @@ export function MileageLogDisplay({
     </Card>
   );
 
+  // Pagination controls component
+  const PaginationControls = () => {
+    if (!pagination) return null;
+
+    const { currentPage, totalPages, pageSize, totalEntries } = pagination;
+    const pageSizeOptions = [10, 25, 50, 100].map(size => ({ value: size.toString(), label: size.toString() }));
+
+    return (
+      <Paper p="md" withBorder mt="md">
+        <Group justify="space-between" align="center">
+          <Group>
+            <Text size="sm" c="dimmed">Show</Text>
+            <Select
+              value={pageSize.toString()}
+              onChange={(value) => handlePageSizeChange(parseInt(value || '25'))}
+              data={pageSizeOptions}
+              w={80}
+            />
+            <Text size="sm" c="dimmed">entries per page</Text>
+          </Group>
+          
+          <Group>
+            <Text size="sm" c="dimmed">
+              Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalEntries)} of {totalEntries} entries
+            </Text>
+            <Pagination
+              value={currentPage}
+              onChange={handlePageChange}
+              total={totalPages}
+              size={isMobile ? 'sm' : 'md'}
+              radius="md"
+              withEdges
+            />
+          </Group>
+        </Group>
+      </Paper>
+    );
+  };
+
   return (
     <Stack gap={isMobile ? "md" : 5}>
       {subscriptionStatus !== "active" && <SubscriptionAlert />}
+      
+      {/* Add pagination controls at the top */}
+      <PaginationControls />
+      
       {isMobile ? (
         <Paper p="md" radius="sm" withBorder shadow="xs" w="100%">
           <Stack gap="xs">
@@ -337,7 +416,7 @@ export function MileageLogDisplay({
 
       {isMobile ? (
         <Stack>
-          {log.log_entries.map((entry, index) => (
+          {entries.map((entry, index) => (
             <MobileLogEntry key={index} entry={entry} />
           ))}
         </Stack>
@@ -362,13 +441,13 @@ export function MileageLogDisplay({
                   </TableTr>
                 </TableThead>
                 <TableTbody>
-                  {log.log_entries.map((entry, index) => (
+                  {entries.map((entry, index) => (
                     <TableTr key={index}>
                       <TableTd>
                         {new Date(entry.date).toLocaleDateString()}
                       </TableTd>
                       <TableTd>
-                        {entry.vehicle_info || log.vehicle_info}
+                        {getVehicleInfo(entry)}
                       </TableTd>
                       <TableTd>
                         {parseFloat(entry.start_mileage.toFixed(1))}
@@ -385,6 +464,9 @@ export function MileageLogDisplay({
               </Table>
             </Box>
           </ScrollArea>
+          
+          {/* Add pagination controls at the bottom */}
+          <PaginationControls />
         </Paper>
       )}
     </Stack>
