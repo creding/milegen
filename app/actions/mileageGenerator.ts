@@ -3,8 +3,10 @@
 import { addDays, format, isWeekend } from "date-fns";
 import { BUSINESS_TYPES } from "@/utils/mileageUtils"; // Assuming BUSINESS_TYPES is static data
 import { HOLIDAYS, getBusinessMileageRate } from "@/utils/constants"; // Assuming HOLIDAYS is static data
-// Add import for location functions
-import { getBusinessLocation, getPersonalLocation } from "@/utils/locationUtils"; 
+import {
+  getBusinessLocation,
+  getPersonalLocation,
+} from "@/utils/locationUtils";
 import { saveMileageLog } from "./saveMileageLog"; // Assuming this exists
 import { isHoliday } from "@/utils/mileageUtils"; // Import isHoliday function
 import { createClient } from "@/lib/supabaseServerClient"; // Corrected import path
@@ -543,9 +545,13 @@ function generateTripsForDay(
 
       const endM = roundMiles(currentMileage + miles);
       const purpose = getRandomBusinessPurpose(businessType);
-      const location = getBusinessLocation(purpose, roundMiles(miles), businessType);
+      const location = getBusinessLocation(
+        purpose,
+        roundMiles(miles),
+        businessType
+      );
       trips.push({
-        date: date.toISOString().split('T')[0], // Format Date
+        date: date.toISOString().split("T")[0], // Format Date
         type: "business",
         miles: roundMiles(miles),
         purpose: purpose, // Use generated purpose
@@ -554,7 +560,7 @@ function generateTripsForDay(
         vehicle_info: vehicleInfo,
         business_type: businessType,
         // Add missing fields
-        id: '', // Placeholder ID
+        id: "", // Placeholder ID
         location: location,
         created_at: null,
         updated_at: null,
@@ -583,9 +589,12 @@ function generateTripsForDay(
 
     const endM = roundMiles(currentMileage + miles);
     const personalPurpose = "Personal";
-    const personalLocation = getPersonalLocation(personalPurpose, roundMiles(miles));
+    const personalLocation = getPersonalLocation(
+      personalPurpose,
+      roundMiles(miles)
+    );
     trips.push({
-      date: date.toISOString().split('T')[0], // Format Date
+      date: date.toISOString().split("T")[0], // Format Date
       type: "personal",
       miles: roundMiles(miles),
       purpose: personalPurpose, // Standard purpose for personal trips
@@ -594,7 +603,7 @@ function generateTripsForDay(
       vehicle_info: vehicleInfo,
       business_type: businessType, // Often good to keep context even for personal
       // Add missing fields
-      id: '', // Placeholder ID
+      id: "", // Placeholder ID
       location: personalLocation,
       created_at: null,
       updated_at: null,
