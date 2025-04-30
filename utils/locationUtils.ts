@@ -547,7 +547,19 @@ function getRandomWeightedItem(items: WeightedLocation[]): string {
 }
 
 // Get a business location based on purpose, miles, and business type
-function getBusinessLocation(purpose: string, miles: number, businessType?: string): string {
+/**
+ * Get a business location based on purpose, miles, and business type.
+ *
+ * @param purpose The purpose of the trip.
+ * @param miles The miles driven for the trip.
+ * @param businessType The type of business (optional).
+ * @returns A randomly selected business location based on the purpose.
+ */
+export function getBusinessLocation(
+  purpose: string,
+  miles: number, // Add miles parameter
+  businessType?: string // Add businessType parameter
+): string { // Revert return type to string
   // First check if we have specific locations for this purpose
   if (purpose in PURPOSE_LOCATION_MAPPING) {
     const specificLocations = PURPOSE_LOCATION_MAPPING[purpose];
@@ -602,10 +614,25 @@ function getBusinessLocation(purpose: string, miles: number, businessType?: stri
   } else {
     return "Local Office";
   }
+
+  // If no specific location found, return a generic fallback
+  console.warn(`No specific business location mapping found for purpose: ${purpose}. Using fallback.`);
+  // Ensure a string is always returned
+  return "Misc Business Location"; 
 }
 
 // Get a personal location based on purpose and miles
-function getPersonalLocation(purpose: string, miles: number): string {
+/**
+ * Get a personal location based on purpose and miles.
+ *
+ * @param purpose The purpose of the trip.
+ * @param miles The number of miles driven (can influence location type).
+ * @returns A randomly selected personal location based on the purpose.
+ */
+export function getPersonalLocation(
+  purpose: string,
+  miles: number // Add miles parameter
+): string { // Revert return type to string
   // First check if we have specific locations for this purpose
   if (purpose in PURPOSE_LOCATION_MAPPING) {
     const specificLocations = PURPOSE_LOCATION_MAPPING[purpose];
@@ -639,6 +666,11 @@ function getPersonalLocation(purpose: string, miles: number): string {
   // Get a random location from the appropriate category
   const locationTypes = PERSONAL_LOCATIONS[distanceCategory];
   return getRandomItem(locationTypes);
+
+  // If no specific location found, return a generic fallback
+  console.warn(`No specific personal location mapping found for purpose: ${purpose}. Using fallback.`);
+  // Ensure a string is always returned
+  return "Misc Personal Location"; 
 }
 
 // Find the appropriate distance category for a given mileage

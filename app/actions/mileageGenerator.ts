@@ -3,8 +3,12 @@
 import { addDays, format, isWeekend } from "date-fns";
 import { BUSINESS_TYPES } from "@/utils/mileageUtils"; // Assuming BUSINESS_TYPES is static data
 import { HOLIDAYS, getBusinessMileageRate } from "@/utils/constants"; // Assuming HOLIDAYS is static data
+// Add import for location functions
+import { getBusinessLocation, getPersonalLocation } from "@/utils/locationUtils"; 
 import { saveMileageLog } from "./saveMileageLog"; // Assuming this exists
 import { isHoliday } from "@/utils/mileageUtils"; // Import isHoliday function
+import { createClient } from "@/lib/supabaseServerClient"; // Corrected import path
+import { Tables } from "@/types/database.types";
 
 // --- Interfaces ---
 
@@ -35,21 +39,7 @@ export interface MileageLog {
   id?: string;
   user_id?: string;
   // Temporarily hold entries for saving; remove before final storage if needed
-  log_entries?: MileageEntry[];
-}
-
-export interface MileageEntry {
-  date: Date; // Keep as Date object until final save if possible
-  type: "business" | "personal"; // Use union type
-  miles: number;
-  purpose: string;
-  start_mileage: number;
-  end_mileage: number;
-  vehicle_info: string;
-  business_type: string;
-  location?: string; // Keep optional
-  log_id?: string;
-  id?: string;
+  log_entries?: Tables<"mileage_log_entries">[];
 }
 
 interface DailyMileage {
@@ -171,7 +161,7 @@ async function generateMileageLog(
     totalPersonalMiles
   );
 
-  const entries: MileageEntry[] = [];
+  const entries: Tables<"mileage_log_entries">[] = [];
   let currentMileage = startMileage;
 
   for (const dailyTarget of dailyMileageTargets) {
@@ -324,7 +314,9 @@ function distributeMileageAcrossDays(
     workdays.length === 0 ? 1.0 : 1.0 - personalWorkdayRatio;
 
   const workdayPersonalMilesAvg =
-    workdays.length > 0 ? (totalPersonalMiles * personalWorkdayRatio) / workdays.length : 0;
+    workdays.length > 0
+      ? (totalPersonalMiles * personalWorkdayRatio) / workdays.length
+      : 0;
   const nonWorkdayPersonalMilesAvg =
     nonWorkdays.length > 0
       ? (totalPersonalMiles * personalNonWorkdayRatio) / nonWorkdays.length
@@ -340,7 +332,8 @@ function distributeMileageAcrossDays(
   }[] = [];
 
   // 3. Generate initial daily targets with variation
-  dates.forEach((day) => { // Assume loop variable is 'day'
+  dates.forEach((day) => {
+    // Assume loop variable is 'day'
     let dailyBusinessMiles = 0;
     let dailyPersonalMiles = 0;
     const distConfig = CONFIG.MILEAGE_DISTRIBUTION;
@@ -387,7 +380,11 @@ function distributeMileageAcrossDays(
           workdayPersonalMilesAvg *
             (1 - personalVariation + Math.random() * 2 * personalVariation)
         );
-      } else if (!day.isWorkday && nonWorkdays.length > 0 && workdays.length === 0) {
+      } else if (
+        !day.isWorkday &&
+        nonWorkdays.length > 0 &&
+        workdays.length === 0
+      ) {
         // *** Explicitly ensure business miles are 0 for non-workdays in edge case ***
         dailyBusinessMiles = 0;
 
@@ -491,7 +488,9 @@ function distributeMileageAcrossDays(
     if (isHoliday(target.date, HOLIDAYS)) {
       target.targetBusinessMiles = 0;
       // Recalculate targetMiles if business miles were zeroed out
-      target.targetMiles = roundMiles(target.targetMiles - target.targetBusinessMiles); // Should subtract 0 if already 0
+      target.targetMiles = roundMiles(
+        target.targetMiles - target.targetBusinessMiles
+      ); // Should subtract 0 if already 0
     }
   });
 
@@ -516,8 +515,8 @@ function generateTripsForDay(
   startMileage: number,
   businessType: string,
   vehicleInfo: string
-): MileageEntry[] {
-  const trips: MileageEntry[] = [];
+): Tables<"mileage_log_entries">[] {
+  const trips: Tables<"mileage_log_entries">[] = [];
   let currentMileage = startMileage;
   const targetPersonalMiles = roundMiles(targetMiles - targetBusinessMiles);
 
@@ -543,15 +542,23 @@ function generateTripsForDay(
       miles = Math.max(CONFIG.REMAINDER_INCREMENT, miles); // Ensure minimum trip length
 
       const endM = roundMiles(currentMileage + miles);
+      const purpose = getRandomBusinessPurpose(businessType);
+      const location = getBusinessLocation(purpose, roundMiles(miles), businessType);
       trips.push({
-        date,
+        date: date.toISOString().split('T')[0], // Format Date
         type: "business",
         miles: roundMiles(miles),
-        purpose: getRandomBusinessPurpose(businessType),
+        purpose: purpose, // Use generated purpose
         start_mileage: roundMiles(currentMileage),
         end_mileage: endM,
         vehicle_info: vehicleInfo,
         business_type: businessType,
+        // Add missing fields
+        id: '', // Placeholder ID
+        location: location,
+        created_at: null,
+        updated_at: null,
+        log_id: null,
       });
 
       remainingBusiness = roundMiles(remainingBusiness - miles);
@@ -575,15 +582,23 @@ function generateTripsForDay(
     miles = Math.max(CONFIG.REMAINDER_INCREMENT, miles); // Ensure minimum trip length
 
     const endM = roundMiles(currentMileage + miles);
+    const personalPurpose = "Personal";
+    const personalLocation = getPersonalLocation(personalPurpose, roundMiles(miles));
     trips.push({
-      date,
+      date: date.toISOString().split('T')[0], // Format Date
       type: "personal",
       miles: roundMiles(miles),
-      purpose: "Personal", // Standard purpose for personal trips
+      purpose: personalPurpose, // Standard purpose for personal trips
       start_mileage: roundMiles(currentMileage),
       end_mileage: endM,
       vehicle_info: vehicleInfo,
       business_type: businessType, // Often good to keep context even for personal
+      // Add missing fields
+      id: '', // Placeholder ID
+      location: personalLocation,
+      created_at: null,
+      updated_at: null,
+      log_id: null,
     });
 
     remainingPersonal = roundMiles(remainingPersonal - miles);
@@ -733,4 +748,54 @@ export async function generateMileageLogFromForm(
       message: `Generation failed: ${errorMessage}`,
     };
   }
+}
+
+/**
+ * Fetches a specific page of mileage log entries for a given log ID.
+ * Designed for use with React Query's useInfiniteQuery.
+ * @param logId - The UUID of the mileage log.
+ * @param pageParam - The starting row index for the page (offset).
+ * @param pageSize - The number of entries per page.
+ * @returns An object containing the entries for the page and the next page parameter.
+ */
+export async function getLogEntriesPage(
+  logId: string,
+  pageParam: number = 0, // Default to page 0 (offset 0)
+  pageSize: number = 25 // Default page size
+): Promise<{
+  entries: Tables<"mileage_log_entries">[];
+  nextPageParam: number | null;
+}> {
+  "use server";
+
+  // Add await here
+  const supabase = await createClient();
+
+  const startIndex = pageParam;
+  const endIndex = pageParam + pageSize - 1;
+
+  const {
+    data: entries,
+    error,
+    count,
+  } = await supabase
+    .from("mileage_log_entries") // Corrected table name
+    .select("*", { count: "exact" }) // Fetch count for total calculation
+    .eq("log_id", logId)
+    .order("date", { ascending: true }) // Ensure consistent ordering
+    .order("created_at", { ascending: true }) // Secondary sort for stability
+    .range(startIndex, endIndex);
+
+  if (error) {
+    console.error("Error fetching log entries page:", error);
+    throw new Error(`Failed to fetch log entries: ${error.message}`);
+  }
+
+  // Determine if there's a next page
+  const nextPageParam = endIndex + 1 < (count ?? 0) ? endIndex + 1 : null;
+
+  return {
+    entries: entries || [],
+    nextPageParam,
+  };
 }
