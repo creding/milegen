@@ -90,7 +90,7 @@ export default async function Page({
   };
 
   return (
-    <Container size="xl" py="xl">
+    <Container size="xl" py="xl" mt={60}>
       <Card withBorder>
         <Group justify="space-between" mb="md">
           <Title order={2}>Mileage Log Details</Title>

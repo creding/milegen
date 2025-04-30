@@ -4,10 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { notifications } from "@mantine/notifications";
 
-import {
-  IconCheck,
-  IconX,
-} from "@tabler/icons-react";
+import { IconCheck, IconX } from "@tabler/icons-react";
 import {
   Card,
   Container,
@@ -65,7 +62,8 @@ export const GeneratorPage = ({
       if (result.success && result.logId) {
         notifications.show({
           title: "Success",
-          message: "Mileage log generated and saved successfully with realistic trip patterns and locations.",
+          message:
+            "Mileage log generated and saved successfully with realistic trip patterns and locations.",
           color: "green",
           icon: <IconCheck />,
         });
@@ -73,14 +71,14 @@ export const GeneratorPage = ({
         // Redirect to saved logs page
         router.push(`/saved-logs/${result.logId}`);
       } else {
-        const errorMessage = result.message || (
-          "Failed to generate or save mileage log. This could be due to:"
-          + "\n• Invalid mileage range"
-          + "\n• Unrealistic trip patterns"
-          + "\n• Database connection issues"
-          + "\n\nPlease verify your inputs and try again."
-        );
-        
+        const errorMessage =
+          result.message ||
+          "Failed to generate or save mileage log. This could be due to:" +
+            "\n• Invalid mileage range" +
+            "\n• Unrealistic trip patterns" +
+            "\n• Database connection issues" +
+            "\n\nPlease verify your inputs and try again.";
+
         notifications.show({
           title: "Error",
           message: errorMessage,
@@ -98,7 +96,6 @@ export const GeneratorPage = ({
           color: "red",
           icon: <IconX />,
         });
-
       }
     } finally {
       setIsGenerating(false);
@@ -116,7 +113,7 @@ export const GeneratorPage = ({
   };
 
   return (
-    <Container size="xl" py="xl" px={isMobile ? "xs" : "md"}>
+    <Container mt={60} size="xl" py="xl" px={isMobile ? "xs" : "md"}>
       <Card withBorder pos="relative">
         <LoadingOverlay visible={isGenerating} overlayProps={{ blur: 2 }} />
         <Stack gap="md" mb="md">

@@ -142,24 +142,7 @@ export const theme = createTheme({
         },
       },
     },
-    Paper: {
-      defaultProps: {
-        radius: "lg",
-        p: "xl",
-        withBorder: true,
-      },
-      styles: {
-        root: {
-          border: "1px solid #e0f2fe",
-          backgroundColor: "white",
-          transition: "transform 0.2s ease, box-shadow 0.2s ease",
-          "&:hover": {
-            transform: "translateY(-2px)",
-            boxShadow: "0 8px 30px rgba(102, 171, 219, 0.1)",
-          },
-        },
-      },
-    },
+
     Input: {
       defaultProps: {
         radius: "md",

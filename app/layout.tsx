@@ -7,7 +7,6 @@ import "@mantine/notifications/styles.css";
 import "@mantine/dates/styles.css";
 import { MantineProvider } from "@mantine/core";
 import { Notifications } from "@mantine/notifications";
-import { ModalsProvider } from "@mantine/modals";
 import { QueryProvider } from "@/components/providers/QueryProvider";
 import { Nav } from "@/components/layout/Nav";
 import { Footer } from "@/components/layout/Footer";
@@ -31,7 +30,7 @@ export default function RootLayout({
   children: ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" data-mantine-color-scheme="light">
       <head></head>
       <body
         className={inter.className}
@@ -39,12 +38,10 @@ export default function RootLayout({
       >
         <QueryProvider>
           <MantineProvider defaultColorScheme="light" theme={theme}>
-            <ModalsProvider>
-              <Notifications position="top-right" />
-              <Nav />
-              <main>{children}</main>
-              <Footer />
-            </ModalsProvider>
+            <Notifications position="top-right" />
+            <Nav />
+            <main>{children}</main>
+            <Footer />
           </MantineProvider>
         </QueryProvider>
         <SpeedInsights />

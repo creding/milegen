@@ -1,29 +1,13 @@
-"use server";
-
 import { SavedLogsPage } from "@/components/pages/SavedLogsPage";
-import { createClient } from "@/lib/supabaseServerClient";
+import { getUserSavedLogs } from "@/lib/data/getUserSavedLogs";
 import { Suspense } from "react";
 import { SavedLogsLoadingSkeleton } from "@/components/pages/SavedLogsLoadingSkeleton";
 
+export const dynamic = "force-dynamic";
+
 export default async function Page() {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  // Get saved logs if user exists
-  let logs = [];
-  if (user) {
-    const { data, error } = await supabase
-      .from("mileage_logs")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
-
-    if (!error) {
-      logs = data;
-    }
-  }
+  // Fetch logs using the dedicated data access function
+  const logs = await getUserSavedLogs();
 
   return (
     <Suspense fallback={<SavedLogsLoadingSkeleton />}>

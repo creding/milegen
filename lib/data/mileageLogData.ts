@@ -5,6 +5,11 @@ import { Database } from "@/types/database.types"; // Import generated Database 
 type MileageLog = Database["public"]["Tables"]["mileage_logs"]["Row"];
 type MileageEntry = Database["public"]["Tables"]["mileage_log_entries"]["Row"];
 
+// Interface for the new function
+export type FullMileageLog = MileageLog & {
+  log_entries: MileageEntry[];
+};
+
 interface GetLogOptions {
   logId: string;
   page: number;
@@ -89,6 +94,56 @@ export async function getSavedMileageLog({
     console.error("Error in getSavedMileageLog:", error);
     // Re-throw the error to be handled by the caller (e.g., the Page component)
     // Or return null/handle differently based on requirements
+    throw error; // Propagate error
+  }
+}
+
+// --- NEW FUNCTION to fetch full log data ---
+export async function getFullMileageLog(
+  logId: string
+): Promise<FullMileageLog | null> {
+  const supabase = await createClient();
+
+  try {
+    // 1. Get the main log data
+    const { data: logData, error: logError } = await supabase
+      .from("mileage_logs")
+      .select()
+      .eq("id", logId)
+      .single();
+
+    if (logError && logError.code !== "PGRST116") {
+      console.error("Error fetching log details:", logError);
+      throw new Error(`Failed to fetch log details for ID: ${logId}`);
+    }
+    if (!logData) {
+      console.warn(`Mileage log not found for ID: ${logId}`);
+      return null; // Log not found
+    }
+
+    // 2. Get ALL entries for this log
+    const { data: entriesData, error: entriesError } = await supabase
+      .from("mileage_log_entries")
+      .select()
+      .eq("log_id", logId)
+      .order("date") // Keep ordering
+      .order("start_mileage"); // Keep ordering
+
+    if (entriesError) {
+      console.error("Error fetching log entries:", entriesError);
+      throw new Error(`Failed to fetch entries for log ID: ${logId}`);
+    }
+
+    // 3. Combine log data with all entries
+    const fullLog: FullMileageLog = {
+      ...(logData as MileageLog),
+      log_entries: (entriesData as MileageEntry[]) || [],
+    };
+
+    return fullLog;
+
+  } catch (error) {
+    console.error("Error in getFullMileageLog:", error);
     throw error; // Propagate error
   }
 }

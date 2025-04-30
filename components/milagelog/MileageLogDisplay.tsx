@@ -11,7 +11,6 @@ import {
   Skeleton,
   LoadingOverlay,
   ScrollArea,
-  Button, // Import ScrollArea
 } from "@mantine/core";
 import { format, parseISO } from "date-fns";
 import { useMediaQuery } from "@mantine/hooks";
@@ -21,9 +20,8 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { getPaginatedMileageEntries } from "@/lib/data/getPaginatedMileageEntries";
 import { MileageLogSummary } from "./MileageLogSummary";
 import { SubscriptionAlert } from "../subscription/SubscriptionAlert";
-import { IconTableExport } from "@tabler/icons-react";
 import { GeneratePDF } from "./GeneratePDF";
-import { PrintMilageLog } from "./PrintMilageLog";
+import { GenerateXls } from "./GenerateXls"; // Import the new XLS component
 
 interface MileageLogDisplayProps {
   log: MileageLogWithEntries;
@@ -59,22 +57,32 @@ export function MileageLogDisplay({
         pageParam,
         PAGE_SIZE
       );
-      return {
+      return { // Only return the essential data needed by getNextPageParam and for rendering
         entries: result.entries,
-        nextPage: pageParam + 1,
         totalCount: result.totalCount ?? 0,
-      };
+      }; // Return entries and totalCount
     },
-    initialPageParam: 1,
-    getNextPageParam: (lastPage) => {
-      // If lastPage is undefined or has no entries, or if the number of entries fetched is less than PAGE_SIZE, there are no more pages.
-      if (!lastPage?.entries || lastPage.entries.length < PAGE_SIZE) {
-        return undefined;
+    initialPageParam: 1, // Starts requesting page 1
+    getNextPageParam: (lastPage, allPages) => { // Determines the *next* pageParam
+      const totalFetched = allPages.reduce((acc, page) => acc + page.entries.length, 0);
+      const totalCountInDb = lastPage.totalCount; // Get total count from the last page's data
+
+      console.log(`getNextPageParam: totalFetched=${totalFetched}, totalCountInDb=${totalCountInDb}`);
+
+      // If the total number fetched is less than the total available in the database
+      if (totalFetched < totalCountInDb) {
+        // Calculate the *next page number* to fetch (which is the count of pages fetched so far + 1)
+        const nextPageNumber = allPages.length + 1;
+        console.log(`--> Requesting next page: ${nextPageNumber}`);
+        return nextPageNumber;
       }
-      // Otherwise, return the next page number
-      return lastPage.nextPage;
+
+      // Otherwise, there are no more pages
+      console.log("--> No more pages.");
+      return undefined;
     },
-    placeholderData: (previousData) => previousData,
+    // Add staleTime and gcTime if needed for caching behavior
+    // staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
   const entries = useMemo(
@@ -146,14 +154,12 @@ export function MileageLogDisplay({
     <Stack gap="lg">
       <MileageLogSummary log={log} />
 
-      <Group justify="space-between">
+      <Group justify="space-between" align="flex-start">
         <Title order={3}>Mileage Entries ({totalEntriesCount})</Title>
+
         <Group justify="flex-end">
-          <Button variant="light" leftSection={<IconTableExport size={16} />}>
-            Download XLS
-          </Button>
-          <GeneratePDF log={log} />
-          <PrintMilageLog log={log} />
+          <GenerateXls logId={log.id} />
+          <GeneratePDF log={{ id: log.id }} />
         </Group>
       </Group>
 
@@ -194,10 +200,6 @@ export function MileageLogDisplay({
                   </Text>
                 </Group>
                 <Group justify="space-between" mb="xs">
-                  <Text size="sm">Type:</Text>
-                  <Text size="sm">{entry.type || "N/A"}</Text>
-                </Group>
-                <Group justify="space-between" mb="xs">
                   <Text size="sm">Miles:</Text>
                   <Text size="sm">{entry.miles?.toFixed(1) ?? "N/A"}</Text>
                 </Group>
@@ -215,7 +217,6 @@ export function MileageLogDisplay({
                   mb="sm"
                 >
                   <Skeleton height={8} radius="xl" mb="md" />
-                  <Skeleton height={8} mt={6} radius="xl" />
                   <Skeleton height={8} mt={6} radius="xl" />
                   <Skeleton height={8} mt={6} radius="xl" />
                   <Skeleton height={8} mt={6} radius="xl" />
@@ -242,7 +243,6 @@ export function MileageLogDisplay({
                     <Table.Th>End</Table.Th>
                     <Table.Th>Miles</Table.Th>
                     <Table.Th>Purpose</Table.Th>
-                    <Table.Th>Type</Table.Th>
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>
@@ -265,17 +265,12 @@ export function MileageLogDisplay({
                       <Table.Td>{entry.miles?.toFixed(1) ?? "N/A"}</Table.Td>
                       {/* Purpose */}
                       <Table.Td>{entry.purpose}</Table.Td>
-                      {/* Type */}
-                      <Table.Td>{entry.type}</Table.Td>
                     </Table.Tr>
                   ))}
                   {/* Render Skeleton Loaders when fetching next page */}
                   {isFetchingNextPage &&
                     Array.from({ length: 3 }).map((_, index) => (
                       <Table.Tr key={`skeleton-desktop-${index}`}>
-                        <Table.Td>
-                          <Skeleton height={8} radius="xl" />
-                        </Table.Td>
                         <Table.Td>
                           <Skeleton height={8} radius="xl" />
                         </Table.Td>
