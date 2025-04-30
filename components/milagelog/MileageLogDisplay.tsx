@@ -30,6 +30,7 @@ import {
   IconCoin,
   IconReceipt,
 } from "@tabler/icons-react";
+import { format, parseISO } from 'date-fns';
 
 import { useMediaQuery } from "@mantine/hooks";
 import { useMemo } from "react";
@@ -87,7 +88,9 @@ const getVehicleInfo = (entry: MileageEntry) => {
 const MobileLogEntry = ({ entry }: { entry: MileageEntry }) => (
     <Card shadow="sm" p="md" radius="md" withBorder mb="sm">
       <Text fw={700} mb="xs">
-        {new Date(entry.date).toLocaleDateString()}
+        {typeof entry.date === 'string'
+          ? format(parseISO(entry.date), 'MM/dd/yyyy')
+          : format(entry.date, 'MM/dd/yyyy')}
       </Text>
       <Stack gap="xs">
         <Group justify="apart">
@@ -199,7 +202,7 @@ const MobileLogEntry = ({ entry }: { entry: MileageEntry }) => (
                 Period:
               </Text>
               <Text fw={600}>
-                {log.start_date} - {log.end_date}
+                {format(parseISO(log.start_date), 'MM/dd/yyyy')} - {format(parseISO(log.end_date), 'MM/dd/yyyy')}
               </Text>
             </Group>
 
@@ -303,7 +306,7 @@ const MobileLogEntry = ({ entry }: { entry: MileageEntry }) => (
                       Period
                     </Text>
                     <Text fw={600}>
-                      {log.start_date} - {log.end_date}
+                      {format(parseISO(log.start_date), 'MM/dd/yyyy')} - {format(parseISO(log.end_date), 'MM/dd/yyyy')}
                     </Text>
                   </Stack>
                 </Group>
@@ -444,7 +447,9 @@ const MobileLogEntry = ({ entry }: { entry: MileageEntry }) => (
                   {entries.map((entry, index) => (
                     <TableTr key={index}>
                       <TableTd>
-                        {new Date(entry.date).toLocaleDateString()}
+                        {typeof entry.date === 'string'
+                          ? format(parseISO(entry.date), 'MM/dd/yyyy')
+                          : format(entry.date, 'MM/dd/yyyy')}
                       </TableTd>
                       <TableTd>
                         {getVehicleInfo(entry)}

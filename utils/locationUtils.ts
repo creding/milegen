@@ -427,105 +427,123 @@ const PERSONAL_PURPOSE_MAPPING: Record<string, DistanceCategory> = {
 };
 
 // Purpose-specific location mapping for more realistic location generation
-const PURPOSE_LOCATION_MAPPING: Record<string, string[]> = {
-  // Personal purposes
-  "School Drop-off/Pick-up": ["Elementary School", "Middle School", "High School", "Private School", "Daycare Center"],
-  "Gym/Fitness": ["Planet Fitness", "LA Fitness", "YMCA", "Local Gym", "Recreation Center"],
-  "Pet Care": ["Veterinarian", "PetSmart", "Petco", "Dog Park", "Groomer"],
-  "Grocery Shopping": ["Kroger", "Safeway", "Whole Foods", "Trader Joe's", "Local Grocery"],
-  "Medical Appointment": ["Doctor's Office", "Medical Center", "Clinic", "Hospital", "Specialist Office"],
-  "Religious Activity": ["Church", "Temple", "Mosque", "Worship Center", "Religious School"],
-  "Commuting": ["Office", "Workplace", "Business Center", "Company HQ"],
-  "Shopping": ["Mall", "Target", "Walmart", "Department Store", "Shopping Center"],
-  "Entertainment": ["Movie Theater", "Concert Venue", "Sports Arena", "Bowling Alley", "Arcade"],
-  "Family Visit": ["Family Home", "Relative's House", "Parents' House", "Grandparents' House"],
-  "Vacation": ["Resort", "Hotel", "Vacation Rental", "Tourist Destination", "Beach Resort"],
-  "Errands": ["Post Office", "Bank", "Dry Cleaner", "Car Wash", "Hardware Store"],
-  "Home Improvement": ["Home Depot", "Lowe's", "Hardware Store", "Furniture Store", "Garden Center"],
-  "Hobby": ["Hobby Shop", "Craft Store", "Music Store", "Art Gallery", "Community Center"],
-  "Volunteer Work": ["Community Center", "Food Bank", "Animal Shelter", "Hospital", "School"],
-  "Personal Visit": ["Friend's House", "Neighbor's Home", "Colleague's House"]
-};
+interface WeightedLocation {
+  location: string;
+  weight: number;
+}
 
-// Compile all business type location mappings
-export const BUSINESS_TYPE_LOCATIONS: BusinessTypeLocationMap = {
-  "Consulting": CONSULTING_LOCATIONS,
-  "Real Estate": REAL_ESTATE_LOCATIONS,
-  "Healthcare": HEALTHCARE_LOCATIONS,
-  "Food Delivery": FOOD_DELIVERY_LOCATIONS,
-  "Rideshare": RIDESHARE_LOCATIONS,
-  "Courier": COURIER_LOCATIONS,
-  "Sales": SALES_LOCATIONS,
-  "Construction": CONSTRUCTION_LOCATIONS
+const PURPOSE_LOCATION_MAPPING: Record<string, WeightedLocation[]> = {
+  "Client Visit": [
+    { location: "Client Office", weight: 5 },
+    { location: "Office", weight: 3 },
+    { location: "Business Park", weight: 1 }
+  ],
+  "Client Meeting": [
+    { location: "Office", weight: 5 },
+    { location: "Client Office", weight: 4 },
+    { location: "Meeting Room", weight: 2 }
+  ],
+  "Property Showing": [
+    { location: "Property", weight: 6 },
+    { location: "House", weight: 3 },
+    { location: "Apartment", weight: 2 }
+  ],
+  "Property Inspection": [
+    { location: "Property", weight: 5 },
+    { location: "House", weight: 3 },
+    { location: "Building", weight: 1 }
+  ],
+  "Patient Visit": [
+    { location: "Patient Home", weight: 7 },
+    { location: "Residence", weight: 2 },
+    { location: "Care Facility", weight: 1 }
+  ],
+  "Food Delivery": [
+    { location: "Customer Home", weight: 6 },
+    { location: "Apartment", weight: 3 },
+    { location: "Office", weight: 2 }
+  ],
+  "Restaurant Pickup": [
+    { location: "Restaurant", weight: 7 },
+    { location: "Fast Food", weight: 2 },
+    { location: "Cafe", weight: 1 }
+  ],
+  "Passenger Pickup": [
+    { location: "Residential Address", weight: 5 },
+    { location: "Business District", weight: 3 },
+    { location: "Shopping Center", weight: 2 },
+    { location: "Airport", weight: 1 } // Lower weight unless miles are high (handled later)
+  ],
+  "Package Delivery": [
+    { location: "Home", weight: 4 },
+    { location: "Office", weight: 3 },
+    { location: "Building", weight: 2 },
+    { location: "Distribution Center", weight: 1 } // Lower weight unless miles are high
+  ],
+  "Package Pickup": [
+    { location: "Warehouse", weight: 4 },
+    { location: "Distribution Center", weight: 3 },
+    { location: "Business", weight: 2 },
+    { location: "Retail Store", weight: 1 }
+  ],
+  "Sales Call": [
+    { location: "Client Office", weight: 5 },
+    { location: "Office", weight: 3 },
+    { location: "Store", weight: 1 }
+  ],
+  "Job Site Visit": [
+    { location: "Construction Site", weight: 6 },
+    { location: "Building Project", weight: 3 },
+    { location: "Site", weight: 1 }
+  ],
+  "Material Pickup": [
+    { location: "Hardware Store", weight: 4 },
+    { location: "Supplier Warehouse", weight: 3 },
+    { location: "Building Supply", weight: 2 }
+  ],
+  "Business Lunch": [
+    { location: "Restaurant", weight: 6 },
+    { location: "Cafe", weight: 3 },
+    { location: "Dining", weight: 1 }
+  ],
+  "Conference": [
+    { location: "Conference Center", weight: 5 },
+    { location: "Hotel", weight: 3 },
+    { location: "Convention Center", weight: 2 }
+  ],
+  // Add weights to other existing simple mappings or add new ones
+  "Training Session": [{ location: "Training Center", weight: 1 }],
+  "Site Inspection": [{ location: "Project Site", weight: 1 }],
+  "Sales Presentation": [{ location: "Client Office", weight: 1 }],
+  "Project Planning": [{ location: "Office", weight: 1 }],
+  "Supply Pickup": [{ location: "Warehouse", weight: 1 }],
+  "Networking Event": [{ location: "Hotel", weight: 1 }]
+  // Add more purpose-specific locations as needed
 };
 
 // Helper function to get a random item from an array
-function getRandomItem<T>(items: T[]): T {
-  return items[Math.floor(Math.random() * items.length)];
+function getRandomItem<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
 }
 
-// Find the appropriate location mapping for a given purpose and business type
-function findLocationMapping(purpose: string, businessType?: string): LocationMapping | null {
-  if (!businessType || !BUSINESS_TYPE_LOCATIONS[businessType]) {
-    // Default fallback for unknown business types
-    return null;
+// Helper function to get a random weighted item
+function getRandomWeightedItem(items: WeightedLocation[]): string {
+  if (!items || items.length === 0) {
+    return "Unknown Location"; // Fallback
   }
 
-  const mappings = BUSINESS_TYPE_LOCATIONS[businessType];
-  return mappings.find(mapping => mapping.purpose === purpose) || null;
-}
+  const totalWeight = items.reduce((sum, item) => sum + item.weight, 0);
+  let random = Math.random() * totalWeight;
 
-// Find the appropriate distance category for a given mileage
-function findDistanceCategory(miles: number): DistanceCategory {
-  for (const [category, range] of Object.entries(DISTANCE_CATEGORIES)) {
-    if (miles >= range.min && miles <= range.max) {
-      return category as DistanceCategory;
+  for (const item of items) {
+    if (random < item.weight) {
+      return item.location;
     }
+    random -= item.weight;
   }
-  
-  // Default to appropriate category based on miles
-  if (miles < 5) return "veryNear";
-  if (miles < 15) return "near";
-  if (miles < 30) return "medium";
-  if (miles < 100) return "far";
-  return "veryFar";
-}
 
-// Get a personal location based on purpose and miles
-function getPersonalLocation(purpose: string, miles: number): string {
-  // First check if we have specific locations for this purpose
-  if (purpose in PURPOSE_LOCATION_MAPPING) {
-    const specificLocations = PURPOSE_LOCATION_MAPPING[purpose];
-    return getRandomItem(specificLocations);
-  }
-  
-  // Determine the appropriate distance category
-  let distanceCategory: DistanceCategory;
-  
-  if (purpose in PERSONAL_PURPOSE_MAPPING) {
-    distanceCategory = PERSONAL_PURPOSE_MAPPING[purpose];
-    
-    // Adjust based on actual miles - ensure long-distance purposes get appropriate locations
-    const actualCategory = findDistanceCategory(miles);
-    
-    // Special handling for specific purposes
-    if (purpose === "Vacation") {
-      // Vacations should always be far or very far
-      distanceCategory = miles >= 100 ? "veryFar" : "far";
-    } else if (purpose === "Family Visit" && miles > 30) {
-      // Long family visits should be far
-      distanceCategory = "far";
-    } else if (miles > DISTANCE_CATEGORIES[distanceCategory].max) {
-      // If miles are greater than the expected category's max, use the actual category
-      distanceCategory = actualCategory;
-    }
-  } else {
-    distanceCategory = findDistanceCategory(miles);
-  }
-  
-  // Get a random location from the appropriate category
-  const locationTypes = PERSONAL_LOCATIONS[distanceCategory];
-  return getRandomItem(locationTypes);
+  // Fallback in case of rounding errors or empty list
+  return items[items.length - 1]?.location || "Unknown Location";
 }
 
 // Get a business location based on purpose, miles, and business type
@@ -533,9 +551,10 @@ function getBusinessLocation(purpose: string, miles: number, businessType?: stri
   // First check if we have specific locations for this purpose
   if (purpose in PURPOSE_LOCATION_MAPPING) {
     const specificLocations = PURPOSE_LOCATION_MAPPING[purpose];
-    return getRandomItem(specificLocations);
+    // Use weighted selection
+    return getRandomWeightedItem(specificLocations);
   }
-  
+
   // Handle specific business types
   if (businessType) {
     if (businessType === "Real Estate" && purpose.includes("Property")) {
@@ -552,7 +571,7 @@ function getBusinessLocation(purpose: string, miles: number, businessType?: stri
       return "Construction Site";
     }
   }
-  
+
   // Handle specific purposes
   if (purpose.includes("Client")) {
     return miles > 20 ? "Client Headquarters" : "Client Office";
@@ -574,7 +593,7 @@ function getBusinessLocation(purpose: string, miles: number, businessType?: stri
   } else if (purpose.includes("Pickup")) {
     return "Warehouse";
   }
-  
+
   // Default based on distance
   if (miles > 50) {
     return "Regional Office";
@@ -583,6 +602,59 @@ function getBusinessLocation(purpose: string, miles: number, businessType?: stri
   } else {
     return "Local Office";
   }
+}
+
+// Get a personal location based on purpose and miles
+function getPersonalLocation(purpose: string, miles: number): string {
+  // First check if we have specific locations for this purpose
+  if (purpose in PURPOSE_LOCATION_MAPPING) {
+    const specificLocations = PURPOSE_LOCATION_MAPPING[purpose];
+    return getRandomWeightedItem(specificLocations);
+  }
+
+  // Determine the appropriate distance category
+  let distanceCategory: DistanceCategory;
+
+  if (purpose in PERSONAL_PURPOSE_MAPPING) {
+    distanceCategory = PERSONAL_PURPOSE_MAPPING[purpose];
+
+    // Adjust based on actual miles - ensure long-distance purposes get appropriate locations
+    const actualCategory = findDistanceCategory(miles);
+
+    // Special handling for specific purposes
+    if (purpose === "Vacation") {
+      // Vacations should always be far or very far
+      distanceCategory = miles >= 100 ? "veryFar" : "far";
+    } else if (purpose === "Family Visit" && miles > 30) {
+      // Long family visits should be far
+      distanceCategory = "far";
+    } else if (miles > DISTANCE_CATEGORIES[distanceCategory].max) {
+      // If miles are greater than the expected category's max, use the actual category
+      distanceCategory = actualCategory;
+    }
+  } else {
+    distanceCategory = findDistanceCategory(miles);
+  }
+
+  // Get a random location from the appropriate category
+  const locationTypes = PERSONAL_LOCATIONS[distanceCategory];
+  return getRandomItem(locationTypes);
+}
+
+// Find the appropriate distance category for a given mileage
+function findDistanceCategory(miles: number): DistanceCategory {
+  for (const [category, range] of Object.entries(DISTANCE_CATEGORIES)) {
+    if (miles >= range.min && miles <= range.max) {
+      return category as DistanceCategory;
+    }
+  }
+
+  // Default to appropriate category based on miles
+  if (miles < 5) return "veryNear";
+  if (miles < 15) return "near";
+  if (miles < 30) return "medium";
+  if (miles < 100) return "far";
+  return "veryFar";
 }
 
 // Get a random mileage within a range
@@ -603,10 +675,10 @@ export function generatePurposeBasedMileage(purpose: string, type: 'business' | 
     max: type === 'business' ? 30 : 15,
     preferredCategory: type === 'business' ? "medium" : "near"
   };
-  
+
   // Generate mileage within the appropriate range with some variation
   const baseMileage = getRandomMileage(range.min, range.max);
-  
+
   // Add some randomness but keep within realistic bounds
   const variation = 0.8 + Math.random() * 0.4; // 80-120% variation
   return roundToOneDecimal(baseMileage * variation);
@@ -638,7 +710,7 @@ export const PURPOSE_DISTANCE_RANGES: Record<string, PurposeDistanceRange> = {
   "Pet Care": { min: 1, max: 10, preferredCategory: "veryNear" },
   "Hobby": { min: 3, max: 25, preferredCategory: "medium" },
   "Personal Visit": { min: 3, max: 30, preferredCategory: "near" },
-  
+
   // Business purposes
   "Conference": { min: 15, max: 300, preferredCategory: "far" },
   "Client Visit": { min: 5, max: 50, preferredCategory: "medium" },
@@ -724,7 +796,7 @@ const SEASONAL_PURPOSE_LOCATIONS: Record<string, Record<string, string[]>> = {
 // Get the season based on date
 function getSeason(date: Date): string {
   const month = date.getMonth();
-  
+
   if (month >= 11 || month <= 1) { // December, January, February
     return "winter";
   } else if (month >= 2 && month <= 4) { // March, April, May
@@ -738,7 +810,7 @@ function getSeason(date: Date): string {
 
 /**
  * Generate a smart location based on trip purpose, miles driven, business type, and date
- * 
+ *
  * @param purpose The purpose of the trip
  * @param miles The miles driven for the trip
  * @param type The type of trip (business or personal)
@@ -761,11 +833,11 @@ export function getLocation(purpose: string, miles: number, type: 'business' | '
   // If no date is provided, use current date
   const currentDate = date || new Date();
   const season = getSeason(currentDate);
-  
+
   // Check for seasonal purposes that should have seasonal locations
   const seasonalPurposes = ["Vacation", "Entertainment", "Shopping", "Family Visit"];
   if (seasonalPurposes.includes(purpose)) {
-    
+
     // 30% chance to use a seasonal location for these purposes
     if (Math.random() < 0.3) {
       if (purpose in SEASONAL_PURPOSE_LOCATIONS[season]) {
@@ -775,10 +847,22 @@ export function getLocation(purpose: string, miles: number, type: 'business' | '
       }
     }
   }
-  
+
   if (type === 'personal') {
     return getPersonalLocation(purpose, miles);
   } else {
     return getBusinessLocation(purpose, miles, businessType);
   }
 }
+
+// Compile all business type location mappings
+export const BUSINESS_TYPE_LOCATIONS: BusinessTypeLocationMap = {
+  "Consulting": CONSULTING_LOCATIONS,
+  "Real Estate": REAL_ESTATE_LOCATIONS,
+  "Healthcare": HEALTHCARE_LOCATIONS,
+  "Food Delivery": FOOD_DELIVERY_LOCATIONS,
+  "Rideshare": RIDESHARE_LOCATIONS,
+  "Courier": COURIER_LOCATIONS,
+  "Sales": SALES_LOCATIONS,
+  "Construction": CONSTRUCTION_LOCATIONS
+};

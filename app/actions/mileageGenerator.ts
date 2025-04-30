@@ -1,8 +1,12 @@
 "use server";
 
 import { addDays, format, isWeekend } from "date-fns";
-import { BUSINESS_TYPES } from "@/utils/mileageUtils";
-import { HOLIDAYS, getBusinessMileageRate } from "@/utils/constants";
+import { BUSINESS_TYPES } from "@/utils/mileageUtils"; // Assuming BUSINESS_TYPES is static data
+import { HOLIDAYS, getBusinessMileageRate } from "@/utils/constants"; // Assuming HOLIDAYS is static data
+import { saveMileageLog } from "./saveMileageLog"; // Assuming this exists
+import { isHoliday } from "@/utils/mileageUtils"; // Import isHoliday function
+
+// --- Interfaces ---
 
 interface MileageGeneratorParams {
   startDate: Date;
@@ -11,14 +15,14 @@ interface MileageGeneratorParams {
   endMileage: number;
   vehicle: string;
   businessType?: string;
-  subscriptionStatus: string;
-  currentEntryCount: number;
+  subscriptionStatus: string; // Keep for subscription logic
+  currentEntryCount?: number; // Keep if used elsewhere, not used in generation itself
   totalPersonalMiles: number;
 }
 
 export interface MileageLog {
-  start_date: string;
-  end_date: string;
+  start_date: string; // YYYY-MM-DD
+  end_date: string; // YYYY-MM-DD
   start_mileage: number;
   end_mileage: number;
   total_mileage: number;
@@ -30,20 +34,20 @@ export interface MileageLog {
   business_type: string;
   id?: string;
   user_id?: string;
-  // Keep log_entries temporarily for generation
+  // Temporarily hold entries for saving; remove before final storage if needed
   log_entries?: MileageEntry[];
 }
 
 export interface MileageEntry {
-  date: Date;
-  type: string;
+  date: Date; // Keep as Date object until final save if possible
+  type: "business" | "personal"; // Use union type
   miles: number;
   purpose: string;
   start_mileage: number;
   end_mileage: number;
   vehicle_info: string;
   business_type: string;
-  location?: string;
+  location?: string; // Keep optional
   log_id?: string;
   id?: string;
 }
@@ -55,12 +59,10 @@ interface DailyMileage {
   isWorkday: boolean;
 }
 
-// Basic configuration
+// --- Configuration ---
+
 const CONFIG = {
-  BUSINESS_HOURS: {
-    start: 8,
-    end: 21,
-  },
+  // Realistic trip lengths (adjust as needed)
   MILES_PER_TRIP: {
     business: {
       min: 2.3,
@@ -71,36 +73,77 @@ const CONFIG = {
       max: 40.4,
     },
   },
-  WEEKEND_MILES_RATIO: 0.4,
+  // Mileage distribution parameters
+  MILEAGE_DISTRIBUTION: {
+    // Ratio of personal miles driven on workdays vs. non-workdays
+    PERSONAL_ON_WORKDAYS_RATIO: 0.3,
+    // Random variation added/subtracted from daily calculated averages
+    BUSINESS_MILES_VARIATION: 0.1, // +/- 10%
+    WORKDAY_PERSONAL_MILES_VARIATION: 0.2, // +/- 20%
+    NON_WORKDAY_PERSONAL_MILES_VARIATION: 0.3, // +/- 30%
+    // Chance to have zero miles on a non-workday
+    NON_WORKDAY_SKIP_CHANCE: 0.2, // 20% chance
+  },
+  // Rounding precision
   DECIMAL_PLACES: 1,
+  // Smallest mileage increment for distributing remainders
+  REMAINDER_INCREMENT: 0.1,
+  // Floating point precision threshold
+  FLOAT_PRECISION_THRESHOLD: 0.01,
+  // Default business type if not provided
+  DEFAULT_BUSINESS_TYPE: "General Business",
 };
 
-async function isHoliday(date: Date): Promise<boolean> {
-  const year = date.getFullYear();
-  const dateString = format(date, "yyyy-MM-dd");
+// --- Helper Functions ---
 
-  const yearHolidays = HOLIDAYS[year as keyof typeof HOLIDAYS];
-  if (yearHolidays) {
-    return yearHolidays.includes(dateString);
+/**
+ * Shuffles an array in place using Fisher-Yates algorithm.
+ * @param array Array to shuffle.
+ */
+function shuffleArray<T>(array: T[]): void {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]]; // Swap elements
   }
-  return false;
 }
 
-async function isWorkday(date: Date): Promise<boolean> {
-  return !isWeekend(date) && !(await isHoliday(date));
-}
-
-async function getRandomBusinessPurpose(businessType: string): Promise<string> {
+/**
+ * Selects a random business purpose based on the business type.
+ * Assumes BUSINESS_TYPES is a static array.
+ * @param businessType The category of business.
+ * @returns A random purpose string.
+ */
+function getRandomBusinessPurpose(businessType: string): string {
   const type = BUSINESS_TYPES.find((t) => t.name === businessType);
-  if (!type) return "Business Meeting";
-  return type.purposes[Math.floor(Math.random() * type.purposes.length)];
+  if (type?.purposes?.length) {
+    return type.purposes[Math.floor(Math.random() * type.purposes.length)];
+  }
+  // Fallback if type not found or has no purposes
+  return "Business Meeting";
 }
 
+/**
+ * Rounds miles to the configured number of decimal places.
+ * @param miles The number of miles.
+ * @returns Rounded miles.
+ */
 function roundMiles(miles: number): number {
   return Number(miles.toFixed(CONFIG.DECIMAL_PLACES));
 }
 
-// Core generation functions
+// --- Core Generation Functions ---
+
+/**
+ * Generates the main mileage log structure and its entries.
+ * @param startDate The starting date of the log period.
+ * @param endDate The ending date of the log period.
+ * @param startMileage The starting odometer reading.
+ * @param endMileage The ending odometer reading.
+ * @param businessType The type of business.
+ * @param vehicleInfo Description of the vehicle used.
+ * @param totalPersonalMiles The user-specified total personal miles for the period.
+ * @returns A Promise resolving to the generated MileageLog object.
+ */
 async function generateMileageLog(
   startDate: Date,
   endDate: Date,
@@ -110,10 +153,17 @@ async function generateMileageLog(
   vehicleInfo: string,
   totalPersonalMiles: number
 ): Promise<MileageLog> {
-  const totalMileage = endMileage - startMileage;
-  const targetBusinessMiles = totalMileage - totalPersonalMiles;
+  const totalMileage = roundMiles(endMileage - startMileage);
+  const targetBusinessMiles = roundMiles(totalMileage - totalPersonalMiles);
 
-  const dailyMileageTargets = await distributeMileageAcrossDays(
+  // Ensure targets are non-negative after calculation
+  if (targetBusinessMiles < 0 || totalPersonalMiles < 0) {
+    throw new Error(
+      "Calculated negative miles (business or personal). Check inputs."
+    );
+  }
+
+  const dailyMileageTargets = distributeMileageAcrossDays(
     startDate,
     endDate,
     totalMileage,
@@ -125,7 +175,12 @@ async function generateMileageLog(
   let currentMileage = startMileage;
 
   for (const dailyTarget of dailyMileageTargets) {
-    const tripsForDay = await generateTripsForDay(
+    // Skip days with zero target miles explicitly
+    if (dailyTarget.targetMiles <= CONFIG.FLOAT_PRECISION_THRESHOLD) {
+      continue;
+    }
+
+    const tripsForDay = generateTripsForDay(
       dailyTarget.date,
       dailyTarget.targetMiles,
       dailyTarget.targetBusinessMiles,
@@ -135,255 +190,421 @@ async function generateMileageLog(
     );
 
     entries.push(...tripsForDay);
-    currentMileage = roundMiles(currentMileage + dailyTarget.targetMiles);
+    // Ensure end mileage of the last trip matches the start of the next day's target
+    if (tripsForDay.length > 0) {
+      currentMileage = roundMiles(
+        tripsForDay[tripsForDay.length - 1].end_mileage
+      );
+    } else {
+      // If no trips were generated (shouldn't happen with targetMiles > 0), mileage doesn't advance
+      currentMileage = roundMiles(currentMileage);
+    }
   }
 
-  const totalBusinessMiles = roundMiles(
+  // Recalculate totals from generated entries for accuracy
+  const finalTotalBusinessMiles = roundMiles(
     entries.reduce(
       (sum, entry) => sum + (entry.type === "business" ? entry.miles : 0),
       0
     )
   );
+  const finalTotalPersonalMiles = roundMiles(
+    totalMileage - finalTotalBusinessMiles
+  );
 
-  // Create the log object
+  // Get the correct mileage rate based on the log's end date year
+  const logEndDateYear = endDate.getFullYear();
+  const businessRate = getBusinessMileageRate(logEndDateYear); // Assumes getBusinessMileageRate handles the year correctly
+
+  // Create the final log object
   const log: MileageLog = {
-    start_date: startDate.toISOString().split("T")[0],
-    end_date: endDate.toISOString().split("T")[0],
+    start_date: format(startDate, "yyyy-MM-dd"),
+    end_date: format(endDate, "yyyy-MM-dd"),
     start_mileage: startMileage,
-    end_mileage: endMileage,
-    total_mileage: roundMiles(totalMileage),
-    total_business_miles: totalBusinessMiles,
-    total_personal_miles: roundMiles(totalMileage - totalBusinessMiles),
-    business_deduction_rate: getBusinessMileageRate(new Date().getFullYear()),
+    // Adjust end_mileage slightly if rounding caused drift, though recalculating from entries is better
+    end_mileage: roundMiles(
+      startMileage + finalTotalBusinessMiles + finalTotalPersonalMiles
+    ),
+    total_mileage: roundMiles(
+      finalTotalBusinessMiles + finalTotalPersonalMiles
+    ),
+    total_business_miles: finalTotalBusinessMiles,
+    total_personal_miles: finalTotalPersonalMiles,
+    business_deduction_rate: businessRate,
     business_deduction_amount: roundMiles(
-      getBusinessMileageRate(new Date().getFullYear()) * totalBusinessMiles
+      businessRate * finalTotalBusinessMiles
     ),
     vehicle_info: vehicleInfo,
     business_type: businessType,
-    // Keep entries for saving to the new table
-    log_entries: entries,
+    log_entries: entries, // Keep entries for saving
   };
+
+  // Final validation check
+  const calculatedEndMileage = roundMiles(
+    log.start_mileage + log.total_mileage
+  );
+  if (
+    Math.abs(calculatedEndMileage - log.end_mileage) >
+    CONFIG.REMAINDER_INCREMENT
+  ) {
+    // Allow small tolerance
+    console.warn(
+      `Final calculated end mileage (${calculatedEndMileage}) differs slightly from target end mileage (${log.end_mileage}). Adjusting log end mileage.`
+    );
+    log.end_mileage = calculatedEndMileage;
+  }
 
   return log;
 }
 
-async function distributeMileageAcrossDays(
+/**
+ * Distributes total business and personal miles across the days in the period.
+ * Prioritizes business miles on workdays and personal miles more on non-workdays.
+ * Handles remainders by distributing small increments.
+ * @param startDate Start date.
+ * @param endDate End date.
+ * @param totalMileage Total miles for the period.
+ * @param targetBusinessMiles Target business miles for the period.
+ * @param totalPersonalMiles Target personal miles for the period.
+ * @returns An array of daily mileage targets.
+ */
+function distributeMileageAcrossDays(
   startDate: Date,
   endDate: Date,
   totalMileage: number,
   targetBusinessMiles: number,
   totalPersonalMiles: number
-): Promise<DailyMileage[]> {
-  const dailyTargets: DailyMileage[] = [];
+): DailyMileage[] {
   let currentDate = new Date(startDate);
+  const dates: { date: Date; isWorkday: boolean; isHoliday: boolean }[] = []; // Add isHoliday flag
 
-  // Count workdays and non-workdays
-  let workdays = 0;
-  let nonWorkdays = 0;
-  const dates: { date: Date; isWorkday: boolean }[] = [];
-
+  // 1. Generate all dates in the range and mark workdays/non-workdays/holidays
   while (currentDate <= endDate) {
-    const isWorkingDay = await isWorkday(currentDate);
-    dates.push({ date: new Date(currentDate), isWorkday: isWorkingDay });
-
-    if (isWorkingDay) {
-      workdays++;
-    } else {
-      nonWorkdays++;
-    }
+    const holidayCheck = isHoliday(currentDate, HOLIDAYS); // Pass HOLIDAYS constant
+    dates.push({
+      date: new Date(currentDate),
+      isWorkday: !isWeekend(currentDate) && !holidayCheck, // Treat holidays like non-workdays
+      isHoliday: holidayCheck, // Store holiday status
+    });
     currentDate = addDays(currentDate, 1);
   }
 
-  // Distribute business miles only on workdays
-  const dailyBusinessMiles = roundMiles(targetBusinessMiles / workdays);
+  // Separate workdays and non-workdays (including holidays)
+  const workdays = dates.filter((d) => d.isWorkday);
+  const nonWorkdays = dates.filter((d) => !d.isWorkday);
 
-  // Distribute personal miles with more on non-workdays
-  const workdayPersonalMiles = roundMiles(
-    (totalPersonalMiles * 0.3) / workdays
-  ); // 30% on workdays
-  const nonWorkdayPersonalMiles = roundMiles(
-    (totalPersonalMiles * 0.7) / nonWorkdays
-  ); // 70% on non-workdays
+  // Handle edge case: no workdays in the period
+  if (workdays.length === 0 && targetBusinessMiles > 0) {
+    console.warn(
+      "Warning: No workdays found in the selected period, distributing business miles across all days."
+    );
+    // Treat all days as workdays for business mile distribution if necessary
+    workdays.push(...dates);
+    nonWorkdays.length = 0;
+  }
+
+  // 2. Calculate base daily mileage distribution
+  let dailyBusinessMilesAvg = 0;
+  if (workdays.length > 0) {
+    dailyBusinessMilesAvg = targetBusinessMiles / workdays.length;
+  } else if (targetBusinessMiles > CONFIG.FLOAT_PRECISION_THRESHOLD) {
+    console.warn(
+      `Target business miles (${targetBusinessMiles}) specified, but no workdays found in the date range. Business miles cannot be assigned.`
+    );
+    // Potentially throw an error here if business miles are mandatory
+    targetBusinessMiles = 0; // Cannot assign these miles
+  }
+
+  // Distribute personal miles, adjusting if no workdays or non-workdays exist
+  const personalWorkdayRatio =
+    nonWorkdays.length === 0
+      ? 1.0
+      : CONFIG.MILEAGE_DISTRIBUTION.PERSONAL_ON_WORKDAYS_RATIO;
+  const personalNonWorkdayRatio =
+    workdays.length === 0 ? 1.0 : 1.0 - personalWorkdayRatio;
+
+  const workdayPersonalMilesAvg =
+    workdays.length > 0 ? (totalPersonalMiles * personalWorkdayRatio) / workdays.length : 0;
+  const nonWorkdayPersonalMilesAvg =
+    nonWorkdays.length > 0
+      ? (totalPersonalMiles * personalNonWorkdayRatio) / nonWorkdays.length
+      : 0;
 
   let totalBusinessAssigned = 0;
   let totalPersonalAssigned = 0;
+  const tempTargets: {
+    date: Date;
+    targetMiles: number;
+    targetBusinessMiles: number;
+    isWorkday: boolean;
+  }[] = [];
 
-  // Generate daily targets
-  for (const { date, isWorkday } of dates) {
-    let businessMiles = 0;
-    let personalMiles = 0;
+  // 3. Generate initial daily targets with variation
+  dates.forEach((day) => { // Assume loop variable is 'day'
+    let dailyBusinessMiles = 0;
+    let dailyPersonalMiles = 0;
+    const distConfig = CONFIG.MILEAGE_DISTRIBUTION;
 
-    if (isWorkday) {
-      // Workday: business miles + some personal miles
-      businessMiles = roundMiles(
-        dailyBusinessMiles * (0.9 + Math.random() * 0.2)
-      ); // ±10% variation
-      personalMiles = roundMiles(
-        workdayPersonalMiles * (0.8 + Math.random() * 0.4)
-      ); // ±20% variation
-
-      // Ensure we don't exceed remaining miles
-      const remainingBusiness = roundMiles(
-        targetBusinessMiles - totalBusinessAssigned
+    if (day.isWorkday && workdays.length > 0) {
+      // Assign business miles with variation
+      const businessVariation = distConfig.BUSINESS_MILES_VARIATION;
+      dailyBusinessMiles = Math.max(
+        0,
+        dailyBusinessMilesAvg *
+          (1 - businessVariation + Math.random() * 2 * businessVariation)
       );
-      const remainingPersonal = roundMiles(
-        totalPersonalMiles - totalPersonalAssigned
+
+      // Assign some personal miles with variation
+      const personalVariation = distConfig.WORKDAY_PERSONAL_MILES_VARIATION;
+      dailyPersonalMiles = Math.max(
+        0,
+        workdayPersonalMilesAvg *
+          (1 - personalVariation + Math.random() * 2 * personalVariation)
+      );
+    } else if (!day.isWorkday && nonWorkdays.length > 0) {
+      // *** Explicitly ensure business miles are 0 for non-workdays ***
+      dailyBusinessMiles = 0;
+
+      // Assign more personal miles on non-workdays with variation
+      const personalVariation = distConfig.NON_WORKDAY_PERSONAL_MILES_VARIATION;
+      dailyPersonalMiles = Math.max(
+        0,
+        nonWorkdayPersonalMilesAvg *
+          (1 - personalVariation + Math.random() * 2 * personalVariation)
       );
 
-      businessMiles = Math.min(businessMiles, remainingBusiness);
-      personalMiles = Math.min(personalMiles, remainingPersonal);
+      // Randomly skip some non-workdays entirely
+      if (Math.random() < distConfig.NON_WORKDAY_SKIP_CHANCE) {
+        dailyPersonalMiles = 0;
+      }
     } else {
-      // Non-workday (weekend/holiday): only personal miles
-      personalMiles = roundMiles(
-        nonWorkdayPersonalMiles * (0.7 + Math.random() * 0.6)
-      ); // ±30% variation
+      // Handle edge cases where only workdays or only non-workdays exist and personal miles need assigning
+      if (day.isWorkday && workdays.length > 0 && nonWorkdays.length === 0) {
+        // All personal miles on workdays
+        const personalVariation = distConfig.WORKDAY_PERSONAL_MILES_VARIATION;
+        dailyPersonalMiles = Math.max(
+          0,
+          workdayPersonalMilesAvg *
+            (1 - personalVariation + Math.random() * 2 * personalVariation)
+        );
+      } else if (!day.isWorkday && nonWorkdays.length > 0 && workdays.length === 0) {
+        // *** Explicitly ensure business miles are 0 for non-workdays in edge case ***
+        dailyBusinessMiles = 0;
 
-      // Ensure we don't exceed remaining personal miles
-      const remainingPersonal = roundMiles(
-        totalPersonalMiles - totalPersonalAssigned
-      );
-      personalMiles = Math.min(personalMiles, remainingPersonal);
-
-      // Randomly skip some non-workdays (20% chance)
-      if (Math.random() < 0.2) {
-        personalMiles = 0;
+        // All personal miles on non-workdays
+        const personalVariation =
+          distConfig.NON_WORKDAY_PERSONAL_MILES_VARIATION;
+        dailyPersonalMiles = Math.max(
+          0,
+          nonWorkdayPersonalMilesAvg *
+            (1 - personalVariation + Math.random() * 2 * personalVariation)
+        );
+        if (Math.random() < distConfig.NON_WORKDAY_SKIP_CHANCE) {
+          dailyPersonalMiles = 0;
+        }
       }
     }
 
-    // Add the day's miles
-    const totalMiles = roundMiles(businessMiles + personalMiles);
-    if (totalMiles > 0) {
-      dailyTargets.push({
-        date,
-        targetMiles: totalMiles,
-        targetBusinessMiles: businessMiles,
-        isWorkday,
-      });
+    // Round individual components before summing
+    dailyBusinessMiles = roundMiles(dailyBusinessMiles);
+    dailyPersonalMiles = roundMiles(dailyPersonalMiles);
 
-      totalBusinessAssigned = roundMiles(totalBusinessAssigned + businessMiles);
-      totalPersonalAssigned = roundMiles(totalPersonalAssigned + personalMiles);
+    // Ensure we don't exceed overall targets yet (remainders handled later)
+    const tempBusinessTotal = roundMiles(
+      totalBusinessAssigned + dailyBusinessMiles
+    );
+    if (tempBusinessTotal > targetBusinessMiles) {
+      dailyBusinessMiles = roundMiles(
+        Math.max(0, targetBusinessMiles - totalBusinessAssigned)
+      );
     }
-  }
 
-  // If we have any remaining miles due to rounding, add them to appropriate days
-  const remainingBusiness = roundMiles(
+    const tempPersonalTotal = roundMiles(
+      totalPersonalAssigned + dailyPersonalMiles
+    );
+    if (tempPersonalTotal > totalPersonalMiles) {
+      dailyPersonalMiles = roundMiles(
+        Math.max(0, totalPersonalMiles - totalPersonalAssigned)
+      );
+    }
+
+    const totalMiles = roundMiles(dailyBusinessMiles + dailyPersonalMiles);
+    tempTargets.push({
+      date: day.date,
+      targetMiles: totalMiles,
+      targetBusinessMiles: dailyBusinessMiles,
+      isWorkday: day.isWorkday,
+    });
+
+    totalBusinessAssigned = roundMiles(
+      totalBusinessAssigned + dailyBusinessMiles
+    );
+    totalPersonalAssigned = roundMiles(
+      totalPersonalAssigned + dailyPersonalMiles
+    );
+  });
+
+  // 4. Distribute remaining miles due to rounding/variation
+  let remainingBusiness = roundMiles(
     targetBusinessMiles - totalBusinessAssigned
   );
-  const remainingPersonal = roundMiles(
+  let remainingPersonal = roundMiles(
     totalPersonalMiles - totalPersonalAssigned
   );
+  const increment = CONFIG.REMAINDER_INCREMENT;
+  const precision = CONFIG.FLOAT_PRECISION_THRESHOLD;
 
-  if (remainingBusiness > 0) {
-    // Add remaining business miles to the last workday
-    for (let i = dailyTargets.length - 1; i >= 0; i--) {
-      if (dailyTargets[i].isWorkday) {
-        dailyTargets[i].targetMiles = roundMiles(
-          dailyTargets[i].targetMiles + remainingBusiness
-        );
-        dailyTargets[i].targetBusinessMiles = roundMiles(
-          dailyTargets[i].targetBusinessMiles + remainingBusiness
-        );
-        break;
-      }
-    }
+  // Distribute remaining business miles across workdays
+  const workdayIndices = tempTargets
+    .map((t, i) => (t.isWorkday ? i : -1))
+    .filter((i) => i !== -1);
+  let currentWorkdayIdx = 0;
+  while (remainingBusiness > precision && workdayIndices.length > 0) {
+    const targetIdx = workdayIndices[currentWorkdayIdx % workdayIndices.length];
+    tempTargets[targetIdx].targetMiles = roundMiles(
+      tempTargets[targetIdx].targetMiles + increment
+    );
+    tempTargets[targetIdx].targetBusinessMiles = roundMiles(
+      tempTargets[targetIdx].targetBusinessMiles + increment
+    );
+    remainingBusiness = roundMiles(remainingBusiness - increment);
+    currentWorkdayIdx++;
   }
 
-  if (remainingPersonal > 0) {
-    // Add remaining personal miles to the last non-workday, or last workday if necessary
-    let added = false;
-    for (let i = dailyTargets.length - 1; i >= 0; i--) {
-      if (!dailyTargets[i].isWorkday) {
-        dailyTargets[i].targetMiles = roundMiles(
-          dailyTargets[i].targetMiles + remainingPersonal
-        );
-        added = true;
-        break;
-      }
-    }
-    if (!added && dailyTargets.length > 0) {
-      // If no non-workday found, add to the last day
-      const lastDay = dailyTargets[dailyTargets.length - 1];
-      lastDay.targetMiles = roundMiles(lastDay.targetMiles + remainingPersonal);
-    }
+  // Distribute remaining personal miles across *any* day (cycling through)
+  const allDayIndices = tempTargets.map((_, i) => i);
+  let currentDayIdx = 0;
+  while (remainingPersonal > precision && allDayIndices.length > 0) {
+    const targetIdx = allDayIndices[currentDayIdx % allDayIndices.length];
+    // Only add personal miles; business miles for the day remain fixed
+    tempTargets[targetIdx].targetMiles = roundMiles(
+      tempTargets[targetIdx].targetMiles + increment
+    );
+    // Note: We don't add to targetBusinessMiles here
+    remainingPersonal = roundMiles(remainingPersonal - increment);
+    currentDayIdx++;
   }
 
-  return dailyTargets;
+  // --- Final Adjustments & Holiday Check ---
+  // Explicitly set business miles to ZERO for all holidays to avoid floating point issues
+  tempTargets.forEach((target) => {
+    if (isHoliday(target.date, HOLIDAYS)) {
+      target.targetBusinessMiles = 0;
+      // Recalculate targetMiles if business miles were zeroed out
+      target.targetMiles = roundMiles(target.targetMiles - target.targetBusinessMiles); // Should subtract 0 if already 0
+    }
+  });
+
+  return tempTargets;
 }
 
-async function generateTripsForDay(
+/**
+ * Generates individual trips (business and personal) for a single day
+ * to match the target miles for that day. Trips are shuffled randomly.
+ * @param date The date of the trips.
+ * @param targetMiles Total miles to generate for the day.
+ * @param targetBusinessMiles Business miles to generate for the day.
+ * @param startMileage Odometer reading at the start of the day.
+ * @param businessType The category of business.
+ * @param vehicleInfo Description of the vehicle.
+ * @returns An array of mileage entries for the day.
+ */
+function generateTripsForDay(
   date: Date,
   targetMiles: number,
   targetBusinessMiles: number,
   startMileage: number,
   businessType: string,
   vehicleInfo: string
-): Promise<MileageEntry[]> {
+): MileageEntry[] {
   const trips: MileageEntry[] = [];
   let currentMileage = startMileage;
   const targetPersonalMiles = roundMiles(targetMiles - targetBusinessMiles);
 
-  // Generate personal trips first to ensure exact match
-  let remainingPersonal = targetPersonalMiles;
-  while (remainingPersonal > 0) {
-    const config = CONFIG.MILES_PER_TRIP.personal;
-    let miles = Math.min(
-      remainingPersonal,
-      roundMiles(config.min + Math.random() * (config.max - config.min))
-    );
+  const businessConfig = CONFIG.MILES_PER_TRIP.business;
+  const personalConfig = CONFIG.MILES_PER_TRIP.personal;
+  const precision = CONFIG.FLOAT_PRECISION_THRESHOLD;
 
-    // For last trip, use all remaining miles
-    if (remainingPersonal <= config.max) {
+  // Generate business trips only if there's a non-negligible amount
+  if (targetBusinessMiles > precision) {
+    let remainingBusiness = targetBusinessMiles;
+    while (remainingBusiness > precision) {
+      let miles = roundMiles(
+        businessConfig.min +
+          Math.random() * (businessConfig.max - businessConfig.min)
+      );
+      // Ensure last trip uses exactly the remaining miles, and prevent tiny trips
+      if (
+        remainingBusiness <= businessConfig.max ||
+        remainingBusiness - miles < precision
+      ) {
+        miles = remainingBusiness;
+      }
+      miles = Math.max(CONFIG.REMAINDER_INCREMENT, miles); // Ensure minimum trip length
+
+      const endM = roundMiles(currentMileage + miles);
+      trips.push({
+        date,
+        type: "business",
+        miles: roundMiles(miles),
+        purpose: getRandomBusinessPurpose(businessType),
+        start_mileage: roundMiles(currentMileage),
+        end_mileage: endM,
+        vehicle_info: vehicleInfo,
+        business_type: businessType,
+      });
+
+      remainingBusiness = roundMiles(remainingBusiness - miles);
+      currentMileage = endM;
+    }
+  }
+
+  // Generate personal trips
+  let remainingPersonal = targetPersonalMiles;
+  while (remainingPersonal > precision) {
+    let miles = roundMiles(
+      personalConfig.min +
+        Math.random() * (personalConfig.max - personalConfig.min)
+    );
+    if (
+      remainingPersonal <= personalConfig.max ||
+      remainingPersonal - miles < precision
+    ) {
       miles = remainingPersonal;
     }
+    miles = Math.max(CONFIG.REMAINDER_INCREMENT, miles); // Ensure minimum trip length
 
+    const endM = roundMiles(currentMileage + miles);
     trips.push({
       date,
       type: "personal",
       miles: roundMiles(miles),
-      purpose: "Personal",
+      purpose: "Personal", // Standard purpose for personal trips
       start_mileage: roundMiles(currentMileage),
-      end_mileage: roundMiles(currentMileage + miles),
+      end_mileage: endM,
       vehicle_info: vehicleInfo,
-      business_type: businessType,
+      business_type: businessType, // Often good to keep context even for personal
     });
 
     remainingPersonal = roundMiles(remainingPersonal - miles);
-    currentMileage = roundMiles(currentMileage + miles);
+    currentMileage = endM;
   }
 
-  // Then generate business trips
-  let remainingBusiness = targetBusinessMiles;
-  while (remainingBusiness > 0) {
-    const config = CONFIG.MILES_PER_TRIP.business;
-    let miles = Math.min(
-      remainingBusiness,
-      roundMiles(config.min + Math.random() * (config.max - config.min))
-    );
+  // Shuffle the generated trips for the day for better realism
+  shuffleArray(trips);
 
-    // For last trip, use all remaining miles
-    if (remainingBusiness <= config.max) {
-      miles = remainingBusiness;
-    }
-
-    trips.push({
-      date,
-      type: "business",
-      miles: roundMiles(miles),
-      purpose: await getRandomBusinessPurpose(businessType),
-      start_mileage: roundMiles(currentMileage),
-      end_mileage: roundMiles(currentMileage + miles),
-      vehicle_info: vehicleInfo,
-      business_type: businessType,
-    });
-
-    remainingBusiness = roundMiles(remainingBusiness - miles);
-    currentMileage = roundMiles(currentMileage + miles);
+  // Recalculate start/end mileage based on shuffled order
+  let runningMileage = startMileage;
+  for (const trip of trips) {
+    trip.start_mileage = roundMiles(runningMileage);
+    trip.end_mileage = roundMiles(runningMileage + trip.miles);
+    runningMileage = trip.end_mileage;
   }
 
   return trips;
 }
 
-import { saveMileageLog } from "./saveMileageLog";
+// --- Main Export Function (Entry Point) ---
 
 export interface GenerateLogResult {
   logId?: string;
@@ -391,52 +612,125 @@ export interface GenerateLogResult {
   message?: string;
 }
 
+/**
+ * Handles form input, validates, generates the mileage log, applies subscription limits,
+ * and saves the result.
+ * @param params Input parameters from the form/client.
+ * @returns A result object indicating success or failure.
+ */
 export async function generateMileageLogFromForm(
   params: MileageGeneratorParams
 ): Promise<GenerateLogResult> {
+  // --- Input Validation ---
+  if (!params.startDate || !params.endDate) {
+    return { success: false, message: "Start and end dates are required." };
+  }
+  // Ensure dates are valid Date objects before comparison
   const startDate = new Date(params.startDate);
   const endDate = new Date(params.endDate);
-
-  const log = await generateMileageLog(
-    startDate,
-    endDate,
-    params.startMileage,
-    params.endMileage,
-    params.businessType || "General Business",
-    params.vehicle,
-    params.totalPersonalMiles
-  );
-
-  // Ensure log_entries exists
-  if (!log.log_entries) {
-    log.log_entries = [];
-    return { success: false, message: "Failed to generate log entries." };
+  if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+    return { success: false, message: "Invalid date format provided." };
   }
 
-  if (params.subscriptionStatus !== "active") {
-    const totalEntries = log.log_entries.length;
-    const limitedEntries = log.log_entries.slice(0, 10);
-    if (totalEntries > 10) {
-      limitedEntries[9].purpose += ` (${
-        totalEntries - 10
-      } more entries available with subscription)`;
-    }
-    log.log_entries = limitedEntries;
+  if (endDate <= startDate) {
+    return { success: false, message: "End date must be after start date." };
   }
+  if (
+    params.startMileage === undefined ||
+    params.startMileage === null ||
+    params.endMileage === undefined ||
+    params.endMileage === null
+  ) {
+    return { success: false, message: "Start and end mileage are required." };
+  }
+  if (params.startMileage < 0 || params.endMileage < 0) {
+    return { success: false, message: "Mileage values cannot be negative." };
+  }
+
+  if (params.endMileage <= params.startMileage) {
+    return {
+      success: false,
+      message: "End mileage must be greater than start mileage.",
+    };
+  }
+  const totalMileage = roundMiles(params.endMileage - params.startMileage);
+  if (
+    params.totalPersonalMiles === undefined ||
+    params.totalPersonalMiles === null ||
+    params.totalPersonalMiles < 0 ||
+    params.totalPersonalMiles > totalMileage
+  ) {
+    return {
+      success: false,
+      message: `Total personal miles must be between 0 and ${totalMileage}.`,
+    };
+  }
+  if (!params.vehicle) {
+    return { success: false, message: "Vehicle information is required." };
+  }
+  const businessType = params.businessType || CONFIG.DEFAULT_BUSINESS_TYPE;
 
   try {
-    // Save the generated log
-    const saveResult = await saveMileageLog(log);
+    // --- Core Logic ---
+    const log = await generateMileageLog(
+      // Now uses await as generateMileageLog is async
+      startDate,
+      endDate,
+      params.startMileage,
+      params.endMileage,
+      businessType,
+      params.vehicle,
+      params.totalPersonalMiles
+    );
+
+    // Ensure log_entries exists (should always exist now unless error thrown)
+    if (!log.log_entries) {
+      // This case might indicate an error during generation that wasn't caught
+      console.error(
+        "Log generation finished but log_entries array is missing."
+      );
+      return {
+        success: false,
+        message: "Internal error: Failed to generate log entries.",
+      };
+    }
+
+    // --- Subscription Limiting ---
+    if (params.subscriptionStatus !== "active") {
+      const limit = 10;
+      const totalEntries = log.log_entries.length;
+      if (totalEntries > limit) {
+        const limitedEntries = log.log_entries.slice(0, limit);
+        // Add note to the *last entry shown*
+        if (limitedEntries.length > 0) {
+          const remainingCount = totalEntries - limit;
+          limitedEntries[
+            limit - 1
+          ].purpose += ` (... and ${remainingCount} more entries available with subscription)`;
+        }
+        log.log_entries = limitedEntries;
+        // Optional: Adjust summary figures if needed based on limited entries,
+        // but typically you'd show the *potential* full log summary
+        // and just limit the visible entries. For this example, we keep summary figs.
+      }
+    }
+
+    // --- Saving ---
+    const saveResult = await saveMileageLog(log); // Assuming saveMileageLog handles DB interaction
     return {
-      logId: saveResult.logId,
+      logId: saveResult.logId, // Assuming saveResult provides these
       success: saveResult.success,
       message: saveResult.message,
     };
-  } catch (error) {
-    console.error("Error saving generated log:", error);
+  } catch (error: unknown) {
+    console.error("Error during mileage log generation or saving:", error);
+    let errorMessage = "An unexpected error occurred. Please try again.";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
     return {
       success: false,
-      message: "Generated log but failed to save. Please try again.",
+      message: `Generation failed: ${errorMessage}`,
     };
   }
 }

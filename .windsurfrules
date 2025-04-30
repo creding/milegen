@@ -1,0 +1,5 @@
+database: 
+    provider: supabase
+    database_name: milegen
+    project_id: rmszfnofzuwvoxvkusak
+    

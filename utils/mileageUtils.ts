@@ -1,3 +1,6 @@
+import { format } from "date-fns";
+import { HOLIDAYS } from "./constants"; // Import HOLIDAYS
+
 export interface BusinessType {
   name: string;
   purposes: string[];
@@ -112,3 +115,17 @@ export const BUSINESS_TYPES: BusinessType[] = [
     ],
   },
 ];
+
+/**
+ * Checks if a given date is a holiday based on the HOLIDAYS constant.
+ * @param date The date to check.
+ * @param holidays The holiday data structure.
+ * @returns True if the date is a holiday, false otherwise.
+ */
+export function isHoliday(date: Date, holidays: typeof HOLIDAYS): boolean {
+  const year = date.getFullYear();
+  const formattedDate = format(date, "yyyy-MM-dd");
+  const yearKey = year as keyof typeof HOLIDAYS;
+  const isHolidayResult = holidays[yearKey]?.includes(formattedDate) || false;
+  return isHolidayResult;
+}
