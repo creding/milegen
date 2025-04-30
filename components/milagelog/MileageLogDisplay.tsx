@@ -8,8 +8,10 @@ import {
   Table,
   Group,
   Paper,
-  Skeleton, 
-  LoadingOverlay, // Re-import LoadingOverlay
+  Skeleton,
+  LoadingOverlay,
+  ScrollArea,
+  Button, // Import ScrollArea
 } from "@mantine/core";
 import { format, parseISO } from "date-fns";
 import { useMediaQuery } from "@mantine/hooks";
@@ -19,6 +21,9 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { getPaginatedMileageEntries } from "@/lib/data/getPaginatedMileageEntries";
 import { MileageLogSummary } from "./MileageLogSummary";
 import { SubscriptionAlert } from "../subscription/SubscriptionAlert";
+import { IconTableExport } from "@tabler/icons-react";
+import { GeneratePDF } from "./GeneratePDF";
+import { PrintMilageLog } from "./PrintMilageLog";
 
 interface MileageLogDisplayProps {
   log: MileageLogWithEntries;
@@ -30,6 +35,7 @@ export function MileageLogDisplay({
   subscriptionStatus,
 }: MileageLogDisplayProps) {
   const isMobile = useMediaQuery("(max-width: 768px)");
+  const scrollAreaRef = useRef<HTMLDivElement>(null); // Ref for ScrollArea
   const [isClient, setIsClient] = useState(false);
   const PAGE_SIZE = 20;
 
@@ -88,6 +94,20 @@ export function MileageLogDisplay({
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // Ensure we have the ref elements and we are in the browser
+    const observerTarget = loadMoreRef.current;
+    const observerRoot = isMobile ? null : scrollAreaRef.current; // Use scroll area as root on desktop
+
+    if (!observerTarget || (!isMobile && !observerRoot)) {
+      console.log("Observer setup skipped: Missing target or desktop root.");
+      return;
+    }
+
+    console.log(
+      "Setting up Observer. Root:",
+      observerRoot ? "ScrollArea" : "Viewport"
+    );
+
     const observer = new IntersectionObserver(
       (entries) => {
         const firstEntry = entries[0];
@@ -107,23 +127,19 @@ export function MileageLogDisplay({
         }
       },
       {
-        threshold: 0.1, // Trigger even if only 10% is visible
-        rootMargin: "0px 0px 200px 0px", // Trigger when sentinel is 200px below the viewport bottom
+        root: observerRoot, // Set the root for observation
+        threshold: 0.1, // Trigger when 10% is visible within the root
       }
     );
 
-    const currentRef = loadMoreRef.current;
-    if (currentRef) {
-      observer.observe(currentRef);
-    }
+    observer.observe(observerTarget);
 
-    // Cleanup function to disconnect the observer when the component unmounts or dependencies change
+    // Cleanup function to disconnect the observer
     return () => {
-      if (currentRef) {
-        observer.unobserve(currentRef);
-      }
+      observer.disconnect();
     };
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]); // Re-run effect if these change
+    // Re-run effect if these change, also include scrollAreaRef for desktop
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage, isMobile, scrollAreaRef]);
   // --- End Intersection Observer Logic ---
 
   return (
@@ -132,13 +148,20 @@ export function MileageLogDisplay({
 
       <Group justify="space-between">
         <Title order={3}>Mileage Entries ({totalEntriesCount})</Title>
+        <Group justify="flex-end">
+          <Button variant="light" leftSection={<IconTableExport size={16} />}>
+            Download XLS
+          </Button>
+          <GeneratePDF log={log} />
+          <PrintMilageLog log={log} />
+        </Group>
       </Group>
 
       {subscriptionStatus !== "active" && <SubscriptionAlert />}
 
       {/* Show overlay during initial load */}
       <LoadingOverlay
-        visible={status === 'pending'}
+        visible={status === "pending"}
         overlayProps={{ radius: "sm", blur: 2 }}
       />
 
@@ -147,7 +170,14 @@ export function MileageLogDisplay({
         (isMobile ? (
           <Stack mt="md">
             {entries.map((entry: Tables<"mileage_log_entries">) => (
-              <Card key={entry.id} shadow="sm" p="md" radius="md" withBorder mb="sm">
+              <Card
+                key={entry.id}
+                shadow="sm"
+                p="md"
+                radius="md"
+                withBorder
+                mb="sm"
+              >
                 <Text fw={700} mb="xs">
                   {typeof entry.date === "string"
                     ? format(parseISO(entry.date), "MM/dd/yyyy")
@@ -176,7 +206,14 @@ export function MileageLogDisplay({
             {/* Render Skeleton Loaders when fetching next page */}
             {isFetchingNextPage &&
               Array.from({ length: 3 }).map((_, index) => (
-                <Card key={`skeleton-mobile-${index}`} shadow="sm" p="md" radius="md" withBorder mb="sm">
+                <Card
+                  key={`skeleton-mobile-${index}`}
+                  shadow="sm"
+                  p="md"
+                  radius="md"
+                  withBorder
+                  mb="sm"
+                >
                   <Skeleton height={8} radius="xl" mb="md" />
                   <Skeleton height={8} mt={6} radius="xl" />
                   <Skeleton height={8} mt={6} radius="xl" />
@@ -189,74 +226,81 @@ export function MileageLogDisplay({
           </Stack>
         ) : (
           <Paper shadow="xs" withBorder p="md">
-            <Table highlightOnHover verticalSpacing="sm" striped>
-              {/* Add the Table Header block */}
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>Date</Table.Th>
-                  <Table.Th>Vehicle</Table.Th>
-                  <Table.Th>Start</Table.Th>
-                  <Table.Th>End</Table.Th>
-                  <Table.Th>Miles</Table.Th>
-                  <Table.Th>Purpose</Table.Th>
-                  <Table.Th>Type</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {entries.map((entry: Tables<"mileage_log_entries">) => (
-                  <Table.Tr key={entry.id}>
-                    {/* Ensure Table Cells match headers */}
-                    {/* Date */}
-                    <Table.Td>
-                      {entry.date
-                        ? format(parseISO(entry.date), "MM/dd/yyyy")
-                        : "N/A"}
-                    </Table.Td>
-                    {/* Vehicle */}
-                    <Table.Td>{getVehicleInfo(entry)}</Table.Td>
-                    {/* Start Odometer */}
-                    <Table.Td>{entry.start_mileage ?? "N/A"}</Table.Td>
-                    {/* End Odometer */}
-                    <Table.Td>{entry.end_mileage ?? "N/A"}</Table.Td>
-                    {/* Miles */}
-                    <Table.Td>{entry.miles?.toFixed(1) ?? "N/A"}</Table.Td>
-                    {/* Purpose */}
-                    <Table.Td>{entry.purpose}</Table.Td>
-                    {/* Type */}
-                    <Table.Td>{entry.type}</Table.Td>
+            <ScrollArea h={500} viewportRef={scrollAreaRef}>
+              <Table
+                stickyHeader // Make header sticky
+                striped
+                highlightOnHover
+                verticalSpacing="sm"
+              >
+                {/* Add the Table Header block */}
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th>Date</Table.Th>
+                    <Table.Th>Vehicle</Table.Th>
+                    <Table.Th>Start</Table.Th>
+                    <Table.Th>End</Table.Th>
+                    <Table.Th>Miles</Table.Th>
+                    <Table.Th>Purpose</Table.Th>
+                    <Table.Th>Type</Table.Th>
                   </Table.Tr>
-                ))}
-                {/* Render Skeleton Loaders when fetching next page */}
-                {isFetchingNextPage &&
-                  Array.from({ length: 3 }).map((_, index) => (
-                    <Table.Tr key={`skeleton-desktop-${index}`}>
+                </Table.Thead>
+                <Table.Tbody>
+                  {entries.map((entry: Tables<"mileage_log_entries">) => (
+                    <Table.Tr key={entry.id}>
+                      {/* Ensure Table Cells match headers */}
+                      {/* Date */}
                       <Table.Td>
-                        <Skeleton height={8} radius="xl" />
+                        {entry.date
+                          ? format(parseISO(entry.date), "MM/dd/yyyy")
+                          : "N/A"}
                       </Table.Td>
-                      <Table.Td>
-                        <Skeleton height={8} radius="xl" />
-                      </Table.Td>
-                      <Table.Td>
-                        <Skeleton height={8} radius="xl" />
-                      </Table.Td>
-                      <Table.Td>
-                        <Skeleton height={8} radius="xl" />
-                      </Table.Td>
-                      <Table.Td>
-                        <Skeleton height={8} radius="xl" />
-                      </Table.Td>
-                      <Table.Td>
-                        <Skeleton height={8} radius="xl" />
-                      </Table.Td>
-                      <Table.Td>
-                        <Skeleton height={8} radius="xl" />
-                      </Table.Td>
+                      {/* Vehicle */}
+                      <Table.Td>{getVehicleInfo(entry)}</Table.Td>
+                      {/* Start Odometer */}
+                      <Table.Td>{entry.start_mileage ?? "N/A"}</Table.Td>
+                      {/* End Odometer */}
+                      <Table.Td>{entry.end_mileage ?? "N/A"}</Table.Td>
+                      {/* Miles */}
+                      <Table.Td>{entry.miles?.toFixed(1) ?? "N/A"}</Table.Td>
+                      {/* Purpose */}
+                      <Table.Td>{entry.purpose}</Table.Td>
+                      {/* Type */}
+                      <Table.Td>{entry.type}</Table.Td>
                     </Table.Tr>
                   ))}
-              </Table.Tbody>
-            </Table>
-            {/* Sentinel element for IntersectionObserver */}
-            <div ref={loadMoreRef} style={{ height: "1px" }} />
+                  {/* Render Skeleton Loaders when fetching next page */}
+                  {isFetchingNextPage &&
+                    Array.from({ length: 3 }).map((_, index) => (
+                      <Table.Tr key={`skeleton-desktop-${index}`}>
+                        <Table.Td>
+                          <Skeleton height={8} radius="xl" />
+                        </Table.Td>
+                        <Table.Td>
+                          <Skeleton height={8} radius="xl" />
+                        </Table.Td>
+                        <Table.Td>
+                          <Skeleton height={8} radius="xl" />
+                        </Table.Td>
+                        <Table.Td>
+                          <Skeleton height={8} radius="xl" />
+                        </Table.Td>
+                        <Table.Td>
+                          <Skeleton height={8} radius="xl" />
+                        </Table.Td>
+                        <Table.Td>
+                          <Skeleton height={8} radius="xl" />
+                        </Table.Td>
+                        <Table.Td>
+                          <Skeleton height={8} radius="xl" />
+                        </Table.Td>
+                      </Table.Tr>
+                    ))}
+                </Table.Tbody>
+              </Table>
+              {/* Move Sentinel element inside ScrollArea */}
+              <div ref={loadMoreRef} style={{ height: "1px" }} />
+            </ScrollArea>
           </Paper>
         ))}
 

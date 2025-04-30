@@ -5,9 +5,9 @@ import {
   Grid,
   Text,
   Group,
-  Button,
   ThemeIcon,
   Stack,
+  Title,
 } from '@mantine/core';
 import {
   IconCar,
@@ -18,12 +18,9 @@ import {
   IconBriefcase,
   IconCoin,
   IconReceipt,
-  IconTableExport,
 } from '@tabler/icons-react';
 import { format, parseISO } from 'date-fns';
 import { MileageLogWithEntries } from '@/types/index';
-import { GeneratePDF } from './GeneratePDF';
-import { PrintMilageLog } from './PrintMilageLog';
 
 interface MileageLogSummaryProps {
   log: MileageLogWithEntries;
@@ -68,14 +65,12 @@ export function MileageLogSummary({ log }: MileageLogSummaryProps) {
 
   return (
     <Card shadow="sm" padding="lg" radius="md" withBorder mb="xl">
-      <Group justify="flex-end" mb="md">
-        <Button variant="light" leftSection={<IconTableExport size={16} />}>
-          Download XLS
-        </Button>
-        <GeneratePDF log={log} />
-        <PrintMilageLog log={log} />
+      {/* Header Row */}
+      <Group justify="flex-start" align="center" mb="lg">
+        <Title order={3}>Mileage Log Summary</Title>
       </Group>
 
+      {/* Details Grid */}
       <Grid gutter="xl">
         <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
           <Stack>
