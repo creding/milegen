@@ -36,8 +36,8 @@ export async function createCheckoutSessionAction(): Promise<CheckoutSessionResu
           quantity: 1,
         },
       ],
-      success_url: `${env.NEXT_PUBLIC_VERCEL_URL}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${env.NEXT_PUBLIC_VERCEL_URL}/subscribe`,
+      success_url: `${env.SITE_URL}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${env.SITE_URL}/subscribe`,
       metadata: {
         userId: user.id,
       },
