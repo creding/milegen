@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabaseServerClient";
+import { logger } from "@/lib/logger";
 
 export async function checkSubscriptionStatus() {
   const supabase = await createClient();
@@ -27,7 +28,7 @@ export async function checkSubscriptionStatus() {
 
     return subscription?.status || null;
   } catch (error) {
-    console.error("Error checking subscription status:", error);
+    logger.error({ err: error }, "Error checking subscription status");
     return null;
   }
 }

@@ -2,11 +2,20 @@
 
 import { createClient } from "@/lib/supabaseServerClient";
 import { stripe } from "@/lib/stripe";
+import { z } from "zod";
 import type { SubscriptionVerificationResult } from "@/types/subscription";
+
+const idSchema = z.string().uuid("Invalid session ID");
 
 export async function verifySubscriptionAction(
   sessionId: string
 ): Promise<SubscriptionVerificationResult> {
+  const parsed = idSchema.safeParse(sessionId);
+  if (!parsed.success) {
+    return { error: `Validation error: ${parsed.error.errors.map(e => e.message).join(", ")}` };
+  }
+  const validSessionId = parsed.data;
+
   try {
     const supabase = await createClient();
 
@@ -18,7 +27,7 @@ export async function verifySubscriptionAction(
       throw new Error("User not found");
     }
 
-    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    const session = await stripe.checkout.sessions.retrieve(validSessionId);
 
     if (session.payment_status !== "paid") {
       throw new Error("Payment not completed");

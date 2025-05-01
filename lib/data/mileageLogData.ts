@@ -147,3 +147,17 @@ export async function getFullMileageLog(
     throw error; // Propagate error
   }
 }
+
+// Delete a mileage log ensuring it belongs to the user
+export async function deleteSavedMileageLog(
+  logId: string,
+  userId: string
+): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("mileage_logs")
+    .delete()
+    .eq("id", logId)
+    .eq("user_id", userId);
+  if (error) throw error;
+}

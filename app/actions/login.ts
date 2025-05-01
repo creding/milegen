@@ -4,6 +4,19 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabaseServerClient";
+import { logger } from "@/lib/logger";
+import { z } from "zod";
+
+const loginSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
+const signUpSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  termsAccepted: z.literal(true, { errorMap: () => ({ message: "Terms of Service must be accepted" }) }),
+});
 
 export async function logoutAction() {
   const supabase = await createClient();
@@ -18,12 +31,13 @@ export async function logoutAction() {
 export async function loginAction(formData: FormData) {
   const supabase = await createClient();
 
-  // type-casting here for convenience
-  // in practice, you should validate your inputs
-  const data = {
-    email: formData.get("email") as string,
-    password: formData.get("password") as string,
-  };
+  const raw = { email: formData.get("email"), password: formData.get("password") };
+  const parsed = loginSchema.safeParse(raw);
+  if (!parsed.success) {
+    const msg = parsed.error.errors.map((e) => e.message).join(", ");
+    return { error: { message: `Validation error: ${msg}` } };
+  }
+  const data = parsed.data;
 
   const { error } = await supabase.auth.signInWithPassword(data);
 
@@ -48,9 +62,11 @@ export async function signUpAction({
 }) {
   const supabase = await createClient();
 
-  // Ensure terms are accepted
-  if (termsAccepted !== true) {
-    return { error: "Terms of Service must be accepted" };
+  // validate inputs
+  const signUpParse = signUpSchema.safeParse({ email, password, termsAccepted });
+  if (!signUpParse.success) {
+    const msg = signUpParse.error.errors.map((e) => e.message).join(", ");
+    return { error: msg };
   }
 
   const termsAcceptedAt = new Date().toISOString();
@@ -70,7 +86,7 @@ export async function signUpAction({
   });
 
   if (authError) {
-    console.error("Failed to create user:", authError);
+    logger.error({ err: authError }, "Failed to create user");
     return { error: "Failed to create user." };
   }
 

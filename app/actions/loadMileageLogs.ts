@@ -2,6 +2,9 @@
 
 import { createClient } from "@/lib/supabaseServerClient";
 import type { MileageLog } from "@/types/mileage";
+import { z } from "zod";
+
+const idSchema = z.string().uuid("Invalid log ID");
 
 export async function loadMileageLogs(): Promise<{
   logs: MileageLog[];
@@ -48,9 +51,16 @@ export async function loadMileageLog(
   success: boolean;
   message: string;
 }> {
+  const parsed = idSchema.safeParse(logId);
+  if (!parsed.success) {
+    return { log: null, success: false, message: `Validation error: ${parsed.error.errors.map(e => e.message).join(", ")}` };
+  }
+  const validLogId = parsed.data;
+
   const supabase = await createClient();
   const {
     data: { user },
+    error: authError,
   } = await supabase.auth.getUser();
 
   try {
@@ -61,7 +71,7 @@ export async function loadMileageLog(
     const { data, error } = await supabase
       .from("mileage_logs")
       .select("*")
-      .eq("id", logId)
+      .eq("id", validLogId)
       .eq("user_id", user.id)
       .single();
 

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import type { MileageLog } from "@/app/actions/mileageGenerator";
 import { createClient } from "@/lib/supabaseServerClient";
+import { logger } from "@/lib/logger";
 import { getBusinessMileageRate } from "@/utils/constants";
 
 export async function saveMileageLog(
@@ -51,7 +52,6 @@ export async function saveMileageLog(
       "save_mileage_log_with_entries",
       {
         log_data: {
-          user_id: preparedLog.user_id,
           year: preparedLog.year,
           start_date: preparedLog.start_date,
           end_date: preparedLog.end_date,
@@ -71,7 +71,7 @@ export async function saveMileageLog(
     );
 
     if (error) {
-      console.error("Database error:", error);
+      logger.error({ err: error }, "Database error saving mileage log");
       throw error;
     }
 
@@ -82,7 +82,7 @@ export async function saveMileageLog(
       logId: data,
     };
   } catch (error) {
-    console.error("Error saving mileage log:", error);
+    logger.error({ err: error }, "Error saving mileage log");
     return {
       success: false,
       message: "Failed to save mileage log. Please try again.",

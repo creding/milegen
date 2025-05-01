@@ -11,6 +11,8 @@ import { saveMileageLog } from "./saveMileageLog"; // Assuming this exists
 import { isHoliday } from "@/utils/mileageUtils"; // Import isHoliday function
 import { createClient } from "@/lib/supabaseServerClient"; // Corrected import path
 import { Tables } from "@/types/database.types";
+import { mileageGeneratorParamsSchema } from "@/features/mileage-generator/utils/inputValidation.utils";
+import { logger } from "@/lib/logger";
 
 // --- Interfaces ---
 
@@ -240,7 +242,7 @@ async function generateMileageLog(
     CONFIG.REMAINDER_INCREMENT
   ) {
     // Allow small tolerance
-    console.warn(
+    logger.error(
       `Final calculated end mileage (${calculatedEndMileage}) differs slightly from target end mileage (${log.end_mileage}). Adjusting log end mileage.`
     );
     log.end_mileage = calculatedEndMileage;
@@ -287,7 +289,7 @@ function distributeMileageAcrossDays(
 
   // Handle edge case: no workdays in the period
   if (workdays.length === 0 && targetBusinessMiles > 0) {
-    console.warn(
+    logger.error(
       "Warning: No workdays found in the selected period, distributing business miles across all days."
     );
     // Treat all days as workdays for business mile distribution if necessary
@@ -300,7 +302,7 @@ function distributeMileageAcrossDays(
   if (workdays.length > 0) {
     dailyBusinessMilesAvg = targetBusinessMiles / workdays.length;
   } else if (targetBusinessMiles > CONFIG.FLOAT_PRECISION_THRESHOLD) {
-    console.warn(
+    logger.error(
       `Target business miles (${targetBusinessMiles}) specified, but no workdays found in the date range. Business miles cannot be assigned.`
     );
     // Potentially throw an error here if business miles are mandatory
@@ -645,54 +647,22 @@ export interface GenerateLogResult {
 export async function generateMileageLogFromForm(
   params: MileageGeneratorParams
 ): Promise<GenerateLogResult> {
-  // --- Input Validation ---
-  if (!params.startDate || !params.endDate) {
-    return { success: false, message: "Start and end dates are required." };
+  // Input validation via Zod
+  const validation = mileageGeneratorParamsSchema.safeParse(params);
+  if (!validation.success) {
+    const message = validation.error.errors.map((e) => e.message).join(", ");
+    return { success: false, message };
   }
-  // Ensure dates are valid Date objects before comparison
-  const startDate = new Date(params.startDate);
-  const endDate = new Date(params.endDate);
-  if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-    return { success: false, message: "Invalid date format provided." };
-  }
-
-  if (endDate <= startDate) {
-    return { success: false, message: "End date must be after start date." };
-  }
-  if (
-    params.startMileage === undefined ||
-    params.startMileage === null ||
-    params.endMileage === undefined ||
-    params.endMileage === null
-  ) {
-    return { success: false, message: "Start and end mileage are required." };
-  }
-  if (params.startMileage < 0 || params.endMileage < 0) {
-    return { success: false, message: "Mileage values cannot be negative." };
-  }
-
-  if (params.endMileage <= params.startMileage) {
-    return {
-      success: false,
-      message: "End mileage must be greater than start mileage.",
-    };
-  }
-  const totalMileage = roundMiles(params.endMileage - params.startMileage);
-  if (
-    params.totalPersonalMiles === undefined ||
-    params.totalPersonalMiles === null ||
-    params.totalPersonalMiles < 0 ||
-    params.totalPersonalMiles > totalMileage
-  ) {
-    return {
-      success: false,
-      message: `Total personal miles must be between 0 and ${totalMileage}.`,
-    };
-  }
-  if (!params.vehicle) {
-    return { success: false, message: "Vehicle information is required." };
-  }
-  const businessType = params.businessType || CONFIG.DEFAULT_BUSINESS_TYPE;
+  const {
+    startDate,
+    endDate,
+    startMileage,
+    endMileage,
+    totalPersonalMiles,
+    vehicle,
+    businessType = CONFIG.DEFAULT_BUSINESS_TYPE,
+    subscriptionStatus,
+  } = validation.data;
 
   try {
     // --- Core Logic ---
@@ -700,17 +670,17 @@ export async function generateMileageLogFromForm(
       // Now uses await as generateMileageLog is async
       startDate,
       endDate,
-      params.startMileage,
-      params.endMileage,
+      startMileage,
+      endMileage,
       businessType,
-      params.vehicle,
-      params.totalPersonalMiles
+      vehicle,
+      totalPersonalMiles
     );
 
     // Ensure log_entries exists (should always exist now unless error thrown)
     if (!log.log_entries) {
       // This case might indicate an error during generation that wasn't caught
-      console.error(
+      logger.error(
         "Log generation finished but log_entries array is missing."
       );
       return {
@@ -720,7 +690,7 @@ export async function generateMileageLogFromForm(
     }
 
     // --- Subscription Limiting ---
-    if (params.subscriptionStatus !== "active") {
+    if (subscriptionStatus !== "active") {
       const limit = 10;
       const totalEntries = log.log_entries.length;
       if (totalEntries > limit) {
@@ -747,7 +717,7 @@ export async function generateMileageLogFromForm(
       message: saveResult.message,
     };
   } catch (error: unknown) {
-    console.error("Error during mileage log generation or saving:", error);
+    logger.error({ err: error }, "Error during mileage log generation or saving");
     let errorMessage = "An unexpected error occurred. Please try again.";
     if (error instanceof Error) {
       errorMessage = error.message;
@@ -796,7 +766,7 @@ export async function getLogEntriesPage(
     .range(startIndex, endIndex);
 
   if (error) {
-    console.error("Error fetching log entries page:", error);
+    logger.error("Error fetching log entries page:", error);
     throw new Error(`Failed to fetch log entries: ${error.message}`);
   }
 

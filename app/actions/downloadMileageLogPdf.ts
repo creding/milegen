@@ -5,6 +5,9 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { getFullMileageLog } from '@/lib/data/mileageLogData';
 import { format, parseISO } from 'date-fns';
+import { z } from "zod";
+
+const idSchema = z.string().uuid("Invalid log ID");
 
 // Helper to safely format date or return placeholder
 const safeFormatDate = (dateStr: string | null | undefined) => {
@@ -24,8 +27,14 @@ const formatCurrencyDisplay = (amount: number | null | undefined): string => {
 };
 
 export async function downloadMileageLogPdf(logId: string): Promise<{ success: boolean; data?: string; error?: string }> {
+  const parsed = idSchema.safeParse(logId);
+  if (!parsed.success) {
+    return { success: false, error: `Validation error: ${parsed.error.errors.map(e => e.message).join(", ")}` };
+  }
+  const validLogId = parsed.data;
+
   try {
-    const logData = await getFullMileageLog(logId);
+    const logData = await getFullMileageLog(validLogId);
 
     if (!logData) {
       return { success: false, error: 'Mileage log not found.' };
