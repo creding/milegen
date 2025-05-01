@@ -2,33 +2,35 @@
 
 import { createClient } from "@/lib/supabaseServerClient";
 import { logger } from "@/lib/logger";
+import { fetchLatestSubscriptionByUserId } from "@/lib/data/subscriptions";
 
-export async function checkSubscriptionStatus() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return null;
-  }
-
+export async function checkSubscriptionStatus(): Promise<string | null> {
   try {
-    const { data: subscription, error } = await supabase
-      .from("subscriptions")
-      .select("*")
-      .eq("user_id", user?.id)
-      .order("created_at", { ascending: false }) // Replace 'created_at' if needed.
-      .limit(1)
-      .single();
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
-    if (error) {
+    if (authError) {
+      throw authError;
+    }
+
+    if (!user) {
+      logger.info('checkSubscriptionStatus: No authenticated user found.');
+      return null;
+    }
+
+    const { data: subscription, error: dbError } = await fetchLatestSubscriptionByUserId(supabase, user.id);
+
+    if (dbError) {
+      logger.warn({ err: dbError, userId: user.id }, 'Database error fetching subscription');
       return null;
     }
 
     return subscription?.status || null;
   } catch (error) {
-    logger.error({ err: error }, "Error checking subscription status");
+    logger.error({ err: error }, 'Error checking subscription status');
     return null;
   }
 }

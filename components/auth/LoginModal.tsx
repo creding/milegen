@@ -42,7 +42,7 @@ export function LoginModal() {
     try {
       const { error } = await loginAction(formData);
       if (error) {
-        setError(error.code);
+        setError(error.code ?? null);
       }
     } catch (error) {
       console.error("Login error:", error);

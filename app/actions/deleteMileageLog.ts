@@ -25,7 +25,12 @@ export async function deleteMileageLog(logId: string): Promise<{ success: boolea
     // Delegate deletion to data layer
     await deleteSavedMileageLog(validLogId, user.id);
 
-    revalidatePath("/saved-logs")
+    // Attempt to revalidate, but do not fail on revalidate errors
+    try {
+      revalidatePath("/saved-logs");
+    } catch (e) {
+      logger.warn({ err: e, logId: validLogId }, "revalidatePath failed");
+    }
     return { success: true, message: "Mileage log deleted successfully." }
   } catch (error) {
     logger.error({ err: error }, "Error deleting mileage log");

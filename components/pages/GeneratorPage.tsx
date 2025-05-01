@@ -20,7 +20,7 @@ import { generateMileageLogFromForm } from "@/app/actions/mileageGenerator";
 export const GeneratorPage = ({
   subscriptionStatus,
 }: {
-  subscriptionStatus: string;
+  subscriptionStatus: string | null;
 }) => {
   const router = useRouter();
   const isMobile = useMediaQuery("(max-width: 768px)");

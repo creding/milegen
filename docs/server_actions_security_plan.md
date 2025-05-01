@@ -49,6 +49,7 @@ This document outlines a structured plan to harden and secure all server actions
 - **Issue**: No explicit security headers.
 - **Action**:
   - Add CSP, HSTS, X-Frame-Options in `next.config.js` or custom middleware.
+  - **Status**: ✅ Completed
   - Audit headers for all routes.
 
 ## 8. Testing & Policy Verification

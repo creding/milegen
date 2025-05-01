@@ -1,6 +1,6 @@
 "use client";
 
-import { MileageLog } from "@/app/actions/mileageGenerator";
+import type { Tables } from "@/types/database.types";
 import { IconEye, IconTrash, IconPlus, IconFileOff } from "@tabler/icons-react";
 import { deleteMileageLog } from "@/app/actions/deleteMileageLog";
 import { notifications } from "@mantine/notifications";
@@ -30,25 +30,23 @@ import {
 } from "@mantine/core";
 import { useState, useTransition } from "react";
 
-export const SavedLogsPage = ({ logs }: { logs: MileageLog[] }) => {
+export const SavedLogsPage = ({ logs }: { logs: Tables<"mileage_logs">[] }) => {
   console.log(logs);
   const [isPending, startTransition] = useTransition();
   const [modalOpened, setModalOpened] = useState(false);
   const [logIdToDelete, setLogIdToDelete] = useState<string | null>(null);
-  const [userIdForDelete, setUserIdForDelete] = useState<string | null>(null);
 
-  const handleDelete = (logId: string, userId: string) => {
+  const handleDelete = (logId: string) => {
     setLogIdToDelete(logId);
-    setUserIdForDelete(userId);
     setModalOpened(true);
   };
 
   const confirmDelete = async () => {
-    if (!logIdToDelete || !userIdForDelete) return;
+    if (!logIdToDelete) return;
 
     startTransition(async () => {
       try {
-        const result = await deleteMileageLog(logIdToDelete, userIdForDelete);
+        const result = await deleteMileageLog(logIdToDelete);
 
         if (result.success) {
           notifications.show({
@@ -71,7 +69,6 @@ export const SavedLogsPage = ({ logs }: { logs: MileageLog[] }) => {
 
     setModalOpened(false);
     setLogIdToDelete(null);
-    setUserIdForDelete(null);
   };
 
   const EmptyState = () => (
@@ -170,12 +167,7 @@ export const SavedLogsPage = ({ logs }: { logs: MileageLog[] }) => {
 
                         <Tooltip label="Delete Log" withArrow position="top">
                           <ActionIcon
-                            onClick={() =>
-                              handleDelete(
-                                log.id as string,
-                                log.user_id as string
-                              )
-                            }
+                            onClick={() => handleDelete(log.id as string)}
                             variant="subtle"
                             color="red"
                             size="lg"

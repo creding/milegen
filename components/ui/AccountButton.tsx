@@ -5,7 +5,7 @@ import Link from "next/link";
 export const AccountButton = ({
   subscriptionStatus,
 }: {
-  subscriptionStatus: "active" | null;
+  subscriptionStatus: string | null;
 }) => {
   return (
     <Group gap={3}>
