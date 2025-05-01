@@ -15,7 +15,9 @@ const loginSchema = z.object({
 const signUpSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
-  termsAccepted: z.literal(true, { errorMap: () => ({ message: "Terms of Service must be accepted" }) }),
+  termsAccepted: z.literal(true, {
+    errorMap: () => ({ message: "Terms of Service must be accepted" }),
+  }),
 });
 
 export async function logoutAction() {
@@ -31,11 +33,14 @@ export async function logoutAction() {
 export async function loginAction(formData: FormData) {
   const supabase = await createClient();
 
-  const raw = { email: formData.get("email"), password: formData.get("password") };
+  const raw = {
+    email: formData.get("email"),
+    password: formData.get("password"),
+  };
   const parsed = loginSchema.safeParse(raw);
   if (!parsed.success) {
     const msg = parsed.error.errors.map((e) => e.message).join(", ");
-    return { error: { message: `Validation error: ${msg}` } };
+    return { success: false, error: { message: `Validation error: ${msg}` } };
   }
   const data = parsed.data;
 
@@ -43,7 +48,11 @@ export async function loginAction(formData: FormData) {
 
   if (error) {
     return {
-      error: { message: "There was an error logging in.", code: error.message },
+      success: false,
+      error: {
+        message: "There was an error logging in.",
+        code: error.message,
+      },
     };
   }
 
@@ -63,7 +72,11 @@ export async function signUpAction({
   const supabase = await createClient();
 
   // validate inputs
-  const signUpParse = signUpSchema.safeParse({ email, password, termsAccepted });
+  const signUpParse = signUpSchema.safeParse({
+    email,
+    password,
+    termsAccepted,
+  });
   if (!signUpParse.success) {
     const msg = signUpParse.error.errors.map((e) => e.message).join(", ");
     return { error: msg };
