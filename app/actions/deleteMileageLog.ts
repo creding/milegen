@@ -1,23 +1,39 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { createClient } from "@supabase/supabase-js"
+import { createClient } from "@/lib/supabaseServerClient"
+import { deleteSavedMileageLog } from "@/lib/data/mileageLogData";
+import { logger } from "@/lib/logger";
+import { z } from "zod";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+const idSchema = z.string().uuid("Invalid log ID");
 
-const supabase = createClient(supabaseUrl, supabaseServiceRoleKey)
+export async function deleteMileageLog(logId: string): Promise<{ success: boolean; message: string }> {
+  const parsed = idSchema.safeParse(logId);
+  if (!parsed.success) {
+    return { success: false, message: `Validation error: ${parsed.error.errors.map(e => e.message).join(", ")}` };
+  }
+  const validLogId = parsed.data;
 
-export async function deleteMileageLog(logId: string, userId: string): Promise<{ success: boolean; message: string }> {
+  const supabase = await createClient()
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) {
+    return { success: false, message: "User not authenticated." }
+  }
+
   try {
-    const { error } = await supabase.from("mileage_logs").delete().eq("id", logId).eq("user_id", userId)
+    // Delegate deletion to data layer
+    await deleteSavedMileageLog(validLogId, user.id);
 
-    if (error) throw error
-
-    revalidatePath("/saved-logs")
+    // Attempt to revalidate, but do not fail on revalidate errors
+    try {
+      revalidatePath("/saved-logs");
+    } catch (e) {
+      logger.warn({ err: e, logId: validLogId }, "revalidatePath failed");
+    }
     return { success: true, message: "Mileage log deleted successfully." }
   } catch (error) {
-    console.error("Error deleting mileage log:", error)
+    logger.error({ err: error }, "Error deleting mileage log");
     return { success: false, message: "Failed to delete mileage log. Please try again." }
   }
 }

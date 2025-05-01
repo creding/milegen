@@ -16,7 +16,7 @@ interface MileageFormProps {
   totalPersonalMiles: string;
   vehicle: string;
   businessType: string;
-  subscriptionStatus: string;
+  subscriptionStatus: string | null;
   onStartMileageChange: (value: string) => void;
   onEndMileageChange: (value: string) => void;
   onStartDateChange: (value: Date) => void;

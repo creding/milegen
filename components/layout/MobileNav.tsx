@@ -28,7 +28,7 @@ import { User } from "@supabase/supabase-js";
 
 interface MobileNavProps {
   user: User | null;
-  subscriptionStatus: string;
+  subscriptionStatus: string | null;
 }
 
 export function MobileNav({ user, subscriptionStatus }: MobileNavProps) {

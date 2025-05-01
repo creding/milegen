@@ -1,391 +1,309 @@
 "use client";
-
+import React, { useMemo, useRef, useEffect, useState } from "react";
 import {
-  Group,
-  Text,
-  TableThead,
-  TableTr,
-  TableTh,
-  TableTbody,
-  TableTd,
-  Stack,
   Card,
-  Box,
-  ScrollArea,
+  Stack,
+  Text,
   Title,
-  Divider,
-  Paper,
-  ThemeIcon,
   Table,
+  Group,
+  Paper,
+  Skeleton,
+  LoadingOverlay,
+  ScrollArea,
 } from "@mantine/core";
-import {
-  IconCar,
-  IconCalendar,
-  IconRoad,
-  IconBriefcase,
-  IconHome,
-  IconGauge,
-  IconCoin,
-  IconReceipt,
-} from "@tabler/icons-react";
-
+import { format, parseISO } from "date-fns";
 import { useMediaQuery } from "@mantine/hooks";
-import type { MileageEntry, MileageLog } from "@/app/actions/mileageGenerator";
-import { DownloadSpreadsheet } from "./DownloadSpreadsheet";
-import { PrintMilageLog } from "./PrintMilageLog";
-import { GeneratePDF } from "./GeneratePDF";
+import { Tables } from "@/types/database.types";
+import { MileageLogWithEntries } from "@/types/index";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { getPaginatedMileageEntries } from "@/lib/data/getPaginatedMileageEntries";
+import { MileageLogSummary } from "./MileageLogSummary";
 import { SubscriptionAlert } from "../subscription/SubscriptionAlert";
+import { GeneratePDF } from "./GeneratePDF";
+import { GenerateXls } from "./GenerateXls"; // Import the new XLS component
+
+interface MileageLogDisplayProps {
+  log: MileageLogWithEntries;
+  subscriptionStatus?: string | null;
+}
 
 export function MileageLogDisplay({
   log,
   subscriptionStatus,
-}: {
-  log: MileageLog;
-  subscriptionStatus?: string;
-}) {
+}: MileageLogDisplayProps) {
   const isMobile = useMediaQuery("(max-width: 768px)");
-  if (log.log_entries.length > 0) {
-    console.log("First mileage log entry:", log.log_entries[0]);
-  }
+  const scrollAreaRef = useRef<HTMLDivElement>(null); // Ref for ScrollArea
+  const [isClient, setIsClient] = useState(false);
+  const PAGE_SIZE = 20;
 
-  const MobileLogEntry = ({ entry }: { entry: MileageEntry }) => (
-    <Card shadow="sm" p="md" radius="md" withBorder mb="sm">
-      <Text fw={700} mb="xs">
-        {new Date(entry.date).toLocaleDateString()}
-      </Text>
-      <Stack gap="xs">
-        <Group justify="apart">
-          <Text size="sm" c="dimmed">
-            Vehicle:
-          </Text>
-          <Text size="sm">{entry.vehicle_info || log.vehicle_info}</Text>
-        </Group>
-        <Group justify="apart">
-          <Text size="sm" c="dimmed">
-            Starting Mileage:
-          </Text>
-          <Text size="sm">{parseFloat(entry.start_mileage.toFixed(1))}</Text>
-        </Group>
-        <Group justify="apart">
-          <Text size="sm" c="dimmed">
-            Ending Mileage:
-          </Text>
-          <Text size="sm">{parseFloat(entry.end_mileage.toFixed(1))}</Text>
-        </Group>
-        <Divider my="xs" />
-        <Text size="sm" c="dimmed" mt="xs">
-          Purpose:
-        </Text>
-        <Text size="sm">{entry.purpose}</Text>
-        <Divider my="xs" />
-        <Group justify="apart">
-          <Text size="sm" c="dimmed">
-            Total Miles:
-          </Text>
-          <Text size="sm">{parseFloat(entry.miles.toFixed(1))} miles</Text>
-        </Group>
-        <Group justify="apart">
-          <Text size="sm" c="dimmed">
-            Type:
-          </Text>
-          <Text size="sm">{entry.type}</Text>
-        </Group>
-      </Stack>
-    </Card>
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  const {
+    data,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    status,
+  } = useInfiniteQuery({
+    queryKey: ["mileageEntries", log.id],
+    queryFn: async ({ pageParam = 1 }) => {
+      if (!log.id) throw new Error("Log ID is required");
+      const result = await getPaginatedMileageEntries(
+        log.id,
+        pageParam,
+        PAGE_SIZE
+      );
+      return { // Only return the essential data needed by getNextPageParam and for rendering
+        entries: result.entries,
+        totalCount: result.totalCount ?? 0,
+      }; // Return entries and totalCount
+    },
+    initialPageParam: 1, // Starts requesting page 1
+    getNextPageParam: (lastPage, allPages) => { // Determines the *next* pageParam
+      const totalFetched = allPages.reduce((acc, page) => acc + page.entries.length, 0);
+      const totalCountInDb = lastPage.totalCount; // Get total count from the last page's data
+
+      console.log(`getNextPageParam: totalFetched=${totalFetched}, totalCountInDb=${totalCountInDb}`);
+
+      // If the total number fetched is less than the total available in the database
+      if (totalFetched < totalCountInDb) {
+        // Calculate the *next page number* to fetch (which is the count of pages fetched so far + 1)
+        const nextPageNumber = allPages.length + 1;
+        console.log(`--> Requesting next page: ${nextPageNumber}`);
+        return nextPageNumber;
+      }
+
+      // Otherwise, there are no more pages
+      console.log("--> No more pages.");
+      return undefined;
+    },
+    // Add staleTime and gcTime if needed for caching behavior
+    // staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+
+  const entries = useMemo(
+    () => data?.pages.flatMap((page) => page.entries) ?? [],
+    [data]
+  );
+  const totalEntriesCount = useMemo(
+    () => data?.pages[0]?.totalCount ?? 0,
+    [data]
   );
 
+  const getVehicleInfo = (entry: Tables<"mileage_log_entries">) => {
+    return entry.vehicle_info || log.vehicle_info || "Not specified";
+  };
+
+  // --- Intersection Observer Logic ---
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Ensure we have the ref elements and we are in the browser
+    const observerTarget = loadMoreRef.current;
+    const observerRoot = isMobile ? null : scrollAreaRef.current; // Use scroll area as root on desktop
+
+    if (!observerTarget || (!isMobile && !observerRoot)) {
+      console.log("Observer setup skipped: Missing target or desktop root.");
+      return;
+    }
+
+    console.log(
+      "Setting up Observer. Root:",
+      observerRoot ? "ScrollArea" : "Viewport"
+    );
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const firstEntry = entries[0];
+        console.log(
+          "Observer callback fired. isIntersecting:",
+          firstEntry.isIntersecting
+        );
+        // If the sentinel element is intersecting (visible) and there are more pages and we're not already fetching
+        if (firstEntry.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          console.log("Conditions met! Fetching next page...");
+          fetchNextPage();
+        } else {
+          console.log("Conditions not met or already fetching.", {
+            hasNextPage,
+            isFetchingNextPage,
+          });
+        }
+      },
+      {
+        root: observerRoot, // Set the root for observation
+        threshold: 0.1, // Trigger when 10% is visible within the root
+      }
+    );
+
+    observer.observe(observerTarget);
+
+    // Cleanup function to disconnect the observer
+    return () => {
+      observer.disconnect();
+    };
+    // Re-run effect if these change, also include scrollAreaRef for desktop
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage, isMobile, scrollAreaRef]);
+  // --- End Intersection Observer Logic ---
+
   return (
-    <Stack gap={isMobile ? "md" : 5}>
+    <Stack gap="lg">
+      <MileageLogSummary log={log} />
+
+      <Group justify="space-between" align="flex-start">
+        <Title order={3}>Mileage Entries ({totalEntriesCount})</Title>
+
+        <Group justify="flex-end">
+          <GenerateXls logId={log.id} />
+          <GeneratePDF log={{ id: log.id }} />
+        </Group>
+      </Group>
+
       {subscriptionStatus !== "active" && <SubscriptionAlert />}
-      {isMobile ? (
-        <Paper p="md" radius="sm" withBorder shadow="xs" w="100%">
-          <Stack gap="xs">
-            {subscriptionStatus === "active" && (
-              <Stack justify="flex-start">
-                <DownloadSpreadsheet log={log} />
-                <PrintMilageLog log={log} />
-                <GeneratePDF log={log} />
-              </Stack>
-            )}
 
-            <Group justify="apart">
-              <Text fw={500} c="dimmed">
-                Vehicle:
-              </Text>
-              <Text fw={600}>{log.vehicle_info || "Not specified"}</Text>
-            </Group>
+      {/* Show overlay during initial load */}
+      <LoadingOverlay
+        visible={status === "pending"}
+        overlayProps={{ radius: "sm", blur: 2 }}
+      />
 
-            <Group justify="apart">
-              <Text fw={500} c="dimmed">
-                Period:
-              </Text>
-              <Text fw={600}>
-                {log.start_date} - {log.end_date}
-              </Text>
-            </Group>
-
-            <Divider my="xs" label="Odometer" labelPosition="center" />
-
-            <Group justify="apart">
-              <Text fw={500} c="dimmed">
-                Starting Odometer:
-              </Text>
-              <Text fw={600}>{parseFloat(log.start_mileage.toFixed(1))}</Text>
-            </Group>
-            <Group justify="apart">
-              <Text fw={500} c="dimmed">
-                Ending Odometer:
-              </Text>
-              <Text fw={600}>{parseFloat(log.end_mileage.toFixed(1))}</Text>
-            </Group>
-
-            <Divider my="xs" label="Mileage" labelPosition="center" />
-
-            <Group justify="apart">
-              <Text fw={500} c="dimmed">
-                Total Mileage:
-              </Text>
-              <Text fw={600}>
-                {parseFloat(log.total_mileage.toFixed(1))} miles
-              </Text>
-            </Group>
-            <Group justify="apart">
-              <Text fw={500} c="dimmed">
-                Business Mileage:
-              </Text>
-              <Text fw={600}>
-                {parseFloat(log.total_business_miles.toFixed(1))} miles
-              </Text>
-            </Group>
-            <Group justify="apart">
-              <Text fw={500} c="dimmed">
-                Personal Mileage:
-              </Text>
-              <Text fw={600}>
-                {parseFloat(log.total_personal_miles.toFixed(1))} miles
-              </Text>
-            </Group>
-
-            {log.business_deduction_rate && log.business_deduction_amount && (
-              <>
-                <Divider my="xs" label="Tax Deduction" labelPosition="center" />
-                <Group justify="apart">
-                  <Text fw={500} c="dimmed">
-                    Rate:
-                  </Text>
-                  <Text fw={600}>
-                    ${log.business_deduction_rate.toFixed(2)}/mile
+      {/* Only render the layout after client has mounted to prevent hydration mismatch */}
+      {isClient &&
+        (isMobile ? (
+          <Stack mt="md">
+            {entries.map((entry: Tables<"mileage_log_entries">) => (
+              <Card
+                key={entry.id}
+                shadow="sm"
+                p="md"
+                radius="md"
+                withBorder
+                mb="sm"
+              >
+                <Text fw={700} mb="xs">
+                  {typeof entry.date === "string"
+                    ? format(parseISO(entry.date), "MM/dd/yyyy")
+                    : "Invalid Date"}
+                </Text>
+                <Group justify="space-between" mb="xs">
+                  <Text size="sm">Vehicle:</Text>
+                  <Text size="sm">{getVehicleInfo(entry)}</Text>
+                </Group>
+                <Group justify="space-between" mb="xs">
+                  <Text size="sm">Purpose:</Text>
+                  <Text size="sm" fw={500}>
+                    {entry.purpose || "N/A"}
                   </Text>
                 </Group>
-                <Group justify="apart">
-                  <Text fw={500} c="dimmed">
-                    Deduction:
-                  </Text>
-                  <Text fw={600}>
-                    ${log.business_deduction_amount.toFixed(2)}
-                  </Text>
+                <Group justify="space-between" mb="xs">
+                  <Text size="sm">Miles:</Text>
+                  <Text size="sm">{entry.miles?.toFixed(1) ?? "N/A"}</Text>
                 </Group>
-              </>
-            )}
+              </Card>
+            ))}
+            {/* Render Skeleton Loaders when fetching next page */}
+            {isFetchingNextPage &&
+              Array.from({ length: 3 }).map((_, index) => (
+                <Card
+                  key={`skeleton-mobile-${index}`}
+                  shadow="sm"
+                  p="md"
+                  radius="md"
+                  withBorder
+                  mb="sm"
+                >
+                  <Skeleton height={8} radius="xl" mb="md" />
+                  <Skeleton height={8} mt={6} radius="xl" />
+                  <Skeleton height={8} mt={6} radius="xl" />
+                  <Skeleton height={8} mt={6} radius="xl" />
+                </Card>
+              ))}
+            {/* Sentinel element for IntersectionObserver */}
+            <div ref={loadMoreRef} style={{ height: "1px" }} />
           </Stack>
-        </Paper>
-      ) : (
-        <>
-          <Paper p="lg" radius="sm" withBorder shadow="xs" w="100%">
-            <Group justify="flex-end" mb="xl" gap="xs">
-              {subscriptionStatus === "active" && (
-                <Group justify="flex-start">
-                  <DownloadSpreadsheet log={log} />
-                  <GeneratePDF log={log} />
-                  <PrintMilageLog log={log} />
-                </Group>
-              )}
-            </Group>
-            <Group grow align="flex-start" gap="xs">
-              <Stack gap="md">
-                <Group>
-                  <ThemeIcon size="md" variant="light" color="blue" radius="xl">
-                    <IconCar size="1rem" />
-                  </ThemeIcon>
-                  <Stack gap={0}>
-                    <Text size="xs" c="dimmed">
-                      Vehicle
-                    </Text>
-                    <Text fw={600}>{log.vehicle_info || "Not specified"}</Text>
-                  </Stack>
-                </Group>
-
-                <Group>
-                  <ThemeIcon size="md" variant="light" color="blue" radius="xl">
-                    <IconCalendar size="1rem" />
-                  </ThemeIcon>
-                  <Stack gap={0}>
-                    <Text size="xs" c="dimmed">
-                      Period
-                    </Text>
-                    <Text fw={600}>
-                      {log.start_date} - {log.end_date}
-                    </Text>
-                  </Stack>
-                </Group>
-                <Group>
-                  <ThemeIcon size="md" variant="light" color="blue" radius="xl">
-                    <IconRoad size="1rem" />
-                  </ThemeIcon>
-                  <Stack gap={0}>
-                    <Text size="xs" c="dimmed">
-                      Total Mileage
-                    </Text>
-                    <Text fw={600}>
-                      {parseFloat(log.total_mileage.toFixed(1))} miles
-                    </Text>
-                  </Stack>
-                </Group>
-              </Stack>
-
-              <Stack gap="md">
-                <Group>
-                  <ThemeIcon size="md" variant="light" color="cyan" radius="xl">
-                    <IconGauge size="1rem" />
-                  </ThemeIcon>
-                  <Stack gap={0}>
-                    <Text size="xs" c="dimmed">
-                      Odometer Reading
-                    </Text>
-                    <Text fw={600}>
-                      {parseFloat(log.start_mileage.toFixed(1))} →{" "}
-                      {parseFloat(log.end_mileage.toFixed(1))}
-                    </Text>
-                  </Stack>
-                </Group>
-                <Group>
-                  <ThemeIcon size="md" variant="light" color="gray" radius="xl">
-                    <IconHome size="1rem" />
-                  </ThemeIcon>
-                  <Stack gap={0}>
-                    <Text size="xs" c="dimmed">
-                      Personal Miles
-                    </Text>
-                    <Text fw={600}>
-                      {parseFloat(log.total_personal_miles.toFixed(1))} miles
-                    </Text>
-                  </Stack>
-                </Group>
-                <Group>
-                  <ThemeIcon
-                    size="md"
-                    variant="light"
-                    color="green"
-                    radius="xl"
-                  >
-                    <IconBriefcase size="1rem" />
-                  </ThemeIcon>
-                  <Stack gap={0}>
-                    <Text size="xs" c="dimmed">
-                      Business Miles
-                    </Text>
-                    <Text fw={600}>
-                      {parseFloat(log.total_business_miles.toFixed(1))} miles
-                    </Text>
-                  </Stack>
-                </Group>
-              </Stack>
-
-              <Stack gap="md">
-                <Group>
-                  <ThemeIcon
-                    size="md"
-                    variant="light"
-                    color="yellow"
-                    radius="xl"
-                  >
-                    <IconCoin size="1rem" />
-                  </ThemeIcon>
-                  <Stack gap={0}>
-                    <Text size="xs" c="dimmed">
-                      Deduction Rate
-                    </Text>
-                    <Text fw={600}>
-                      ${log.business_deduction_rate?.toFixed(2) || "0.00"}
-                      /mile
-                    </Text>
-                  </Stack>
-                </Group>
-                <Group>
-                  <ThemeIcon
-                    size="md"
-                    variant="light"
-                    color="green"
-                    radius="xl"
-                  >
-                    <IconReceipt size="1rem" />
-                  </ThemeIcon>
-                  <Stack gap={0}>
-                    <Text size="xs" c="dimmed">
-                      Tax Deduction
-                    </Text>
-                    <Text fw={700} size="lg" c="green">
-                      ${log.business_deduction_amount?.toFixed(2) || "0.00"}
-                    </Text>
-                  </Stack>
-                </Group>
-              </Stack>
-            </Group>
-          </Paper>
-        </>
-      )}
-
-      {isMobile ? (
-        <Stack>
-          {log.log_entries.map((entry, index) => (
-            <MobileLogEntry key={index} entry={entry} />
-          ))}
-        </Stack>
-      ) : (
-        <Paper p="lg" radius="sm" withBorder shadow="xs" w="100%">
-          <Title order={4} mb="md">
-            Mileage Log Entries
-          </Title>
-          <Divider mb="md" />
-          <ScrollArea>
-            <Box maw="100%" w="100%">
-              <Table striped highlightOnHover withTableBorder w="100%">
-                <TableThead>
-                  <TableTr>
-                    <TableTh>Date</TableTh>
-                    <TableTh>Vehicle</TableTh>
-                    <TableTh>Start</TableTh>
-                    <TableTh>End</TableTh>
-                    <TableTh>Miles</TableTh>
-                    <TableTh>Purpose</TableTh>
-                    <TableTh>Type</TableTh>
-                  </TableTr>
-                </TableThead>
-                <TableTbody>
-                  {log.log_entries.map((entry, index) => (
-                    <TableTr key={index}>
-                      <TableTd>
-                        {new Date(entry.date).toLocaleDateString()}
-                      </TableTd>
-                      <TableTd>
-                        {entry.vehicle_info || log.vehicle_info}
-                      </TableTd>
-                      <TableTd>
-                        {parseFloat(entry.start_mileage.toFixed(1))}
-                      </TableTd>
-                      <TableTd>
-                        {parseFloat(entry.end_mileage.toFixed(1))}
-                      </TableTd>
-                      <TableTd>{parseFloat(entry.miles.toFixed(1))}</TableTd>
-                      <TableTd>{entry.purpose}</TableTd>
-                      <TableTd>{entry.type}</TableTd>
-                    </TableTr>
+        ) : (
+          <Paper shadow="xs" withBorder p="md">
+            <ScrollArea h={500} viewportRef={scrollAreaRef}>
+              <Table
+                stickyHeader // Make header sticky
+                striped
+                highlightOnHover
+                verticalSpacing="sm"
+              >
+                {/* Add the Table Header block */}
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th>Date</Table.Th>
+                    <Table.Th>Vehicle</Table.Th>
+                    <Table.Th>Start</Table.Th>
+                    <Table.Th>End</Table.Th>
+                    <Table.Th>Miles</Table.Th>
+                    <Table.Th>Purpose</Table.Th>
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                  {entries.map((entry: Tables<"mileage_log_entries">) => (
+                    <Table.Tr key={entry.id}>
+                      {/* Ensure Table Cells match headers */}
+                      {/* Date */}
+                      <Table.Td>
+                        {entry.date
+                          ? format(parseISO(entry.date), "MM/dd/yyyy")
+                          : "N/A"}
+                      </Table.Td>
+                      {/* Vehicle */}
+                      <Table.Td>{getVehicleInfo(entry)}</Table.Td>
+                      {/* Start Odometer */}
+                      <Table.Td>{entry.start_mileage ?? "N/A"}</Table.Td>
+                      {/* End Odometer */}
+                      <Table.Td>{entry.end_mileage ?? "N/A"}</Table.Td>
+                      {/* Miles */}
+                      <Table.Td>{entry.miles?.toFixed(1) ?? "N/A"}</Table.Td>
+                      {/* Purpose */}
+                      <Table.Td>{entry.purpose}</Table.Td>
+                    </Table.Tr>
                   ))}
-                </TableTbody>
+                  {/* Render Skeleton Loaders when fetching next page */}
+                  {isFetchingNextPage &&
+                    Array.from({ length: 3 }).map((_, index) => (
+                      <Table.Tr key={`skeleton-desktop-${index}`}>
+                        <Table.Td>
+                          <Skeleton height={8} radius="xl" />
+                        </Table.Td>
+                        <Table.Td>
+                          <Skeleton height={8} radius="xl" />
+                        </Table.Td>
+                        <Table.Td>
+                          <Skeleton height={8} radius="xl" />
+                        </Table.Td>
+                        <Table.Td>
+                          <Skeleton height={8} radius="xl" />
+                        </Table.Td>
+                        <Table.Td>
+                          <Skeleton height={8} radius="xl" />
+                        </Table.Td>
+                        <Table.Td>
+                          <Skeleton height={8} radius="xl" />
+                        </Table.Td>
+                      </Table.Tr>
+                    ))}
+                </Table.Tbody>
               </Table>
-            </Box>
-          </ScrollArea>
-        </Paper>
+              {/* Move Sentinel element inside ScrollArea */}
+              <div ref={loadMoreRef} style={{ height: "1px" }} />
+            </ScrollArea>
+          </Paper>
+        ))}
+
+      {error && (
+        <Text c="red" mt="md">
+          Error fetching mileage entries:{" "}
+          {error instanceof Error ? error.message : "Unknown error"}
+        </Text>
       )}
     </Stack>
   );

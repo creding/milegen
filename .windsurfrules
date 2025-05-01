@@ -1,0 +1,28 @@
+database: 
+    provider: supabase
+    database_name: milegen
+    project_id: rmszfnofzuwvoxvkusak
+
+rules:
+  project_structure:
+    app: "Next.js routes, pages, server actions, edge functions"
+    components: "Reusable React components (PascalCase)"
+    features: "Domain modules grouping components, hooks, utils, types"
+    utils: "Shared utilities (*.utils.ts)"
+    types: "Global type definitions (.d.ts)"
+    assets: "Static files (images, fonts)"
+    styles: "Global theme config & design tokens"
+    tests: "Test suites mirroring src structure"
+
+  naming_conventions:
+    folders: "kebab-case"
+    components_and_pages: "PascalCase.tsx/.ts"
+    utilities: "camelCase.utils.ts"
+    types: "snake_case.d.ts"
+
+  separation_of_concerns:
+    ui: "components/features"
+    business_logic: "features/<feature>/utils"
+    data_access:
+      server_actions: "app/actions"
+      db_queries: "lib/data"

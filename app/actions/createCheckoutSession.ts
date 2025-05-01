@@ -2,6 +2,8 @@
 
 import { createClient } from "@/lib/supabaseServerClient";
 import { stripe } from "@/lib/stripe";
+import { logger } from "@/lib/logger";
+import { env } from "@/lib/env";
 
 export type CheckoutSessionResult =
   | { url: string }
@@ -30,12 +32,12 @@ export async function createCheckoutSessionAction(): Promise<CheckoutSessionResu
       customer_email: user.email,
       line_items: [
         {
-          price: process.env.STRIPE_PRICE_ID,
+          price: env.STRIPE_PRICE_ID,
           quantity: 1,
         },
       ],
-      success_url: `${process.env.SITE_URL}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.SITE_URL}/subscribe`,
+      success_url: `${env.NEXT_PUBLIC_VERCEL_URL}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${env.NEXT_PUBLIC_VERCEL_URL}/subscribe`,
       metadata: {
         userId: user.id,
       },
@@ -47,7 +49,7 @@ export async function createCheckoutSessionAction(): Promise<CheckoutSessionResu
 
     return { url: session.url };
   } catch (err) {
-    console.error("Error creating checkout session:", err);
+    logger.error({ err }, "Error creating checkout session");
     return {
       error:
         err instanceof Error
