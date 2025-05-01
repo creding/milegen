@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Confirm Your Email - Welcome to MileGen!</title>
+    <style>
+        /* Basic Reset */
+        body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+        img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+        table { border-collapse: collapse !important; }
+        body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; background-color: #f4f4f4; }
+        a[x-apple-data-detectors] {
+            color: inherit !important;
+            text-decoration: none !important;
+            font-size: inherit !important;
+            font-family: inherit !important;
+            font-weight: inherit !important;
+            line-height: inherit !important;
+        }
+        /* Base Styles */
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        }
+        .wrapper {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px; /* Added subtle rounding */
+            overflow: hidden; /* Ensures contained rounding */
+        }
+        .content {
+            padding: 30px;
+            text-align: left; /* Changed to left for better readability of paragraphs */
+        }
+        .header {
+            padding: 25px 0;
+            text-align: center;
+            background-color: #0056b3; /* Slightly darker blue */
+            color: #ffffff;
+        }
+         .header h1 {
+            margin: 0;
+            font-size: 28px; /* Slightly larger */
+            color: #ffffff;
+         }
+        .button-container {
+            text-align: center; /* Center the button */
+            margin: 25px 0;
+        }
+        .button {
+            display: inline-block;
+            padding: 14px 30px; /* Larger padding */
+            background-color: #0069d9; /* Adjusted blue */
+            color: #ffffff !important; /* Important to override default link styles */
+            text-decoration: none !important; /* Important to override default link styles */
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none; /* Remove border */
+        }
+        .button:hover {
+             background-color: #0056b3; /* Darker on hover */
+        }
+        .footer {
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #777777;
+            background-color: #eeeeee; /* Light grey background for footer */
+        }
+        .link-paragraph {
+             text-align: center;
+             font-size: 12px;
+             word-break: break-all;
+             color: #555555;
+             margin-top: 15px;
+        }
+        .link-paragraph a {
+             color: #0069d9 !important; /* Important to override default link styles */
+             text-decoration: underline !important; /* Important to override default link styles */
+        }
+    </style>
+</head>
+<body style="margin: 0 !important; padding: 0 !important; background-color: #f4f4f4;">
+    <!-- Preheader Text -->
+    <div style="display: none; font-size: 1px; color: #f4f4f4; line-height: 1px; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden;">
+        Confirm your email and start generating compliant mileage logs effortlessly with MileGen.
+    </div>
+
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+        <tr>
+            <td align="center" style="background-color: #f4f4f4; padding: 20px 0;">
+                <!--[if (gte mso 9)|(IE)]>
+                <table align="center" border="0" cellspacing="0" cellpadding="0" width="600">
+                <tr>
+                <td align="center" valign="top" width="600">
+                <![endif]-->
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" class="wrapper">
+                    <!-- Header -->
+                    <tr>
+                        <td align="center" class="header">
+                            <h1>Welcome to MileGen!</h1>
+                        </td>
+                    </tr>
+                    <!-- Content -->
+                    <tr>
+                        <td class="content" style="color: #333333; font-size: 16px; line-height: 1.6;">
+                            <h2 style="font-size: 22px; margin-bottom: 20px; color: #0056b3; text-align: center;">Confirm Your Account</h2>
+                            <p>Thank you for signing up! MileGen simplifies mileage tracking by automatically generating compliant logs from your driving data. Save time, ensure accuracy, and get ready for effortless reimbursements or tax deductions.</p>
+                            <p>To get started, please confirm your email address by clicking the button below:</p>
+                            <div class="button-container">
+                                <a href="{{ .ConfirmationURL }}" target="_blank" class="button">Confirm Email & Activate Account</a>
+                            </div>
+                            <p class="link-paragraph">If you're having trouble with the button, please copy and paste this link into your browser:<br><a href="{{ .ConfirmationURL }}" target="_blank">{{ .ConfirmationURL }}</a></p>
+                        </td>
+                    </tr>
+                    <!-- Footer -->
+                    <tr>
+                        <td align="center" class="footer">
+                            <p>If you didn't sign up for MileGen, please disregard this email.</p>
+                            <p>MileGen | Simplify Your Drive &copy; 2025</p>
+                        </td>
+                    </tr>
+                </table>
+                <!--[if (gte mso 9)|(IE)]>
+                </td>
+                </tr>
+                </table>
+                <![endif]-->
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

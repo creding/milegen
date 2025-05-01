@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Confirm Your Action</title>
+    <style>
+        /* Basic Reset */
+        body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+        img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+        table { border-collapse: collapse !important; }
+        body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; background-color: #f4f4f4; }
+        a[x-apple-data-detectors] {
+            color: inherit !important;
+            text-decoration: none !important;
+            font-size: inherit !important;
+            font-family: inherit !important;
+            font-weight: inherit !important;
+            line-height: inherit !important;
+        }
+        /* Base Styles */
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        }
+        .wrapper {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .content {
+            padding: 30px;
+            text-align: left;
+        }
+        .header {
+            padding: 25px 0;
+            text-align: center;
+            background-color: #0056b3; /* Match other emails */
+            color: #ffffff;
+        }
+         .header h1 {
+            margin: 0;
+            font-size: 28px;
+            color: #ffffff;
+         }
+        .token-container {
+            text-align: center;
+            margin: 25px 0;
+            padding: 15px;
+            background-color: #e9ecef; /* Light grey background for token */
+            border-radius: 5px;
+        }
+        .token {
+            font-size: 24px;
+            font-weight: bold;
+            color: #0056b3; /* Match header color */
+            letter-spacing: 2px; /* Add some spacing for readability */
+        }
+        .footer {
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #777777;
+            background-color: #eeeeee;
+        }
+        .link-paragraph {
+             text-align: center;
+             font-size: 12px;
+             word-break: break-all;
+             color: #555555;
+             margin-top: 15px;
+        }
+        .link-paragraph a {
+             color: #0069d9 !important;
+             text-decoration: underline !important;
+        }
+         .security-note {
+            font-size: 14px;
+            color: #555555;
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body style="margin: 0 !important; padding: 0 !important; background-color: #f4f4f4;">
+    <!-- Preheader Text -->
+    <div style="display: none; font-size: 1px; color: #f4f4f4; line-height: 1px; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden;">
+        Enter this code to confirm your action on MileGen.
+    </div>
+
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+        <tr>
+            <td align="center" style="background-color: #f4f4f4; padding: 20px 0;">
+                <!--[if (gte mso 9)|(IE)]>
+                <table align="center" border="0" cellspacing="0" cellpadding="0" width="600">
+                <tr>
+                <td align="center" valign="top" width="600">
+                <![endif]-->
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" class="wrapper">
+                    <!-- Header -->
+                    <tr>
+                        <td align="center" class="header">
+                            <h1>Confirm Action Required</h1>
+                        </td>
+                    </tr>
+                    <!-- Content -->
+                    <tr>
+                        <td class="content" style="color: #333333; font-size: 16px; line-height: 1.6;">
+                            <h2 style="font-size: 22px; margin-bottom: 20px; color: #333333; text-align: center;">Confirm Your Action</h2>
+                            <p>To protect your account, we need you to confirm that you intended to perform a recent action. Please enter the following code in your MileGen application to verify this action:</p>
+                            <div class="token-container">
+                                <span class="token">{{ .Token }}</span>
+                            </div>
+                            <p class="security-note">This confirmation code is required to proceed and will expire shortly.</p>
+                        </td>
+                    </tr>
+                    <!-- Footer -->
+                    <tr>
+                        <td align="center" class="footer">
+                            <p>If you did not recently perform an action requiring confirmation on MileGen, please disregard this email or contact support if you suspect suspicious activity.</p>
+                            <p>MileGen | Simplify Your Drive &copy; 2025</p>
+                        </td>
+                    </tr>
+                </table>
+                <!--[if (gte mso 9)|(IE)]>
+                </td>
+                </tr>
+                </table>
+                <![endif]-->
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
