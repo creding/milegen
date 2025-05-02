@@ -79,8 +79,8 @@ export function HeroSection({ user }: { user: User | null }) {
                   variant="default"
                   leftSection={<IconDownload size={20} />}
                   component="a"
-                  href="/api/download-sample"
-                  download="milegen-sample-log.csv"
+                  href="/sample-mileage-log.pdf" // Point to static PDF in public/
+                  download="sample-mileage-log.pdf"
                 >
                   Download Sample
                 </Button>
