@@ -18,8 +18,9 @@ import {
   IconReportAnalytics,
 } from "@tabler/icons-react";
 import Link from "next/link";
+import { User } from "@supabase/supabase-js";
 
-export function CTASection() {
+export function CTASection({ user }: { user: User | null }) {
   return (
     <Box py={80} style={{ backgroundColor: "#f8f9fa" }}>
       <Container size="xl">
@@ -138,7 +139,9 @@ export function CTASection() {
                     fullWidth
                     variant="gradient"
                     component={Link}
-                    href="/?signup=true"
+                    href={
+                      user ? "/generator" : "/?login=true&redirect=/generator"
+                    }
                     rightSection={<IconChevronRight size="1rem" />}
                   >
                     Create Your Log

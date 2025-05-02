@@ -11,7 +11,7 @@ export function LoginModal() {
     <Modal
       radius="md"
       centered
-      shadow="sm"
+      shadow="lg"
       opened={true}
       onClose={() => router.push("/")}
       transitionProps={{
@@ -20,7 +20,7 @@ export function LoginModal() {
       }}
       size="lg"
     >
-      <AuthForm redirectPath="/" />
+      <AuthForm />
     </Modal>
   );
 }

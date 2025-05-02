@@ -1,11 +1,11 @@
 import { LoginModal } from "@/components/auth/LoginModal";
-import { SignupModal } from "@/components/auth/SignupModal";
 import {
   HeroSection,
   StepsSection,
   CTASection,
   SEOSection,
 } from "@/components/homepage";
+import { createClient } from "@/lib/supabaseServerClient";
 
 import { Metadata } from "next";
 
@@ -29,17 +29,20 @@ export const metadata: Metadata = {
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ login: string; signup: string }>;
+  searchParams: Promise<{ login: string }>;
 }) {
-  const { login, signup } = await searchParams;
+  const { login } = await searchParams;
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   return (
     <>
-      <HeroSection />
-      <StepsSection />
-      <CTASection />
+      <HeroSection user={user} />
+      <StepsSection user={user} />
+      <CTASection user={user} />
       <SEOSection />
       {login === "true" && <LoginModal />}
-      {signup === "true" && <SignupModal />}
     </>
   );
 }

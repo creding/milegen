@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import {
-  Paper,
   TextInput,
   PasswordInput,
   Button,
@@ -22,13 +21,18 @@ import { createClient } from "@/lib/supabaseBrowserClient";
 
 import { GoogleLoginButton } from "@/components/ui/google/GoogleLoginButton";
 import { loginAction, signUpAction } from "@/app/actions/login";
+import { useSearchParams } from "next/navigation";
 
-export default function AuthForm({ redirectPath }: { redirectPath: string }) {
+export default function AuthForm() {
   const [error, setError] = useState<string | null>(null);
   const [signupMessage, setSignupMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
-
+  const searchParams = useSearchParams();
+  const signup = searchParams.get("signup");
+  const [mode, setMode] = useState<"signin" | "signup">(
+    signup ? "signup" : "signin"
+  );
+  const redirectPath = searchParams.get("redirect") || "/";
   const supabase = createClient();
   const url = getURL();
   const redirectTo = `${url}/auth/callback?redirect=${encodeURIComponent(
@@ -148,136 +152,128 @@ export default function AuthForm({ redirectPath }: { redirectPath: string }) {
   };
 
   return (
-    <Paper p="xl" withBorder>
-      <form onSubmit={form.onSubmit(handleSubmit)}>
-        <Stack gap="md">
-          <Title order={4} ta="center">
-            {mode === "signin"
-              ? "Sign in to your account"
-              : "Create an account"}
-          </Title>
+    <form onSubmit={form.onSubmit(handleSubmit)}>
+      <Stack gap="lg" p="xl">
+        <Title order={3} ta="center">
+          {mode === "signin" ? "Sign in to your account" : "Create an account"}
+        </Title>
 
-          {/* Display Error Message */}
-          {error &&
-            !form.errors.termsAccepted && ( // Don't show general error if it's just the terms checkbox error
-              <Alert
-                variant="light"
-                color="red"
-                title="Authentication Error"
-                icon={<IconInfoCircle />} // Use an appropriate icon
-                withCloseButton
-                onClose={() => setError("")} // Allow closing
-              >
-                {error}
-              </Alert>
-            )}
-
-          {/* Display Signup Success Message */}
-          {signupMessage && (
+        {/* Display Error Message */}
+        {error &&
+          !form.errors.termsAccepted && ( // Don't show general error if it's just the terms checkbox error
             <Alert
               variant="light"
-              color="teal" // Use a success color
-              title="Sign Up Successful"
-              icon={<IconInfoCircle />}
+              color="red"
+              title="Authentication Error"
+              icon={<IconInfoCircle />} // Use an appropriate icon
               withCloseButton
-              onClose={() => setSignupMessage("")}
+              onClose={() => setError("")} // Allow closing
             >
-              {signupMessage}
+              {error}
             </Alert>
           )}
 
-          {/* Hide form fields if sign up was successful */}
-          {!signupMessage && (
-            <>
-              <TextInput
-                required
-                label="Email address"
-                placeholder="your@email.com"
-                {...form.getInputProps("email")}
-                disabled={loading}
-              />
+        {/* Display Signup Success Message */}
+        {signupMessage && (
+          <Alert
+            variant="light"
+            color="teal" // Use a success color
+            title="Sign Up Successful"
+            icon={<IconInfoCircle />}
+            withCloseButton
+            onClose={() => setSignupMessage("")}
+          >
+            {signupMessage}
+          </Alert>
+        )}
 
+        {/* Hide form fields if sign up was successful */}
+        {!signupMessage && (
+          <>
+            <TextInput
+              required
+              label="Email address"
+              placeholder="your@email.com"
+              {...form.getInputProps("email")}
+              disabled={loading}
+            />
+
+            <PasswordInput
+              required
+              label="Password"
+              placeholder="Your password"
+              {...form.getInputProps("password")}
+              disabled={loading}
+              // Suggestion: Add description for password requirements if any
+              // description="Password must be at least 6 characters long"
+            />
+
+            {mode === "signup" && (
               <PasswordInput
                 required
-                label="Password"
-                placeholder="Your password"
-                {...form.getInputProps("password")}
+                label="Confirm Password"
+                placeholder="Confirm your password"
+                {...form.getInputProps("confirmPassword")}
                 disabled={loading}
-                // Suggestion: Add description for password requirements if any
-                // description="Password must be at least 6 characters long"
               />
+            )}
 
-              {mode === "signup" && (
-                <PasswordInput
-                  required
-                  label="Confirm Password"
-                  placeholder="Confirm your password"
-                  {...form.getInputProps("confirmPassword")}
-                  disabled={loading}
-                />
-              )}
-
-              {/* Terms Accepted Checkbox */}
-              {mode === "signup" && (
-                <Checkbox
-                  mt="md"
-                  label={
-                    <>
-                      I accept the{" "}
-                      <Anchor href="/terms" target="_blank" size="sm">
-                        Terms and Conditions
-                      </Anchor>
-                    </>
-                  }
-                  {...form.getInputProps("termsAccepted", { type: "checkbox" })}
-                  error={form.errors.termsAccepted} // Display validation error specific to checkbox
-                />
-              )}
-
-              <Button
-                type="submit"
-                loading={loading}
-                fullWidth // Consider fullWidth for main action
-              >
-                {mode === "signin" ? "Sign in" : "Sign up"}
-              </Button>
-
-              <Divider
-                label="Or continue with"
-                labelPosition="center"
-                my="sm"
+            {/* Terms Accepted Checkbox */}
+            {mode === "signup" && (
+              <Checkbox
+                mt="md"
+                label={
+                  <>
+                    I accept the{" "}
+                    <Anchor href="/terms" target="_blank" size="sm">
+                      Terms and Conditions
+                    </Anchor>
+                  </>
+                }
+                {...form.getInputProps("termsAccepted", { type: "checkbox" })}
+                error={form.errors.termsAccepted} // Display validation error specific to checkbox
               />
+            )}
 
-              <GoogleLoginButton
-                onClick={handleGoogleAuth}
-                disabled={loading}
-                fullWidth
-                variant="outline"
-              />
-            </>
-          )}
+            <Button
+              type="submit"
+              loading={loading}
+              fullWidth // Consider fullWidth for main action
+            >
+              {mode === "signin" ? "Sign in" : "Sign up"}
+            </Button>
 
-          {/* Mode Toggle - Conditionally render or adjust text */}
-          {!signupMessage && ( // Hide toggle if showing success message
-            <Group justify="center" gap={5} mt="sm">
-              <Text size="sm">
-                {mode === "signin"
-                  ? "Don't have an account?"
-                  : "Already have an account?"}
-              </Text>
-              <Anchor
-                size="sm"
-                component="button"
-                type="button"
-                onClick={handleModeChange} // Use updated handler
-                disabled={loading}
-              >
-                {mode === "signin" ? "Sign up" : "Sign in"}
-              </Anchor>
-            </Group>
-          )}
-        </Stack>
-      </form>
-    </Paper>
+            <Divider label="Or continue with" labelPosition="center" my="sm" />
+
+            <GoogleLoginButton
+              onClick={handleGoogleAuth}
+              disabled={loading}
+              fullWidth
+              variant="outline"
+            />
+          </>
+        )}
+
+        {/* Mode Toggle - Conditionally render or adjust text */}
+        {!signupMessage && ( // Hide toggle if showing success message
+          <Group justify="center" gap={5} mt="sm">
+            <Text size="sm">
+              {mode === "signin"
+                ? "Don't have an account?"
+                : "Already have an account?"}
+            </Text>
+            <Anchor
+              size="sm"
+              component="button"
+              type="button"
+              onClick={handleModeChange} // Use updated handler
+              disabled={loading}
+            >
+              {mode === "signin" ? "Sign up" : "Sign in"}
+            </Anchor>
+          </Group>
+        )}
+      </Stack>
+    </form>
   );
 }

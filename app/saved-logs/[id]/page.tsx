@@ -7,6 +7,8 @@ import { Card, Container, Title, Text, Group } from "@mantine/core";
 import { checkSubscriptionStatus } from "@/app/actions/checkSubscriptionStatus";
 import { MileageLogWithEntries } from "@/types/index"; // Import the new combined type
 import { Tables } from "@/types/database.types"; // Import Tables
+import { createClient } from "@/lib/supabaseServerClient";
+import { redirect } from "next/navigation";
 
 type SSRParams = {
   id: string;
@@ -31,6 +33,13 @@ export default async function Page({
   let log: PaginatedMileageLog | null = null;
 
   const subscriptionStatus = await checkSubscriptionStatus();
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    redirect("/?login=true&redirect=/saved-logs/" + id);
+  }
 
   try {
     log = await getSavedMileageLog({

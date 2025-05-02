@@ -1,0 +1,88 @@
+.hero {
+  /* Reduced top/bottom padding */
+  padding-top: calc(var(--mantine-spacing-xl) * 3);
+  padding-bottom: calc(var(--mantine-spacing-xl) * 3);
+  position: relative; /* Needed for potential pseudo-elements later if desired */
+  overflow: hidden; /* Prevent gradient bleed */
+
+  /* Clean Background */
+  background-color: 
+    light-dark(
+      var(--mantine-color-gray-0), 
+      var(--mantine-color-dark-8)
+    );
+}
+
+.title {
+  /* Strong Headline */
+  color: light-dark(var(--mantine-color-black), var(--mantine-color-white));
+  font-size: 64px; /* Slightly adjusted size */
+  font-weight: 800; /* Slightly less heavy */
+  line-height: 1.15;
+  margin-bottom: var(--mantine-spacing-md);
+  letter-spacing: -0.5px; /* Subtle tightening */
+  z-index: 1; /* Ensure text is above background */
+  position: relative; /* Needed for z-index */
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2); /* Added text shadow for legibility */
+
+  /* Use CSS variable for breakpoint */
+  @media (max-width: var(--mantine-breakpoint-sm)) {
+    font-size: 48px; /* Adjusted smaller screen size */
+  }
+}
+
+.description {
+  /* Clear Description */
+  color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-gray-4)); 
+  font-size: var(--mantine-font-size-lg);
+  line-height: 1.6;
+  z-index: 1;
+  position: relative;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.15); /* Added text shadow for legibility */
+}
+
+.ctaGroup {
+  margin-top: var(--mantine-spacing-xl);
+  z-index: 1;
+  position: relative;
+}
+
+/* Optional: Style primary CTA specifically if needed */
+/* .primaryCta { ... } */
+
+/* Optional: Style secondary CTA specifically if needed */
+/* .secondaryCta { ... } */
+
+/* Ensure Grid container allows absolute positioning */
+/* Note: We assume the parent Grid component handles positioning context, 
+   but if not, we might need to set position: relative on it or the container */
+
+/* Text column: Needs higher z-index */
+.heroTextCol {
+  position: relative; /* To establish stacking context */
+  z-index: 2; /* Ensure text is above */
+}
+
+/* Added style for the image column */
+.heroImageCol { /* Updated for background image */
+  position: relative; /* Establish stacking context */
+  z-index: 0; /* Ensure image is behind text */
+  background: var(--mantine-color-gray-7);
+  /* Background image properties */
+  background-image: url('/images/milegen-log.png'); /* Path relative to public folder */
+  background-size: cover; /* Zoom/crop effect */
+  background-position: center; /* Adjust focus point if needed */
+  min-height: 450px; /* Give the column height - Adjust as needed */
+  border-radius: var(--mantine-radius-md);
+
+  /* Apply negative margin only on screens where columns are side-by-side */
+  @media (min-width: em(768px)) { /* Assuming 'md' breakpoint is 768px (adjust if needed) */
+    /* Pull the image column to the left to create overlap */
+    margin-left: calc(-1 * var(--mantine-spacing-xl) * 2); /* Use the larger negative margin */
+  }
+}
+
+/* Ensure Grid alignment works well */
+.hero :global(.mantine-Grid-inner) {
+  align-items: center; /* Vertically center columns */
+}

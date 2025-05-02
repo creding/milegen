@@ -20,7 +20,7 @@ export default async function Page() {
   const subscriptionStatus = await checkSubscriptionStatus();
 
   if (!user) {
-    redirect("/login");
+    redirect("/?login=true&redirect=/account");
   }
 
   return (

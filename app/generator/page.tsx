@@ -9,7 +9,7 @@ export default async function Page() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    redirect("/login");
+    redirect("/?login=true&redirect=/generator");
   }
   const subscriptionStatus = await checkSubscriptionStatus();
 

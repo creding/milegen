@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function CookiePolicyPage() {
   return (
-    <Box mt={20}>
+    <Box mt={60}>
       <Container size="md" py="xl">
         <Title order={1} mb="lg">
           Cookie Policy

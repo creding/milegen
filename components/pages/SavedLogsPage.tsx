@@ -14,7 +14,6 @@ import {
   Group,
   Container,
   Title,
-  ActionIcon,
   TableThead,
   TableTr,
   TableTh,
@@ -25,7 +24,6 @@ import {
   Center,
   Paper,
   ThemeIcon,
-  Tooltip,
   Modal,
 } from "@mantine/core";
 import { useState, useTransition } from "react";
@@ -123,7 +121,7 @@ export const SavedLogsPage = ({ logs }: { logs: Tables<"mileage_logs">[] }) => {
                   <TableTh style={{ textAlign: "right" }}>
                     Personal Miles
                   </TableTh>
-                  <TableTh style={{ textAlign: "center" }}>Actions</TableTh>
+                  <TableTh></TableTh>
                 </TableTr>
               </TableThead>
               <TableTbody>
@@ -148,33 +146,27 @@ export const SavedLogsPage = ({ logs }: { logs: Tables<"mileage_logs">[] }) => {
                       {log.total_personal_miles}
                     </TableTd>
                     <TableTd>
-                      <Group gap="xs" justify="flex-start">
-                        <Tooltip
-                          label="View Log Details"
-                          withArrow
-                          position="top"
+                      <Group gap="xs" justify="flex-end">
+                        <Button
+                          component={Link}
+                          href={`/saved-logs/${log.id}`}
+                          variant="subtle"
+                          color="blue"
+                          size="xs"
+                          leftSection={<IconEye size="1rem" />}
                         >
-                          <ActionIcon
-                            component={Link}
-                            href={`/saved-logs/${log.id}`}
-                            variant="subtle"
-                            color="blue"
-                            size="lg"
-                          >
-                            <IconEye size="1.125rem" />
-                          </ActionIcon>
-                        </Tooltip>
+                          View
+                        </Button>
 
-                        <Tooltip label="Delete Log" withArrow position="top">
-                          <ActionIcon
-                            onClick={() => handleDelete(log.id as string)}
-                            variant="subtle"
-                            color="red"
-                            size="lg"
-                          >
-                            <IconTrash size="1.125rem" />
-                          </ActionIcon>
-                        </Tooltip>
+                        <Button
+                          onClick={() => handleDelete(log.id as string)}
+                          variant="subtle"
+                          color="red"
+                          size="xs"
+                          leftSection={<IconTrash size="1rem" />}
+                        >
+                          Delete
+                        </Button>
                       </Group>
                     </TableTd>
                   </TableTr>

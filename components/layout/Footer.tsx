@@ -47,7 +47,9 @@ export const Footer = async () => {
                     boxShadow: "0 4px 14px rgba(0, 0, 0, 0.15)",
                   }}
                   component={Link}
-                  href="/?signup=true"
+                  href={
+                    user ? "/generator" : "/?login=true&redirect=/generator"
+                  }
                   rightSection={<IconChevronRight size="1rem" />}
                 >
                   Get Started Now

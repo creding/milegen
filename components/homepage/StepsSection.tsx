@@ -13,8 +13,9 @@ import {
 } from "@mantine/core";
 import { IconCar, IconChevronRight } from "@tabler/icons-react";
 import Link from "next/link";
+import { User } from "@supabase/supabase-js";
 
-export function StepsSection() {
+export function StepsSection({ user }: { user: User | null }) {
   // Process steps
   const processSteps = [
     {
@@ -123,7 +124,9 @@ export function StepsSection() {
                     size="md"
                     radius="md"
                     component={Link}
-                    href="/?signup=true"
+                    href={
+                      user ? "/generator" : "/?login=true&redirect=/generator"
+                    }
                     rightSection={<IconChevronRight size="1rem" />}
                     variant="gradient"
                   >

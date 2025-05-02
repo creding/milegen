@@ -13,7 +13,7 @@ import Link from "next/link";
 
 export default function TermsPage() {
   return (
-    <Box mt={20}>
+    <Box mt={60}>
       <Container size="md" py="xl">
         <Stack gap="lg">
           <Title order={1}>Terms of Service - Milegen.us</Title>
@@ -168,7 +168,7 @@ export default function TermsPage() {
           </Box>
 
           <Group justify="center" mt="xl">
-            <Button component={Link} href="/?signup=true">
+            <Button component={Link} href="/?login=true&signup=true">
               Back to Sign Up
             </Button>
           </Group>
