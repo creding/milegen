@@ -19,7 +19,15 @@ export const metadata: Metadata = {
     title: "MileGen - IRS-Compliant Mileage Logs in Minutes",
     description:
       "Generate IRS-compliant mileage logs in minutes. Maximize tax deductions and protect yourself from audits.",
-    url: "https://milegen.us",
+    url: process.env.NEXT_PUBLIC_SITE_URL,
+    images: [
+      {
+        url: `${process.env.NEXT_PUBLIC_SITE_URL}/og-image.png`,
+        width: 1200,
+        height: 630,
+        alt: "MileGen - IRS-Compliant Mileage Logs in Minutes",
+      },
+    ],
     siteName: "MileGen",
     locale: "en_US",
     type: "website",
