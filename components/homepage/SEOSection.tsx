@@ -25,7 +25,7 @@ import {
 
 export function SEOSection() {
   return (
-    <Box py={80} style={{ backgroundColor: "#ffffff" }}>
+    <Box py={80} component="section">
       <Container size="xl">
         <Stack gap={60}>
           {/* Main Content Section */}
@@ -42,7 +42,7 @@ export function SEOSection() {
                     >
                       <IconClipboardCheck size={20} />
                     </ThemeIcon>
-                    <Title order={3} style={{ color: "#2c3e50" }}>
+                    <Title order={3} c="blue.9">
                       IRS-Compliant Mileage Logs Made Simple
                     </Title>
                   </Group>
@@ -101,7 +101,7 @@ export function SEOSection() {
                     >
                       <IconCertificate size={20} />
                     </ThemeIcon>
-                    <Title order={3} style={{ color: "#2c3e50" }}>
+                    <Title order={3} c="blue.9">
                       Why Proper Mileage Documentation Matters
                     </Title>
                   </Group>
@@ -126,7 +126,7 @@ export function SEOSection() {
                     </ThemeIcon>
                     <div>
                       <Text fw={600}>Average Annual Savings</Text>
-                      <Text size="xl" fw={700} style={{ color: "#27ae60" }}>
+                      <Text size="xl" fw={700} c="green">
                         $3,500
                       </Text>
                       <Text size="xs" c="dimmed">
@@ -148,7 +148,7 @@ export function SEOSection() {
           {/* Industry Section */}
           <Paper p="xl" radius="md" withBorder shadow="sm">
             <Stack align="center" mb="lg">
-              <Title order={3} ta="center" style={{ color: "#2c3e50" }}>
+              <Title order={3} ta="center" c="blue.9">
                 Trusted by Professionals Across Industries
               </Title>
               <Text size="md" c="dimmed" maw={700} ta="center">
@@ -196,7 +196,7 @@ export function SEOSection() {
                     >
                       {item.icon}
                     </ThemeIcon>
-                    <Title order={3} ta="center" style={{ color: "#2c3e50" }}>
+                    <Title order={3} ta="center" c="blue.9">
                       {item.title}
                     </Title>
                     <Text size="sm" c="dimmed" ta="center">
@@ -211,7 +211,7 @@ export function SEOSection() {
           {/* SEO Footer - Hidden in plain sight */}
           <Box mt={20}>
             <Divider my="lg" />
-            <Text size="xs" c="dimmed" ta="center" style={{ lineHeight: 1.6 }}>
+            <Text size="xs" c="dimmed" ta="center" lh={1.6}>
               Serving professionals nationwide including New York, Los Angeles,
               Chicago, Houston, Phoenix, Philadelphia, San Antonio, San Diego,
               Dallas, and San Jose. Our IRS-compliant mileage tracking solution

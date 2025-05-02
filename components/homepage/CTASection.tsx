@@ -22,22 +22,13 @@ import { User } from "@supabase/supabase-js";
 
 export function CTASection({ user }: { user: User | null }) {
   return (
-    <Box py={80} style={{ backgroundColor: "#f8f9fa" }}>
+    <Box py={80} component="section" bg="gray.0">
       <Container size="xl">
-        <Paper
-          p="xl"
-          radius="md"
-          withBorder
-          style={{
-            background: "white",
-            borderColor: "#e9ecef",
-            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
-          }}
-        >
+        <Paper p="xl" radius="md" withBorder shadow="md">
           <Grid gutter={40}>
             <GridCol span={{ base: 12, md: 7 }}>
               <Stack gap="md">
-                <Title order={2} style={{ color: "#2c3e50" }}>
+                <Title order={2} c="blue.9">
                   Say Goodbye to Tedious Mileage Tracking
                 </Title>
 
@@ -138,6 +129,7 @@ export function CTASection({ user }: { user: User | null }) {
                     radius="md"
                     fullWidth
                     variant="gradient"
+                    gradient={{ from: "blue", to: "cyan", deg: 90 }}
                     component={Link}
                     href={
                       user ? "/generator" : "/?login=true&redirect=/generator"

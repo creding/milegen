@@ -32,10 +32,7 @@ export function HeroSection({ user }: { user: User | null }) {
       <Container size="lg">
         <Grid gutter={{ base: 40, md: 80 }} align="stretch">
           {/* Left Column: Text & CTAs */}
-          <GridCol
-            span={{ base: 12, md: 7 }}
-            style={{ position: "relative", zIndex: 1 }}
-          >
+          <GridCol span={{ base: 12, md: 7 }}>
             <Stack gap="lg">
               <Title c="blue.9" order={1} fw={700} lh={1.2}>
                 Effortless Mileage Logging, Maximum Deductions.

@@ -53,7 +53,7 @@ export function StepsSection({ user }: { user: User | null }) {
         <Paper radius="md" withBorder shadow="sm">
           <Stack p="lg" gap="xl">
             <Stack align="center" gap="xs">
-              <Title order={2} ta="center" style={{ color: "#2c3e50" }}>
+              <Title order={2} ta="center" c="blue.9">
                 Create Your Mileage Log in 3 Simple Steps
               </Title>
               <Text c="dimmed" ta="center" maw={700} size="md" mx="auto">
@@ -86,7 +86,7 @@ export function StepsSection({ user }: { user: User | null }) {
                           {step.number}
                         </Text>
                       </ThemeIcon>
-                      <Title order={3} style={{ color: "#2c3e50" }}>
+                      <Title order={3} c="blue.9">
                         {step.title}
                       </Title>
                     </Group>
@@ -100,19 +100,14 @@ export function StepsSection({ user }: { user: User | null }) {
             </SimpleGrid>
 
             <Box mt={10}>
-              <Paper
-                p="md"
-                radius="md"
-                withBorder
-                style={{ backgroundColor: "#f1f8fe" }}
-              >
+              <Paper p="md" radius="md" withBorder bg="gray.0">
                 <Group justify="apart" align="center">
                   <Group gap="md">
                     <ThemeIcon size={42} radius="xl" color="blue">
                       <IconCar size={24} />
                     </ThemeIcon>
                     <div>
-                      <Text fw={600} size="lg" style={{ color: "#2c3e50" }}>
+                      <Text fw={600} size="lg" c="blue.9">
                         Ready to Simplify Your Mileage Tracking?
                       </Text>
                       <Text size="sm" c="dimmed">
