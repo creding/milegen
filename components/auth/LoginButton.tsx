@@ -1,5 +1,5 @@
 import { Button } from "@mantine/core";
-import { IconLogin2 } from "@tabler/icons-react";
+import { IconLogin } from "@tabler/icons-react";
 import Link from "next/link";
 
 export function LoginButton() {
@@ -7,8 +7,9 @@ export function LoginButton() {
     <Button
       component={Link}
       href={{ pathname: "/", query: { login: true } }}
-      leftSection={<IconLogin2 size={18} />}
-      variant="gradient"
+      leftSection={<IconLogin size={18} />}
+      variant="subtle"
+      color="gray"
     >
       Log In
     </Button>
