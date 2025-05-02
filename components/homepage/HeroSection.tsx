@@ -13,7 +13,7 @@ import Link from "next/link";
 import { IconDownload } from "@tabler/icons-react";
 import { User } from "@supabase/supabase-js";
 import Image from "next/image";
-
+import milegenLog from "@/images/milegen-log.webp";
 export function HeroSection({ user }: { user: User | null }) {
   return (
     <Box
@@ -91,10 +91,11 @@ export function HeroSection({ user }: { user: User | null }) {
           {/* Right Column: Visual Placeholder */}
           <GridCol span={{ base: 12, md: 5 }} visibleFrom="md">
             <Image
-              src="/images/milegen-log.png"
+              src={milegenLog}
               alt="Milegen Log"
               height={400}
               width={600}
+              sizes="42vw"
               style={{
                 borderRadius: "var(--mantine-radius-md)",
                 boxShadow: "var(--mantine-shadow-md)",

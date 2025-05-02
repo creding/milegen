@@ -86,7 +86,7 @@ export function StepsSection({ user }: { user: User | null }) {
                           {step.number}
                         </Text>
                       </ThemeIcon>
-                      <Title order={4} style={{ color: "#2c3e50" }}>
+                      <Title order={3} style={{ color: "#2c3e50" }}>
                         {step.title}
                       </Title>
                     </Group>

@@ -148,7 +148,7 @@ export function SEOSection() {
           {/* Industry Section */}
           <Paper p="xl" radius="md" withBorder shadow="sm">
             <Stack align="center" mb="lg">
-              <Title order={2} ta="center" style={{ color: "#2c3e50" }}>
+              <Title order={3} ta="center" style={{ color: "#2c3e50" }}>
                 Trusted by Professionals Across Industries
               </Title>
               <Text size="md" c="dimmed" maw={700} ta="center">
@@ -196,7 +196,7 @@ export function SEOSection() {
                     >
                       {item.icon}
                     </ThemeIcon>
-                    <Title order={4} ta="center" style={{ color: "#2c3e50" }}>
+                    <Title order={3} ta="center" style={{ color: "#2c3e50" }}>
                       {item.title}
                     </Title>
                     <Text size="sm" c="dimmed" ta="center">

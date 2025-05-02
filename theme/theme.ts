@@ -97,7 +97,7 @@ export const theme = createTheme({
     Card: {
       defaultProps: {
         radius: "lg",
-        p: "xl",
+        p: 'xl',
       },
       styles: {
         root: {
@@ -115,10 +115,10 @@ export const theme = createTheme({
         root: {
           borderRadius: "md",
           fontWeight: 500,
-          color: lightBlue,
+          color: '#0369a1', // Use darker blue (blue[7]) for contrast
           "&[dataActive]": {
             background: "#f0f9ff",
-            color: lightBlue,
+            color: '#0369a1', // Use darker blue (blue[7]) for contrast
             "&:hover": {
               background: "#e0f2fe",
             },
@@ -176,11 +176,11 @@ export const theme = createTheme({
     Anchor: {
       styles: {
         root: {
-          color: lightBlue,
+          color: '#0369a1', // Use darker blue (blue[7]) for contrast
           fontWeight: 500,
           transition: "all 0.2s ease",
           "&:hover": {
-            color: "#5499c9",
+            color: '#075985', // Use even darker blue (blue[8]) on hover
             textDecoration: "none",
           },
         },

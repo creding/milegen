@@ -3,7 +3,7 @@ import { z } from "zod";
 const envSchema = z.object({
   STRIPE_SECRET_KEY: z.string().min(1, "Missing STRIPE_SECRET_KEY"),
   STRIPE_PRICE_ID: z.string().min(1, "Missing STRIPE_PRICE_ID"),
-  SITE_URL: z.string().url("Invalid SITE_URL"),
+  NEXT_PUBLIC_SITE_URL: z.string().url("Invalid NEXT_PUBLIC_SITE_URL"),
   NEXT_PUBLIC_SUPABASE_URL: z
     .string()
     .min(1, "Missing NEXT_PUBLIC_SUPABASE_URL"),

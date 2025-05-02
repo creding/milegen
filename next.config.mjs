@@ -1,3 +1,5 @@
+import bundleAnalyzer from '@next/bundle-analyzer';
+
 /** @type {import('next').NextConfig} */
 const ContentSecurityPolicy = `
   default-src 'self';
@@ -11,7 +13,11 @@ const ContentSecurityPolicy = `
   style-src 'self' 'unsafe-inline';
 `;
 
-const nextConfig = {
+let nextConfig = {
+  // Add image optimization formats
+  images: {
+    formats: ['image/avif', 'image/webp'],
+  },
   async headers() {
     return [
       {
@@ -34,5 +40,11 @@ const nextConfig = {
     ];
   },
 };
+
+const withBundleAnalyzer = bundleAnalyzer({
+  enabled: process.env.ANALYZE === 'true',
+});
+
+nextConfig = withBundleAnalyzer(nextConfig);
 
 export default nextConfig;
