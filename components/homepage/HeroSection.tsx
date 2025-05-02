@@ -23,7 +23,7 @@ export function HeroSection({ user }: { user: User | null }) {
         paddingBottom: "calc(var(--mantine-spacing-xl) * 3)",
         position: "relative",
         overflow: "hidden",
-        background: `linear-gradient(135deg, var(--mantine-color-gray-0) 0%, var(--mantine-color-blue-0) 100%), url('/images/milegen-log.png')`,
+        background: `linear-gradient(135deg, var(--mantine-color-gray-1) 0%, var(--mantine-color-blue-2) 100%), url('/images/milegen-log.png')`,
         backgroundSize: "cover, 40%",
         backgroundPosition: "center, 80% 10px",
         backgroundRepeat: "no-repeat",
@@ -37,27 +37,11 @@ export function HeroSection({ user }: { user: User | null }) {
             style={{ position: "relative", zIndex: 1 }}
           >
             <Stack gap="lg">
-              <Title
-                order={1}
-                fw={700}
-                style={{
-                  fontSize: "rem(44px)",
-                  lineHeight: 1.2,
-                  textShadow: "1px 1px 3px rgba(0, 0, 0, 0.2)",
-                  color: "var(--mantine-color-black)",
-                }}
-              >
+              <Title c="blue.9" order={1} fw={700} lh={1.2}>
                 Effortless Mileage Logging, Maximum Deductions.
               </Title>
 
-              <Text
-                size="xl"
-                c="gray.7"
-                style={{
-                  lineHeight: 1.6,
-                  textShadow: "1px 1px 2px rgba(0, 0, 0, 0.15)",
-                }}
-              >
+              <Text size="xl" c="gray.7" lh={1.4}>
                 Generate accurate, IRS-compliant mileage logs in seconds. Stop
                 guessing, start saving.
               </Text>
