@@ -14,6 +14,7 @@ import { IconDownload } from "@tabler/icons-react";
 import { User } from "@supabase/supabase-js";
 import Image from "next/image";
 import milegenLog from "@/images/milegen-log.webp";
+import milegenHeroBkg from "@/images/milegen-hero-bkg.webp";
 export function HeroSection({ user }: { user: User | null }) {
   return (
     <Box
@@ -23,9 +24,15 @@ export function HeroSection({ user }: { user: User | null }) {
         paddingBottom: "calc(var(--mantine-spacing-xl) * 3)",
         position: "relative",
         overflow: "hidden",
-        background: `linear-gradient(135deg, var(--mantine-color-gray-1) 0%, var(--mantine-color-blue-2) 100%), url('/images/milegen-log.png')`,
-        backgroundSize: "cover, 40%",
-        backgroundPosition: "center, 80% 10px",
+        backgroundImage: `linear-gradient(135deg, 
+          rgba(240, 249, 255, 0.25) 0%, 
+          rgba(224, 242, 254, 0.2) 25%,
+          rgba(186, 230, 253, 0.15) 50%,
+          rgba(125, 211, 252, 0.1) 75%,
+          rgba(56, 189, 248, 0.05) 100%),
+          url(${milegenHeroBkg.src})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
       }}
     >
