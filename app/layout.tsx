@@ -15,7 +15,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/react";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import type { ReactNode } from "react";
-
+import milegenHeroBkg from "@/images/milegen-hero-bkg.webp";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -31,7 +31,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" data-mantine-color-scheme="light">
-      <head></head>
+      <head>
+        <link
+          rel="preload"
+          href={milegenHeroBkg.src}
+          as="image"
+          type="image/webp"
+        />
+      </head>
       <body
         className={inter.className}
         style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}

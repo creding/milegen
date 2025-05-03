@@ -39,7 +39,7 @@ export function HeroSection({ user }: { user: User | null }) {
       <Container size="lg">
         <Grid gutter={{ base: 40, md: 80 }} align="stretch">
           {/* Left Column: Text & CTAs */}
-          <GridCol span={{ base: 12, md: 7 }}>
+          <GridCol span={{ base: 12, md: 6 }}>
             <Stack gap="lg">
               <Title c="blue.9" order={1} fw={700} lh={1.2}>
                 Effortless Mileage Logging, Maximum Deductions.
@@ -77,7 +77,7 @@ export function HeroSection({ user }: { user: User | null }) {
           </GridCol>
 
           {/* Right Column: Visual Placeholder */}
-          <GridCol span={{ base: 12, md: 5 }} visibleFrom="md">
+          <GridCol span={{ base: 12, md: 6 }} visibleFrom="md">
             <Image
               src={milegenLog}
               alt="Milegen Log"
@@ -86,7 +86,7 @@ export function HeroSection({ user }: { user: User | null }) {
               sizes="42vw"
               style={{
                 borderRadius: "var(--mantine-radius-md)",
-                boxShadow: "var(--mantine-shadow-md)",
+                boxShadow: "var(--mantine-shadow-xl)",
                 maxWidth: "100%", // Ensure image stays within column
                 height: "auto", // Maintain aspect ratio
               }}

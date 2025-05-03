@@ -6,6 +6,7 @@ import {
   SEOSection,
 } from "@/components/homepage";
 import { createClient } from "@/lib/supabaseServerClient";
+import Script from "next/script";
 
 import { Metadata } from "next";
 
@@ -46,6 +47,31 @@ export default async function Home({
   } = await supabase.auth.getUser();
   return (
     <>
+      <Script
+        id="structured-data"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "SoftwareApplication",
+            "name": "Milegen",
+            "applicationCategory": "BusinessApplication",
+            "description": "Generate professional, IRS-compliant mileage logs quickly and easily. Save time, maximize tax deductions, and protect yourself from audits.",
+            "operatingSystem": "Web",
+            "offers": {
+              "@type": "Offer",
+              "price": "9.99",
+              "priceCurrency": "USD",
+              "priceValidUntil": "2025-12-31"
+            },
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4.8",
+              "ratingCount": "124"
+            }
+          })
+        }}
+      />
       <HeroSection user={user} />
       <StepsSection user={user} />
       <CTASection user={user} />

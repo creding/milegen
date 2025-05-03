@@ -18,13 +18,16 @@ This list outlines actions to improve the performance and accessibility of `mile
 
 **Accessibility:**
 
-3.  **Fix Color Contrast Issues:**
-    * **Action:** Identify all elements listed in the "Background and foreground colors do not have a sufficient contrast ratio" audit.
-    * **Action:** Adjust the text color and/or background color for these elements to meet the minimum WCAG AA contrast ratio (4.5:1 for normal text, 3:1 for large text). Use a contrast checker tool if necessary. (Elements identified seem to use `#868e96` on `#ffffff` or `#f1f8fe`, and `#27ae60` on `#ffffff`).
+3.  **Fix Color Contrast Issues:** completed
+    * **Action:** Identified elements with insufficient contrast and replaced hardcoded color values with theme tokens that meet WCAG AA standards.
+    * **Action:** Updated NavLink and Anchor component styles in theme.ts to use darker blue shades (#0369a1 and #075985) for better contrast.
+    * **Action:** Replaced inline color styles with Mantine's `c` prop using theme tokens (e.g., `c="blue.9"` instead of `style={{ color: "#2c3e50" }}`).
     * **Reason:** Improves readability for users with visual impairments.
 
-4.  **Correct Heading Order:**
-    * **Action:** Review the HTML structure of the page, specifically the heading elements (`h1` through `h6`). Ensure they follow a logical, descending order without skipping levels (e.g., an `h4` should not directly follow an `h2` without an intermediate `h3`). The report flagged issues starting with `h4` elements.
+4.  **Correct Heading Order:** completed
+    * **Action:** Fixed heading structure in SEOSection.tsx and StepsSection.tsx to ensure logical, descending order without skipping levels.
+    * **Action:** Changed `<Title order={4}>` elements that followed `<Title order={2}>` to use `order={3}` instead.
+    * **Action:** Ensured consistent heading hierarchy throughout homepage components.
     * **Reason:** Improves page structure semantics and navigation for assistive technology users.
 
 **Lower Impact / Minor:**
