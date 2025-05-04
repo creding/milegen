@@ -28,26 +28,23 @@ import {
 } from "@/utils/constants";
 
 interface MileageFormProps {
-  startMileage: string;
-  endMileage: string;
   startDate: Date;
   endDate: Date;
   totalPersonalMiles: string;
   vehicle: string;
   businessType: string;
   subscriptionStatus: string | null;
-  onStartMileageChange: (value: string) => void;
-  onEndMileageChange: (value: string) => void;
   onStartDateChange: (value: Date) => void;
   onEndDateChange: (value: Date) => void;
   onTotalPersonalMilesChange: (value: string) => void;
   onVehicleChange: (value: string) => void;
   onBusinessTypeChange: (value: string) => void;
-  onGenerate: () => void;
+  onGenerate: (values: FormValues) => Promise<void>;
   onReset: () => void;
 }
 
-interface FormValues {
+// Export the FormValues interface
+export interface FormValues {
   startMileage: string;
   endMileage: string;
   vehicleMake: string;
@@ -60,16 +57,12 @@ interface FormValues {
 }
 
 export function MileageForm({
-  startMileage,
-  endMileage,
   startDate,
   endDate,
   totalPersonalMiles,
   vehicle,
   businessType,
   subscriptionStatus,
-  onStartMileageChange,
-  onEndMileageChange,
   onStartDateChange,
   onEndDateChange,
   onTotalPersonalMilesChange,
@@ -97,69 +90,10 @@ export function MileageForm({
   // Initial vehicle parts
   const initialVehicle = parseVehicle(vehicle);
 
-  // State for vehicle parts
-  const [vehicleMake, setVehicleMake] = useState(initialVehicle.make);
-  const [vehicleModel, setVehicleModel] = useState(initialVehicle.model);
-  const [vehicleYear, setVehicleYear] = useState(initialVehicle.year);
-
-  // Available models based on selected make
+  // Available models based on selected make (still need state for this)
   const [availableModels, setAvailableModels] = useState<
     { value: string; label: string }[]
-  >(
-    vehicleMake && VEHICLE_MODELS[vehicleMake]
-      ? VEHICLE_MODELS[vehicleMake]
-      : []
-  );
-
-  // Update available models when make changes
-  useEffect(() => {
-    if (vehicleMake && VEHICLE_MODELS[vehicleMake]) {
-      setAvailableModels(VEHICLE_MODELS[vehicleMake]);
-    } else {
-      setAvailableModels([]);
-    }
-  }, [vehicleMake]);
-
-  // Update the vehicle string when any part changes
-  useEffect(() => {
-    if (vehicleMake && vehicleModel && vehicleYear) {
-      // Find the display labels
-      const makeLabel =
-        VEHICLE_MAKES.find((m) => m.value === vehicleMake)?.label || "";
-      const modelLabel =
-        availableModels.find((m) => m.value === vehicleModel)?.label || "";
-
-      // Format the vehicle string: "2022 Toyota Camry"
-      const vehicleString = `${vehicleYear} ${makeLabel} ${modelLabel}`.trim();
-
-      if (vehicleString.split(" ").length >= 3) {
-        onVehicleChange(vehicleString);
-      }
-    }
-  }, [
-    vehicleMake,
-    vehicleModel,
-    vehicleYear,
-    availableModels,
-    onVehicleChange,
-  ]);
-
-  // Handle make selection
-  const handleMakeChange = (value: string | null) => {
-    const newMake = value || "";
-    setVehicleMake(newMake);
-    setVehicleModel(""); // Reset model when make changes
-  };
-
-  // Handle model selection
-  const handleModelChange = (value: string | null) => {
-    setVehicleModel(value || "");
-  };
-
-  // Handle year selection
-  const handleYearChange = (value: string | null) => {
-    setVehicleYear(value || "");
-  };
+  >([]);
 
   // Create business type options for the select dropdown
   const businessTypeOptions = BUSINESS_TYPES.map(
@@ -171,14 +105,15 @@ export function MileageForm({
 
   const form = useForm<FormValues>({
     initialValues: {
-      startMileage: startMileage,
-      endMileage: endMileage,
+      startMileage: "",
+      endMileage: "",
       startDate: startDate,
       endDate: endDate,
       totalPersonalMiles: totalPersonalMiles,
-      vehicleMake: vehicleMake,
-      vehicleModel: vehicleModel,
-      vehicleYear: vehicleYear,
+      // Use parsed initial values directly
+      vehicleMake: initialVehicle.make,
+      vehicleModel: initialVehicle.model,
+      vehicleYear: initialVehicle.year,
       businessType: businessType,
     },
     validate: {
@@ -207,6 +142,57 @@ export function MileageForm({
     },
   });
 
+  // Update available models when make changes (use form value)
+  useEffect(() => {
+    const currentMake = form.values.vehicleMake;
+    if (currentMake && VEHICLE_MODELS[currentMake]) {
+      setAvailableModels(VEHICLE_MODELS[currentMake]);
+      // Ensure model selection is reset if it's not valid for the new make
+      if (
+        !VEHICLE_MODELS[currentMake].some(
+          (m) => m.value === form.values.vehicleModel
+        )
+      ) {
+        form.setFieldValue("vehicleModel", "");
+      }
+    } else {
+      setAvailableModels([]);
+      form.setFieldValue("vehicleModel", ""); // Also clear model if make is cleared
+    }
+    // Reason: form.setFieldValue is stable; effect logic depends only on vehicleMake or vehicleModel changing.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.values.vehicleMake, form.values.vehicleModel]);
+
+  // Update the vehicle string when any part changes (use form values)
+  useEffect(() => {
+    const { vehicleMake, vehicleModel, vehicleYear } = form.values;
+    if (vehicleMake && vehicleModel && vehicleYear) {
+      // Find the display labels
+      const makeLabel =
+        VEHICLE_MAKES.find((m) => m.value === vehicleMake)?.label || "";
+      const modelLabel =
+        // Use availableModels state here, as it's derived
+        availableModels.find((m) => m.value === vehicleModel)?.label || "";
+
+      // Format the vehicle string: "2022 Toyota Camry"
+      const vehicleString = `${vehicleYear} ${makeLabel} ${modelLabel}`.trim();
+
+      // Update parent only if a complete vehicle string is formed
+      if (vehicleString.split(" ").length >= 3) {
+        onVehicleChange(vehicleString);
+      }
+    }
+    // Reason: Omitting form.values dependency to avoid re-run on unrelated field changes.
+    // Dependencies are explicitly listed based on what's read/used.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    form.values.vehicleMake,
+    form.values.vehicleModel,
+    form.values.vehicleYear,
+    availableModels,
+    onVehicleChange,
+  ]);
+
   // Custom validation function for dates
   const validateDates = (start: Date | null, end: Date | null) => {
     // If either date is null, let the 'required' validation handle it
@@ -231,17 +217,41 @@ export function MileageForm({
     onEndDateChange(date);
   };
 
-  const handleSubmit = () => {
-    const validation = form.validate();
-    if (!validation.hasErrors) {
-      onGenerate();
+  // Handle form submission callback
+  const handleSubmitCallback = (values: FormValues) => {
+    // Check if subscription is active or if it's a first-time use case
+    // TODO: Replace 0 with currentEntryCount from props/context when available
+    if (
+      subscriptionStatus === "active" ||
+      (subscriptionStatus !== "active" && 0 < 50)
+    ) {
+      console.log("Form values submitted:", values);
+      // Pass form values to the parent's onGenerate handler
+      onGenerate(values).catch((error) => {
+        console.error("Error during generation:", error);
+        // Optionally show an error notification to the user
+        // notifications.show({
+        //   title: 'Generation Error',
+        //   message: 'Failed to generate mileage log. Please try again.',
+        //   color: 'red',
+        // });
+      });
+    } else {
+      // Handle inactive subscription case (e.g., show modal)
+      console.log("Subscription inactive and limit reached");
+      // notifications.show({
+      //   title: 'Subscription Required',
+      //   message: 'Please upgrade your subscription to generate more logs.',
+      //   color: 'orange',
+      // });
     }
   };
 
+  // Handle resetting the form
   const handleReset = () => {
-    form.reset();
-    onReset();
-    setActiveStep(0);
+    form.reset(); // Reset Mantine form state
+    onReset(); // Call parent's reset logic
+    setActiveStep(0); // Reset stepper to the first step
   };
 
   // Step validation functions
@@ -297,7 +307,8 @@ export function MileageForm({
     <Box p="md">
       {subscriptionStatus !== "active" && <SubscriptionAlert mb="md" />}
 
-      <form onSubmit={form.onSubmit(handleSubmit)}>
+      {/* Correct onSubmit handler */}
+      <form onSubmit={form.onSubmit(handleSubmitCallback)}>
         <Stepper active={activeStep} onStepClick={setActiveStep}>
           <Stepper.Step
             label="Vehicle Information"
@@ -309,12 +320,7 @@ export function MileageForm({
             <VehicleInfoStep
               form={form}
               isMobile={isMobile}
-              onStartMileageChange={onStartMileageChange}
-              onEndMileageChange={onEndMileageChange}
               availableModels={availableModels}
-              handleMakeChange={handleMakeChange}
-              handleModelChange={handleModelChange}
-              handleYearChange={handleYearChange}
             />
           </Stepper.Step>
 
@@ -379,24 +385,16 @@ export function MileageForm({
             <Button
               variant="light"
               color="gray"
+              // Use the restored handleReset
               onClick={handleReset}
               size={isMobile ? "md" : "sm"}
             >
               Reset
             </Button>
           )}
-
-          {activeStep === 3 ? (
+          <Group gap="sm">
             <Button
-              variant="gradient"
-              onClick={handleSubmit}
-              size={isMobile ? "md" : "sm"}
-              rightSection={<IconCheck size={14} />}
-            >
-              Generate Log
-            </Button>
-          ) : (
-            <Button
+              disabled={activeStep === 3}
               onClick={nextStep}
               variant="filled"
               size={isMobile ? "md" : "sm"}
@@ -404,7 +402,17 @@ export function MileageForm({
             >
               Next Step
             </Button>
-          )}
+            <Button
+              disabled={activeStep !== 3}
+              variant="gradient"
+              // Restore type="submit"
+              type="submit"
+              size={isMobile ? "md" : "sm"}
+              rightSection={<IconCheck size={14} />}
+            >
+              Generate Log
+            </Button>
+          </Group>
         </Group>
       </form>
     </Box>

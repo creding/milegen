@@ -21,23 +21,13 @@ interface FormValues {
 interface VehicleInfoStepProps {
   form: UseFormReturnType<FormValues>;
   isMobile: boolean;
-  onStartMileageChange: (value: string) => void;
-  onEndMileageChange: (value: string) => void;
   availableModels: { value: string; label: string }[];
-  handleMakeChange: (value: string | null) => void;
-  handleModelChange: (value: string | null) => void;
-  handleYearChange: (value: string | null) => void;
 }
 
 export function VehicleInfoStep({ 
   form, 
   isMobile, 
-  onStartMileageChange,
-  onEndMileageChange,
-  availableModels,
-  handleMakeChange,
-  handleModelChange,
-  handleYearChange
+  availableModels
 }: VehicleInfoStepProps) {
   return (
     <Box mt="md">
@@ -63,10 +53,6 @@ export function VehicleInfoStep({
               <TextInput
                 placeholder="Enter starting mileage"
                 {...form.getInputProps("startMileage")}
-                onChange={(e) => {
-                  form.setFieldValue("startMileage", e.target.value);
-                  onStartMileageChange(e.target.value);
-                }}
                 error={null} // Hide default error
               />
             </CustomInputWrapper>
@@ -78,10 +64,6 @@ export function VehicleInfoStep({
               <TextInput
                 placeholder="Enter ending mileage"
                 {...form.getInputProps("endMileage")}
-                onChange={(e) => {
-                  form.setFieldValue("endMileage", e.target.value);
-                  onEndMileageChange(e.target.value);
-                }}
                 error={null} // Hide default error
               />
             </CustomInputWrapper>
@@ -96,10 +78,6 @@ export function VehicleInfoStep({
               <TextInput
                 placeholder="Enter starting mileage"
                 {...form.getInputProps("startMileage")}
-                onChange={(e) => {
-                  form.setFieldValue("startMileage", e.target.value);
-                  onStartMileageChange(e.target.value);
-                }}
                 error={null} // Hide default error
               />
             </CustomInputWrapper>
@@ -111,10 +89,6 @@ export function VehicleInfoStep({
               <TextInput
                 placeholder="Enter ending mileage"
                 {...form.getInputProps("endMileage")}
-                onChange={(e) => {
-                  form.setFieldValue("endMileage", e.target.value);
-                  onEndMileageChange(e.target.value);
-                }}
                 error={null} // Hide default error
               />
             </CustomInputWrapper>
@@ -137,11 +111,7 @@ export function VehicleInfoStep({
             <Select
               placeholder="Select make"
               data={VEHICLE_MAKES} // Directly use imported constant
-              value={form.values.vehicleMake}
-              onChange={(value) => {
-                form.setFieldValue("vehicleMake", value || "");
-                handleMakeChange(value);
-              }}
+              {...form.getInputProps("vehicleMake")} 
               searchable
               clearable
               error={null} // Hide default error
@@ -159,14 +129,10 @@ export function VehicleInfoStep({
             <Select
               placeholder="Select model"
               data={availableModels}
-              value={form.values.vehicleModel}
-              onChange={(value) => {
-                form.setFieldValue("vehicleModel", value || "");
-                handleModelChange(value);
-              }}
+              {...form.getInputProps("vehicleModel")}
               searchable
               clearable
-              disabled={!form.values.vehicleMake}
+              disabled={!form.values.vehicleMake} // Still need this check
               error={null} // Hide default error
               comboboxProps={{ position: "bottom", withinPortal: true }}
               maxDropdownHeight={280}
@@ -182,11 +148,7 @@ export function VehicleInfoStep({
             <Select
               placeholder="Select year"
               data={VEHICLE_YEARS} // Directly use imported constant
-              value={form.values.vehicleYear}
-              onChange={(value) => {
-                form.setFieldValue("vehicleYear", value || "");
-                handleYearChange(value);
-              }}
+              {...form.getInputProps("vehicleYear")}
               searchable
               clearable
               error={null} // Hide default error

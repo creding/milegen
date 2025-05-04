@@ -13,7 +13,7 @@ import {
   Text,
   LoadingOverlay,
 } from "@mantine/core";
-import { MileageForm } from "@/components/milagelog/MileageForm";
+import { MileageForm, FormValues } from "@/components/milagelog/MileageForm";
 import { useMediaQuery } from "@mantine/hooks";
 import { generateMileageLogFromForm } from "@/app/actions/mileageGenerator";
 
@@ -24,8 +24,6 @@ export const GeneratorPage = ({
 }) => {
   const router = useRouter();
   const isMobile = useMediaQuery("(max-width: 768px)");
-  const [startMileage, setStartMileage] = useState("");
-  const [endMileage, setEndMileage] = useState("");
   const [startDate, setStartDate] = useState(() => {
     const lastYear = new Date().getFullYear() - 1;
     return new Date(lastYear, 0, 1);
@@ -39,9 +37,9 @@ export const GeneratorPage = ({
   const [totalPersonalMiles, setTotalPersonalMiles] = useState("0");
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const handleGenerateMileageLog = async () => {
-    const start = parseInt(startMileage);
-    const end = parseInt(endMileage);
+  const handleGenerateMileageLog = async (values: FormValues) => {
+    const start = parseInt(values.startMileage);
+    const end = parseInt(values.endMileage);
     const personalMiles = parseInt(totalPersonalMiles) || 0;
 
     setIsGenerating(true);
@@ -103,8 +101,6 @@ export const GeneratorPage = ({
   };
 
   const resetForm = () => {
-    setStartMileage("");
-    setEndMileage("");
     setStartDate(new Date(new Date().getFullYear() - 1, 0, 1));
     setEndDate(new Date(new Date().getFullYear() - 1, 11, 31));
     setTotalPersonalMiles("0");
@@ -123,16 +119,12 @@ export const GeneratorPage = ({
           </Text>
         </Stack>
         <MileageForm
-          startMileage={startMileage}
-          endMileage={endMileage}
           startDate={startDate}
           endDate={endDate}
           totalPersonalMiles={totalPersonalMiles}
           vehicle={vehicle}
           businessType={businessType}
           subscriptionStatus={subscriptionStatus}
-          onStartMileageChange={setStartMileage}
-          onEndMileageChange={setEndMileage}
           onStartDateChange={setStartDate}
           onEndDateChange={setEndDate}
           onTotalPersonalMilesChange={setTotalPersonalMiles}
