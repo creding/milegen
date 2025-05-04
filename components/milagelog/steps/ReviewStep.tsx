@@ -1,101 +1,68 @@
-// components/milagelog/steps/ReviewStep.tsx
 import React from 'react';
-import { Box, Paper, Title, Text, Stack, Group, Divider } from '@mantine/core';
+import { Box, Text, SimpleGrid, Title, Paper } from '@mantine/core';
 import { UseFormReturnType } from '@mantine/form';
-import { VEHICLE_MAKES } from '@/utils/constants'; // Import constants if needed for display
+import { FormValues } from '@/types/form_values';
+import { getVehicleLabel } from '@/utils/vehicle.utils';
+import { formatDate } from '@/utils/date.utils'; 
 
-// Define FormValues type (should match the one in MileageForm.tsx)
-interface FormValues {
-  startMileage: string;
-  endMileage: string;
-  vehicleMake: string;
-  vehicleModel: string;
-  vehicleYear: string;
-  startDate: Date | null;
-  endDate: Date | null;
-  totalPersonalMiles: string;
-  businessType: string;
-}
+// --- Component Props Interface --- //
 
 interface ReviewStepProps {
   form: UseFormReturnType<FormValues>;
   totalMiles: number;
   businessMiles: number;
-  availableModels: { value: string; label: string }[]; // Pass needed constants/state for display
 }
 
-export function ReviewStep({ 
-  form, 
-  totalMiles, 
-  businessMiles, 
-  availableModels 
-}: ReviewStepProps) {
-  // Helper to find label for display
-  const displayVehicleMake = VEHICLE_MAKES.find(m => m.value === form.values.vehicleMake)?.label || form.values.vehicleMake;
-  const displayVehicleModel = availableModels.find(m => m.value === form.values.vehicleModel)?.label || form.values.vehicleModel;
+// --- Component Definition --- //
+
+export function ReviewStep({ form, totalMiles, businessMiles }: ReviewStepProps) {
+  const { values } = form;
+  // Calculate personal miles derived from form inputs
+  const calculatedPersonalMiles = totalMiles - businessMiles;
+  // Use the helper functions defined above
+  const vehicleDisplay = getVehicleLabel(values);
+  const startDateDisplay = formatDate(values.startDate);
+  const endDateDisplay = formatDate(values.endDate);
 
   return (
-    <Box mt="md">
-      <Title order={3} size="h4" mb="md">
-        Review Your Mileage Log
-      </Title>
-      <Text c="dimmed" mb="lg">
-        Please review the information before generating your log
-      </Text>
-      
-      {/* Review Details Section */}
-      <Paper p="md" withBorder radius="md">
-        <Stack gap="md">
-          <Group>
-            <Text fw={500} w={180}>
-              Vehicle:
-            </Text>
-            <Text>
-              {/* Display formatted vehicle string */}
-              {form.values.vehicleYear} {displayVehicleMake} {displayVehicleModel}
-            </Text>
-          </Group>
-          <Divider />
-
-          <Group>
-            <Text fw={500} w={180}>
-              Date Range:
-            </Text>
-            <Text>
-              {form.values.startDate?.toLocaleDateString()} to {form.values.endDate?.toLocaleDateString()}
-            </Text>
-          </Group>
-          <Divider />
-
-          <Group>
-            <Text fw={500} w={180}>
-              Odometer Readings:
-            </Text>
-            <Text>
-              {form.values.startMileage} to {form.values.endMileage} ({totalMiles} total miles)
-            </Text>
-          </Group>
-          <Divider />
-
-          <Group>
-            <Text fw={500} w={180}>
-              Business Type:
-            </Text>
-            <Text>{form.values.businessType || "Not specified"}</Text>
-          </Group>
-          <Divider />
-
-          <Group>
-            <Text fw={500} w={180}>
-              Miles Breakdown:
-            </Text>
-            <Stack gap="xs">
-              <Text>Business Miles: {businessMiles}</Text>
-              <Text>Personal Miles: {form.values.totalPersonalMiles || 0}</Text>
-              <Text>Total Miles: {totalMiles}</Text>
-            </Stack>
-          </Group>
-        </Stack>
+    <Box my="lg">
+      <Paper shadow="sm" p="lg" withBorder>
+        <Title order={3} mb="xs">Review Details</Title>
+        <Text mb="lg" size="sm" c="dimmed">
+          Please confirm the details below before generating the mileage log.
+        </Text>
+        <SimpleGrid cols={{ base: 1, xs: 2 }} spacing="lg">
+          <Box>
+            <Text fw={500}>Vehicle:</Text>
+            <Text>{vehicleDisplay}</Text>
+          </Box>
+          <Box>
+            <Text fw={500}>Mileage Range:</Text>
+            {/* Display raw values with fallback */}
+            <Text>{values.startMileage || 'N/A'} - {values.endMileage || 'N/A'}</Text>
+          </Box>
+          <Box>
+            <Text fw={500}>Date Range:</Text>
+            <Text>{startDateDisplay} to {endDateDisplay}</Text>
+          </Box>
+          <Box>
+            <Text fw={500}>Total Miles:</Text>
+            <Text>{totalMiles}</Text>
+          </Box>
+          <Box>
+            <Text fw={500}>Business Miles:</Text>
+            <Text>{businessMiles}</Text>
+          </Box>
+          <Box>
+            <Text fw={500}>Personal Miles:</Text>
+             {/* Show calculated personal miles and the user input value */}
+            <Text>{calculatedPersonalMiles} (Entered: {values.totalPersonalMiles || 'N/A'})</Text> 
+          </Box>
+           <Box>
+            <Text fw={500}>Business Type:</Text>
+            <Text>{values.businessType || 'N/A'}</Text>
+          </Box>
+        </SimpleGrid>
       </Paper>
     </Box>
   );

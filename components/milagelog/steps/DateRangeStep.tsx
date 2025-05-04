@@ -4,19 +4,7 @@ import { Box, Title, Text, Stack, Group } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
 import { CustomInputWrapper } from '@/components/form/CustomInputWrapper';
 import { UseFormReturnType } from '@mantine/form';
-
-// Define FormValues type (should match the one in MileageForm.tsx)
-interface FormValues {
-  startMileage: string;
-  endMileage: string;
-  vehicleMake: string;
-  vehicleModel: string;
-  vehicleYear: string;
-  startDate: Date | null;
-  endDate: Date | null;
-  totalPersonalMiles: string;
-  businessType: string;
-}
+import { FormValues } from '@/types/form_values';
 
 interface DateRangeStepProps {
   form: UseFormReturnType<FormValues>;

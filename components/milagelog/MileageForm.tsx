@@ -26,6 +26,7 @@ import {
   VEHICLE_MAKES, // Import the constant array
   VEHICLE_MODELS, // Import the models object/map
 } from "@/utils/constants";
+import { FormValues } from "@/types/form_values";
 
 interface MileageFormProps {
   startDate: Date;
@@ -41,19 +42,6 @@ interface MileageFormProps {
   onBusinessTypeChange: (value: string) => void;
   onGenerate: (values: FormValues) => Promise<void>;
   onReset: () => void;
-}
-
-// Export the FormValues interface
-export interface FormValues {
-  startMileage: string;
-  endMileage: string;
-  vehicleMake: string;
-  vehicleModel: string;
-  vehicleYear: string;
-  startDate: Date | null;
-  endDate: Date | null;
-  totalPersonalMiles: string;
-  businessType: string;
 }
 
 export function MileageForm({
@@ -90,11 +78,6 @@ export function MileageForm({
   // Initial vehicle parts
   const initialVehicle = parseVehicle(vehicle);
 
-  // Available models based on selected make (still need state for this)
-  const [availableModels, setAvailableModels] = useState<
-    { value: string; label: string }[]
-  >([]);
-
   // Create business type options for the select dropdown
   const businessTypeOptions = BUSINESS_TYPES.map(
     (type: { name: string; purposes: string[] }) => ({
@@ -120,7 +103,7 @@ export function MileageForm({
       startMileage: (value) => (value ? null : "Start mileage is required"),
       endMileage: (value, values) =>
         value
-          ? parseInt(value) <= parseInt(values.startMileage)
+          ? parseInt(value) <= parseInt(values.startMileage || "0")
             ? "End mileage must be greater than start mileage"
             : null
           : "End mileage is required",
@@ -128,9 +111,10 @@ export function MileageForm({
       endDate: (value, values) => validateDates(values.startDate, value),
       totalPersonalMiles: (value, values) => {
         const totalMiles =
-          parseInt(values.endMileage) - parseInt(values.startMileage);
+          parseInt(values.endMileage || "0") -
+          parseInt(values.startMileage || "0");
         return value !== undefined && value !== null
-          ? parseInt(value) > totalMiles
+          ? parseInt(value || "0") > totalMiles
             ? `Personal miles cannot exceed total miles (${totalMiles})`
             : null
           : "Personal miles is required";
@@ -142,27 +126,6 @@ export function MileageForm({
     },
   });
 
-  // Update available models when make changes (use form value)
-  useEffect(() => {
-    const currentMake = form.values.vehicleMake;
-    if (currentMake && VEHICLE_MODELS[currentMake]) {
-      setAvailableModels(VEHICLE_MODELS[currentMake]);
-      // Ensure model selection is reset if it's not valid for the new make
-      if (
-        !VEHICLE_MODELS[currentMake].some(
-          (m) => m.value === form.values.vehicleModel
-        )
-      ) {
-        form.setFieldValue("vehicleModel", "");
-      }
-    } else {
-      setAvailableModels([]);
-      form.setFieldValue("vehicleModel", ""); // Also clear model if make is cleared
-    }
-    // Reason: form.setFieldValue is stable; effect logic depends only on vehicleMake or vehicleModel changing.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.values.vehicleMake, form.values.vehicleModel]);
-
   // Update the vehicle string when any part changes (use form values)
   useEffect(() => {
     const { vehicleMake, vehicleModel, vehicleYear } = form.values;
@@ -171,8 +134,8 @@ export function MileageForm({
       const makeLabel =
         VEHICLE_MAKES.find((m) => m.value === vehicleMake)?.label || "";
       const modelLabel =
-        // Use availableModels state here, as it's derived
-        availableModels.find((m) => m.value === vehicleModel)?.label || "";
+        VEHICLE_MODELS[vehicleMake]?.find((m) => m.value === vehicleModel)
+          ?.label || "";
 
       // Format the vehicle string: "2022 Toyota Camry"
       const vehicleString = `${vehicleYear} ${makeLabel} ${modelLabel}`.trim();
@@ -182,14 +145,11 @@ export function MileageForm({
         onVehicleChange(vehicleString);
       }
     }
-    // Reason: Omitting form.values dependency to avoid re-run on unrelated field changes.
-    // Dependencies are explicitly listed based on what's read/used.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     form.values.vehicleMake,
     form.values.vehicleModel,
     form.values.vehicleYear,
-    availableModels,
     onVehicleChange,
   ]);
 
@@ -225,33 +185,19 @@ export function MileageForm({
       subscriptionStatus === "active" ||
       (subscriptionStatus !== "active" && 0 < 50)
     ) {
-      console.log("Form values submitted:", values);
-      // Pass form values to the parent's onGenerate handler
       onGenerate(values).catch((error) => {
         console.error("Error during generation:", error);
-        // Optionally show an error notification to the user
-        // notifications.show({
-        //   title: 'Generation Error',
-        //   message: 'Failed to generate mileage log. Please try again.',
-        //   color: 'red',
-        // });
       });
     } else {
       // Handle inactive subscription case (e.g., show modal)
-      console.log("Subscription inactive and limit reached");
-      // notifications.show({
-      //   title: 'Subscription Required',
-      //   message: 'Please upgrade your subscription to generate more logs.',
-      //   color: 'orange',
-      // });
     }
   };
 
   // Handle resetting the form
   const handleReset = () => {
-    form.reset(); // Reset Mantine form state
-    onReset(); // Call parent's reset logic
-    setActiveStep(0); // Reset stepper to the first step
+    form.reset();
+    onReset();
+    setActiveStep(0);
   };
 
   // Step validation functions
@@ -299,15 +245,15 @@ export function MileageForm({
 
   // Calculate total miles and business miles
   const totalMiles =
-    parseInt(form.values.endMileage) - parseInt(form.values.startMileage) || 0;
+    parseInt(form.values.endMileage || "0") -
+      parseInt(form.values.startMileage || "0") || 0;
   const businessMiles =
-    totalMiles - (parseInt(form.values.totalPersonalMiles) || 0);
+    totalMiles - (parseInt(form.values.totalPersonalMiles || "0") || 0);
 
   return (
     <Box p="md">
       {subscriptionStatus !== "active" && <SubscriptionAlert mb="md" />}
 
-      {/* Correct onSubmit handler */}
       <form onSubmit={form.onSubmit(handleSubmitCallback)}>
         <Stepper active={activeStep} onStepClick={setActiveStep}>
           <Stepper.Step
@@ -316,12 +262,7 @@ export function MileageForm({
             icon={<IconCar size={18} />}
             allowStepSelect={activeStep > 0}
           >
-            {/* Replace inline JSX with VehicleInfoStep component */}
-            <VehicleInfoStep
-              form={form}
-              isMobile={isMobile}
-              availableModels={availableModels}
-            />
+            <VehicleInfoStep form={form} />
           </Stepper.Step>
 
           <Stepper.Step
@@ -330,7 +271,6 @@ export function MileageForm({
             icon={<IconRoute size={18} />}
             allowStepSelect={activeStep > 1}
           >
-            {/* Replace inline JSX with TripDetailsStep component */}
             <TripDetailsStep
               form={form}
               businessTypeOptions={businessTypeOptions}
@@ -345,14 +285,13 @@ export function MileageForm({
             icon={<IconCalendar size={18} />}
             allowStepSelect={activeStep > 2}
           >
-            {/* Replace inline JSX with DateRangeStep component */}
             <DateRangeStep
               form={form}
               isMobile={isMobile}
-              startDate={startDate} // Pass state variable
-              handleStartDateChange={handleStartDateChange} // Pass state handler
-              endDate={endDate} // Pass state variable
-              handleEndDateChange={handleEndDateChange} // Pass state handler
+              startDate={startDate}
+              handleStartDateChange={handleStartDateChange}
+              endDate={endDate}
+              handleEndDateChange={handleEndDateChange}
             />
           </Stepper.Step>
 
@@ -361,12 +300,10 @@ export function MileageForm({
             description="Confirm and create log"
             icon={<IconFileCheck size={18} />}
           >
-            {/* Replace inline JSX with ReviewStep component */}
             <ReviewStep
               form={form}
               totalMiles={totalMiles}
               businessMiles={businessMiles}
-              availableModels={availableModels} // Pass needed state/constants for display
             />
           </Stepper.Step>
         </Stepper>
@@ -385,7 +322,6 @@ export function MileageForm({
             <Button
               variant="light"
               color="gray"
-              // Use the restored handleReset
               onClick={handleReset}
               size={isMobile ? "md" : "sm"}
             >
@@ -405,7 +341,6 @@ export function MileageForm({
             <Button
               disabled={activeStep !== 3}
               variant="gradient"
-              // Restore type="submit"
               type="submit"
               size={isMobile ? "md" : "sm"}
               rightSection={<IconCheck size={14} />}
