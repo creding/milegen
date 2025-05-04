@@ -152,17 +152,6 @@ export function MileageForm({
     return null;
   };
 
-  // Handle date changes separately since they're not string values
-  const handleStartDateChange = (date: Date) => {
-    form.setFieldValue("startDate", date);
-    // onStartDateChange(date);
-  };
-
-  const handleEndDateChange = (date: Date) => {
-    form.setFieldValue("endDate", date);
-    // onEndDateChange(date);
-  };
-
   // Handle form submission callback
   const handleFormSubmit = async (values: FormValues) => {
     // Check if subscription is active or if it's a first-time use case
@@ -272,13 +261,9 @@ export function MileageForm({
             icon={<IconCalendar size={18} />}
             allowStepSelect={activeStep > 2}
           >
-            <DateRangeStep
-              form={form}
-              isMobile={isMobile}
-              startDate={form.values.startDate}
-              handleStartDateChange={handleStartDateChange}
-              endDate={form.values.endDate}
-              handleEndDateChange={handleEndDateChange}
+            <DateRangeStep 
+              form={form} 
+              isMobile={isMobile || false} 
             />
           </Stepper.Step>
 
