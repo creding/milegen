@@ -13,7 +13,8 @@ import {
   Text,
   LoadingOverlay,
 } from "@mantine/core";
-import { MileageForm, FormValues } from "@/components/milagelog/MileageForm";
+import { MileageForm } from "@/components/milagelog/MileageForm";
+import { FormValues } from "@/types/form_values";
 import { useMediaQuery } from "@mantine/hooks";
 import { generateMileageLogFromForm } from "@/app/actions/mileageGenerator";
 
@@ -24,39 +25,58 @@ export const GeneratorPage = ({
 }) => {
   const router = useRouter();
   const isMobile = useMediaQuery("(max-width: 768px)");
-  const [startDate, setStartDate] = useState(() => {
-    const lastYear = new Date().getFullYear() - 1;
-    return new Date(lastYear, 0, 1);
-  });
-  const [endDate, setEndDate] = useState(() => {
-    const lastYear = new Date().getFullYear() - 1;
-    return new Date(lastYear, 11, 31);
-  });
-  const [vehicle, setVehicle] = useState("");
-  const [businessType, setBusinessType] = useState("");
-  const [totalPersonalMiles, setTotalPersonalMiles] = useState("0");
   const [isGenerating, setIsGenerating] = useState(false);
 
   const handleGenerateMileageLog = async (values: FormValues) => {
-    const start = parseInt(values.startMileage);
-    const end = parseInt(values.endMileage);
-    const personalMiles = parseInt(totalPersonalMiles) || 0;
-
     setIsGenerating(true);
 
-    try {
-      const result = await generateMileageLogFromForm({
-        startMileage: start,
-        endMileage: end,
-        startDate,
-        endDate,
-        totalPersonalMiles: personalMiles,
-        vehicle,
-        businessType,
-        subscriptionStatus: subscriptionStatus || "inactive",
-        currentEntryCount: 0,
+    // --- Validation --- 
+    if (!values.startDate || !values.endDate) {
+      notifications.show({
+        title: "Error",
+        message: "Start date and end date are required.",
+        color: "red",
+        icon: <IconX />,
       });
+      setIsGenerating(false);
+      return;
+    }
 
+    // Construct the combined vehicle string for the server action
+    const vehicleString = `${values.vehicleYear} ${values.vehicleMake} ${values.vehicleModel}`.trim();
+    // Parse numeric values from form, providing default '0' if undefined/empty
+    const startMileageInt = parseInt(values.startMileage || "0");
+    const endMileageInt = parseInt(values.endMileage || "0");
+    const personalMilesInt = parseInt(values.totalPersonalMiles || "0");
+
+    // Validate parsed numbers
+    if (isNaN(startMileageInt) || isNaN(endMileageInt) || isNaN(personalMilesInt)) {
+      notifications.show({
+        title: "Error",
+        message: "Invalid mileage numbers entered.",
+        color: "red",
+        icon: <IconX />,
+      });
+      setIsGenerating(false);
+      return;
+    }
+    // --- End Validation ---
+
+    try {
+      // Call the server action with the correctly structured data
+      const result = await generateMileageLogFromForm({
+        // Pass correctly typed/formatted values
+        startMileage: startMileageInt,
+        endMileage: endMileageInt,
+        totalPersonalMiles: personalMilesInt,
+        vehicle: vehicleString, 
+        startDate: values.startDate, // Guaranteed non-null by check above
+        endDate: values.endDate,     // Guaranteed non-null by check above
+        businessType: values.businessType, // Pass businessType from form values
+        // Pass other necessary params
+        subscriptionStatus: subscriptionStatus || "inactive",
+        currentEntryCount: 0, // TODO: Replace with actual count if needed
+      });
       if (result.success && result.logId) {
         notifications.show({
           title: "Success",
@@ -101,11 +121,8 @@ export const GeneratorPage = ({
   };
 
   const resetForm = () => {
-    setStartDate(new Date(new Date().getFullYear() - 1, 0, 1));
-    setEndDate(new Date(new Date().getFullYear() - 1, 11, 31));
-    setTotalPersonalMiles("0");
-    setVehicle("");
-    setBusinessType("");
+    // No longer managing form state here
+    // Note: The actual form reset is handled within MileageForm via form.reset()
   };
 
   return (
@@ -119,17 +136,7 @@ export const GeneratorPage = ({
           </Text>
         </Stack>
         <MileageForm
-          startDate={startDate}
-          endDate={endDate}
-          totalPersonalMiles={totalPersonalMiles}
-          vehicle={vehicle}
-          businessType={businessType}
           subscriptionStatus={subscriptionStatus}
-          onStartDateChange={setStartDate}
-          onEndDateChange={setEndDate}
-          onTotalPersonalMilesChange={setTotalPersonalMiles}
-          onVehicleChange={setVehicle}
-          onBusinessTypeChange={setBusinessType}
           onGenerate={handleGenerateMileageLog}
           onReset={resetForm}
         />

@@ -36,7 +36,12 @@ export function VehicleInfoStep({ form }: VehicleInfoStepProps) {
         </Title>
         <Grid gutter="md">
           <GridCol span={{ base: 12, sm: 6 }}>
-            <CustomInputWrapper label="Starting Odometer Reading" required>
+            {/* Pass error explicitly to the wrapper */}
+            <CustomInputWrapper 
+              label="Starting Odometer Reading" 
+              required
+              error={form.errors.startMileage} // Pass error here
+            >
               <NumberInput
                 placeholder="Enter starting mileage"
                 {...form.getInputProps("startMileage")}
@@ -44,18 +49,25 @@ export function VehicleInfoStep({ form }: VehicleInfoStepProps) {
                 step={1}
                 required
                 hideControls
+                error={null} // Prevent default error display
               />
             </CustomInputWrapper>
           </GridCol>
           <GridCol span={{ base: 12, sm: 6 }}>
-            <CustomInputWrapper label="Ending Odometer Reading" required>
+             {/* Pass error explicitly to the wrapper */}
+            <CustomInputWrapper 
+              label="Ending Odometer Reading" 
+              required
+              error={form.errors.endMileage} // Pass error here
+            >
               <NumberInput
-                placeholder="Enter end mileage"
+                placeholder="Enter ending mileage"
                 {...form.getInputProps("endMileage")}
-                min={Number(form.values.startMileage) || 0}
+                min={form.values.startMileage ? parseInt(form.values.startMileage) + 1 : 1}
                 step={1}
                 required
                 hideControls
+                error={null} // Prevent default error display
               />
             </CustomInputWrapper>
           </GridCol>

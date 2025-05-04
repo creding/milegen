@@ -29,33 +29,13 @@ import {
 import { FormValues } from "@/types/form_values";
 
 interface MileageFormProps {
-  startDate: Date;
-  endDate: Date;
-  totalPersonalMiles: string;
-  vehicle: string;
-  businessType: string;
   subscriptionStatus: string | null;
-  onStartDateChange: (value: Date) => void;
-  onEndDateChange: (value: Date) => void;
-  onTotalPersonalMilesChange: (value: string) => void;
-  onVehicleChange: (value: string) => void;
-  onBusinessTypeChange: (value: string) => void;
   onGenerate: (values: FormValues) => Promise<void>;
   onReset: () => void;
 }
 
 export function MileageForm({
-  startDate,
-  endDate,
-  totalPersonalMiles,
-  vehicle,
-  businessType,
   subscriptionStatus,
-  onStartDateChange,
-  onEndDateChange,
-  onTotalPersonalMilesChange,
-  onVehicleChange,
-  onBusinessTypeChange,
   onGenerate,
   onReset,
 }: MileageFormProps) {
@@ -76,7 +56,7 @@ export function MileageForm({
   };
 
   // Initial vehicle parts
-  const initialVehicle = parseVehicle(vehicle);
+  const initialVehicle = parseVehicle("");
 
   // Create business type options for the select dropdown
   const businessTypeOptions = BUSINESS_TYPES.map(
@@ -90,14 +70,20 @@ export function MileageForm({
     initialValues: {
       startMileage: "",
       endMileage: "",
-      startDate: startDate,
-      endDate: endDate,
-      totalPersonalMiles: totalPersonalMiles,
-      // Use parsed initial values directly
+      // Default dates to the full previous year
+      startDate: (() => {
+        const lastYear = new Date().getFullYear() - 1;
+        return new Date(lastYear, 0, 1); // Jan 1st of last year
+      })(),
+      endDate: (() => {
+        const lastYear = new Date().getFullYear() - 1;
+        return new Date(lastYear, 11, 31); // Dec 31st of last year
+      })(),
+      totalPersonalMiles: "",
       vehicleMake: initialVehicle.make,
       vehicleModel: initialVehicle.model,
       vehicleYear: initialVehicle.year,
-      businessType: businessType,
+      businessType: "",
     },
     validate: {
       startMileage: (value) => (value ? null : "Start mileage is required"),
@@ -142,7 +128,7 @@ export function MileageForm({
 
       // Update parent only if a complete vehicle string is formed
       if (vehicleString.split(" ").length >= 3) {
-        onVehicleChange(vehicleString);
+        // onVehicleChange(vehicleString);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -150,7 +136,6 @@ export function MileageForm({
     form.values.vehicleMake,
     form.values.vehicleModel,
     form.values.vehicleYear,
-    onVehicleChange,
   ]);
 
   // Custom validation function for dates
@@ -169,16 +154,16 @@ export function MileageForm({
   // Handle date changes separately since they're not string values
   const handleStartDateChange = (date: Date) => {
     form.setFieldValue("startDate", date);
-    onStartDateChange(date);
+    // onStartDateChange(date);
   };
 
   const handleEndDateChange = (date: Date) => {
     form.setFieldValue("endDate", date);
-    onEndDateChange(date);
+    // onEndDateChange(date);
   };
 
   // Handle form submission callback
-  const handleSubmitCallback = (values: FormValues) => {
+  const handleFormSubmit = async (values: FormValues) => {
     // Check if subscription is active or if it's a first-time use case
     // TODO: Replace 0 with currentEntryCount from props/context when available
     if (
@@ -243,18 +228,11 @@ export function MileageForm({
 
   const prevStep = () => setActiveStep((current) => Math.max(current - 1, 0));
 
-  // Calculate total miles and business miles
-  const totalMiles =
-    parseInt(form.values.endMileage || "0") -
-      parseInt(form.values.startMileage || "0") || 0;
-  const businessMiles =
-    totalMiles - (parseInt(form.values.totalPersonalMiles || "0") || 0);
-
   return (
     <Box p="md">
       {subscriptionStatus !== "active" && <SubscriptionAlert mb="md" />}
 
-      <form onSubmit={form.onSubmit(handleSubmitCallback)}>
+      <form onSubmit={form.onSubmit(handleFormSubmit)}>
         <Stepper active={activeStep} onStepClick={setActiveStep}>
           <Stepper.Step
             label="Vehicle Information"
@@ -274,8 +252,6 @@ export function MileageForm({
             <TripDetailsStep
               form={form}
               businessTypeOptions={businessTypeOptions}
-              onBusinessTypeChange={onBusinessTypeChange}
-              onTotalPersonalMilesChange={onTotalPersonalMilesChange}
             />
           </Stepper.Step>
 
@@ -288,9 +264,9 @@ export function MileageForm({
             <DateRangeStep
               form={form}
               isMobile={isMobile}
-              startDate={startDate}
+              startDate={form.values.startDate}
               handleStartDateChange={handleStartDateChange}
-              endDate={endDate}
+              endDate={form.values.endDate}
               handleEndDateChange={handleEndDateChange}
             />
           </Stepper.Step>
@@ -300,11 +276,7 @@ export function MileageForm({
             description="Confirm and create log"
             icon={<IconFileCheck size={18} />}
           >
-            <ReviewStep
-              form={form}
-              totalMiles={totalMiles}
-              businessMiles={businessMiles}
-            />
+            <ReviewStep form={form} />
           </Stepper.Step>
         </Stepper>
 

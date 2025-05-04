@@ -6,17 +6,13 @@ import { UseFormReturnType } from '@mantine/form';
 import { FormValues } from '@/types/form_values';
 
 interface TripDetailsStepProps {
-  form: UseFormReturnType<FormValues>;
+  form: UseFormReturnType<FormValues, (values: FormValues) => FormValues>;
   businessTypeOptions: { value: string; label: string }[];
-  onBusinessTypeChange: (value: string) => void;
-  onTotalPersonalMilesChange: (value: string) => void;
 }
 
 export function TripDetailsStep({ 
   form, 
-  businessTypeOptions, 
-  onBusinessTypeChange, 
-  onTotalPersonalMilesChange 
+  businessTypeOptions 
 }: TripDetailsStepProps) {
   return (
     <Box mt="md">
@@ -41,11 +37,7 @@ export function TripDetailsStep({
           <Select
             placeholder="Select business type"
             data={businessTypeOptions}
-            value={form.values.businessType}
-            onChange={(value) => {
-              form.setFieldValue("businessType", value || "");
-              onBusinessTypeChange(value || "");
-            }}
+            {...form.getInputProps("businessType")}
             searchable
             clearable
             error={null} // Hide default error
@@ -64,10 +56,6 @@ export function TripDetailsStep({
           <TextInput
             placeholder="Enter personal miles"
             {...form.getInputProps("totalPersonalMiles")}
-            onChange={(e) => {
-              form.setFieldValue("totalPersonalMiles", e.target.value);
-              onTotalPersonalMilesChange(e.target.value);
-            }}
             error={null} // Hide default error
           />
         </CustomInputWrapper>
