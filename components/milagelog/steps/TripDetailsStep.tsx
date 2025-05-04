@@ -1,18 +1,26 @@
 // components/milagelog/steps/TripDetailsStep.tsx
-import React from 'react';
-import { Box, Paper, Title, Text, Stack, TextInput, Select } from '@mantine/core';
-import { CustomInputWrapper } from '@/components/form/CustomInputWrapper';
-import { UseFormReturnType } from '@mantine/form';
-import { FormValues } from '@/types/form_values';
+import React from "react";
+import {
+  Box,
+  Paper,
+  Title,
+  Text,
+  Stack,
+  TextInput,
+  Select,
+} from "@mantine/core";
+import { CustomInputWrapper } from "@/components/form/CustomInputWrapper";
+import { UseFormReturnType } from "@mantine/form";
+import { FormValues } from "@/types/form_values";
 
 interface TripDetailsStepProps {
   form: UseFormReturnType<FormValues, (values: FormValues) => FormValues>;
   businessTypeOptions: { value: string; label: string }[];
 }
 
-export function TripDetailsStep({ 
-  form, 
-  businessTypeOptions 
+export function TripDetailsStep({
+  form,
+  businessTypeOptions,
 }: TripDetailsStepProps) {
   return (
     <Box mt="md">
@@ -22,7 +30,7 @@ export function TripDetailsStep({
       <Text c="dimmed" mb="lg">
         Specify your business type and personal miles
       </Text>
-      
+
       {/* Business Information Section */}
       <Paper p="md" withBorder radius="md" mb="lg">
         <Title order={4} size="h5" mb="md">
@@ -30,7 +38,6 @@ export function TripDetailsStep({
         </Title>
         <CustomInputWrapper
           label="Business Type"
-          description="Select your business type"
           error={form.errors.businessType}
           required
         >

@@ -203,8 +203,10 @@ export function MileageForm({
   };
 
   const validateDateStep = () => {
-    // Date fields are always valid since they have default values
-    return true;
+    // Validate the date fields explicitly
+    const startDateError = form.validateField('startDate').error;
+    const endDateError = form.validateField('endDate').error;
+    return !startDateError && !endDateError;
   };
 
   const validateTripDetailsStep = () => {
@@ -215,14 +217,16 @@ export function MileageForm({
   };
 
   const nextStep = () => {
-    if (activeStep === 0 && !validateVehicleStep()) {
+    // Validate the *current* step before advancing
+    if (activeStep === 0 && !validateVehicleStep()) { // Leaving Step 0 (Vehicle Info)
       return;
-    } else if (activeStep === 1 && !validateDateStep()) {
+    } else if (activeStep === 1 && !validateTripDetailsStep()) { // Leaving Step 1 (Trip Details) - Corrected
       return;
-    } else if (activeStep === 2 && !validateTripDetailsStep()) {
+    } else if (activeStep === 2 && !validateDateStep()) { // Leaving Step 2 (Date Range) - Corrected
       return;
     }
 
+    // If validation passes, advance to the next step
     setActiveStep((current) => Math.min(current + 1, 3));
   };
 
