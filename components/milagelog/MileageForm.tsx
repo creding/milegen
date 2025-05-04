@@ -175,20 +175,21 @@ export function MileageForm({
     setActiveStep(0);
   };
 
-  // Step validation functions
+  // --- Step Progression Validation ---
   const validateVehicleStep = () => {
+    // Check if all required vehicle fields are filled
+    const makeError = form.validateField("vehicleMake").error;
+    const modelError = form.validateField("vehicleModel").error;
+    const yearError = form.validateField("vehicleYear").error;
     const startMileageError = form.validateField("startMileage").error;
     const endMileageError = form.validateField("endMileage").error;
-    const vehicleMakeError = form.validateField("vehicleMake").error;
-    const vehicleModelError = form.validateField("vehicleModel").error;
-    const vehicleYearError = form.validateField("vehicleYear").error;
 
     return (
+      !makeError &&
+      !modelError &&
+      !yearError &&
       !startMileageError &&
-      !endMileageError &&
-      !vehicleMakeError &&
-      !vehicleModelError &&
-      !vehicleYearError
+      !endMileageError
     );
   };
 
