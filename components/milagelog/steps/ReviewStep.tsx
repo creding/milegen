@@ -2,18 +2,29 @@ import React from "react";
 import { Box, Text, SimpleGrid, Title, Paper } from "@mantine/core";
 import { UseFormReturnType } from "@mantine/form";
 import { FormValues } from "@/types/form_values";
-import { getVehicleLabel } from "@/utils/vehicle.utils";
 import { formatDate } from "@/utils/date.utils";
+
+// Define VehicleOption locally or import if centralized
+interface VehicleOption {
+  value: string;
+  label: string;
+}
 
 // --- Component Props Interface --- //
 
 interface ReviewStepProps {
   form: UseFormReturnType<FormValues>;
+  vehicleMakes: VehicleOption[]; // Add prop for makes
+  vehicleModels: Record<string, VehicleOption[]>; // Add prop for models
 }
 
 // --- Component Definition --- //
 
-export function ReviewStep({ form }: ReviewStepProps) {
+export function ReviewStep({ 
+  form, 
+  vehicleMakes, // Destructure props
+  vehicleModels 
+}: ReviewStepProps) {
   const { values } = form;
 
   // Calculate total miles driven based on user input
@@ -28,8 +39,22 @@ export function ReviewStep({ form }: ReviewStepProps) {
       ? totalMilesDriven - personalMilesInput
       : 0;
 
-  // Use the helper functions defined above
-  const vehicleDisplay = getVehicleLabel(values);
+  // Re-implement vehicle label logic using props
+  let vehicleDisplay = "Vehicle information incomplete";
+  if (values.vehicleMake && values.vehicleModel && values.vehicleYear) {
+    const make = vehicleMakes.find((m) => m.value === values.vehicleMake);
+    const modelData = vehicleModels[values.vehicleMake];
+    const model = modelData?.find((m) => m.value === values.vehicleModel);
+
+    if (make && model) {
+      vehicleDisplay = `${values.vehicleYear} ${make.label} ${model.label}`.trim();
+    } else {
+      // Fallback if labels not found, use raw values
+      vehicleDisplay = `${values.vehicleYear} ${values.vehicleMake} ${values.vehicleModel}`.trim();
+    }
+  }
+
+  // Use the helper function for dates
   const startDateDisplay = formatDate(values.startDate);
   const endDateDisplay = formatDate(values.endDate);
 

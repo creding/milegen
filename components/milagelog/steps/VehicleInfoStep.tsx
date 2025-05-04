@@ -15,11 +15,25 @@ import { UseFormReturnType } from "@mantine/form";
 import { VehicleSelector } from "../VehicleSelector";
 import { FormValues } from "@/types/form_values";
 
-interface VehicleInfoStepProps {
-  form: UseFormReturnType<FormValues>;
+// Define the VehicleOption type locally or import if it's centralized
+interface VehicleOption {
+  value: string;
+  label: string;
 }
 
-export function VehicleInfoStep({ form }: VehicleInfoStepProps) {
+interface VehicleInfoStepProps {
+  form: UseFormReturnType<FormValues>;
+  vehicleMakes: VehicleOption[]; // Add prop for makes
+  vehicleModels: Record<string, VehicleOption[]>; // Add prop for models
+  vehicleYears: VehicleOption[]; // Add prop for years
+}
+
+export function VehicleInfoStep({ 
+  form, 
+  vehicleMakes, // Destructure props
+  vehicleModels, 
+  vehicleYears 
+}: VehicleInfoStepProps) {
   return (
     <Box mt="md">
       <Title order={3} size="h4" mb="md">
@@ -80,7 +94,13 @@ export function VehicleInfoStep({ form }: VehicleInfoStepProps) {
           Vehicle Details
         </Title>
         <Stack gap="md">
-          <VehicleSelector form={form} />
+          {/* Pass the constant props down to VehicleSelector */}
+          <VehicleSelector 
+            form={form} 
+            vehicleMakes={vehicleMakes} 
+            vehicleModels={vehicleModels} 
+            vehicleYears={vehicleYears} 
+          />
         </Stack>
       </Paper>
     </Box>

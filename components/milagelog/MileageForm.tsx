@@ -25,6 +25,7 @@ import { BUSINESS_TYPES } from "@/utils/mileageUtils";
 import {
   VEHICLE_MAKES, // Import the constant array
   VEHICLE_MODELS, // Import the models object/map
+  VEHICLE_YEARS, // Import the years array
 } from "@/utils/constants";
 import { FormValues } from "@/types/form_values";
 
@@ -244,7 +245,13 @@ export function MileageForm({
             icon={<IconCar size={18} />}
             allowStepSelect={activeStep > 0}
           >
-            <VehicleInfoStep form={form} />
+            {/* Pass constants down to VehicleInfoStep */}
+            <VehicleInfoStep 
+              form={form} 
+              vehicleMakes={VEHICLE_MAKES} 
+              vehicleModels={VEHICLE_MODELS} 
+              vehicleYears={VEHICLE_YEARS} 
+            />
           </Stepper.Step>
 
           <Stepper.Step
@@ -280,7 +287,12 @@ export function MileageForm({
             description="Confirm and create log"
             icon={<IconFileCheck size={18} />}
           >
-            <ReviewStep form={form} />
+            {/* Pass constants down to ReviewStep */}
+            <ReviewStep 
+              form={form} 
+              vehicleMakes={VEHICLE_MAKES} 
+              vehicleModels={VEHICLE_MODELS} 
+            />
           </Stepper.Step>
         </Stepper>
 

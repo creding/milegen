@@ -1,26 +1,33 @@
 import { useState, useEffect } from 'react';
 import { Select, Grid, GridCol } from '@mantine/core';
 import { UseFormReturnType } from '@mantine/form';
-import { VEHICLE_MAKES, VEHICLE_MODELS, VEHICLE_YEARS as YEARS } from '@/utils/constants';
 import { FormValues } from '@/types/form_values';
 import { CustomInputWrapper } from '@/components/form/CustomInputWrapper';
-
-interface VehicleSelectorProps {
-  form: UseFormReturnType<FormValues>;
-}
 
 interface VehicleOption {
   value: string;
   label: string;
 }
 
-export function VehicleSelector({ form }: VehicleSelectorProps) {
+interface VehicleSelectorProps {
+  form: UseFormReturnType<FormValues>;
+  vehicleMakes: VehicleOption[];
+  vehicleModels: Record<string, VehicleOption[]>;
+  vehicleYears: VehicleOption[];
+}
+
+export function VehicleSelector({ 
+  form, 
+  vehicleMakes, 
+  vehicleModels, 
+  vehicleYears 
+}: VehicleSelectorProps) {
   const [availableModels, setAvailableModels] = useState<VehicleOption[]>([]);
 
   useEffect(() => {
     const currentMake = form.values.vehicleMake;
-    if (currentMake && VEHICLE_MODELS[currentMake]) {
-      const models = VEHICLE_MODELS[currentMake];
+    if (currentMake && vehicleModels[currentMake]) {
+      const models = vehicleModels[currentMake];
       setAvailableModels(models);
       if (!models.some((m: VehicleOption) => m.value === form.values.vehicleModel)) {
         form.setFieldValue('vehicleModel', '');
@@ -30,7 +37,7 @@ export function VehicleSelector({ form }: VehicleSelectorProps) {
       form.setFieldValue('vehicleModel', '');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.values.vehicleMake]);
+  }, [form.values.vehicleMake, vehicleModels]);
 
   return (
     <Grid gutter="md">
@@ -42,7 +49,7 @@ export function VehicleSelector({ form }: VehicleSelectorProps) {
         >
           <Select
             placeholder="Select make"
-            data={VEHICLE_MAKES}
+            data={vehicleMakes}
             {...form.getInputProps('vehicleMake')}
             searchable
             error={null} 
@@ -73,7 +80,7 @@ export function VehicleSelector({ form }: VehicleSelectorProps) {
         >
           <Select
             placeholder="Select year"
-            data={YEARS}
+            data={vehicleYears}
             {...form.getInputProps('vehicleYear')}
             searchable
             error={null} 
