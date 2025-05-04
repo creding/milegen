@@ -13,13 +13,7 @@ import {
 import { CustomInputWrapper } from "@/components/form/CustomInputWrapper";
 import { UseFormReturnType } from "@mantine/form";
 import { VehicleSelector } from "../VehicleSelector";
-import { FormValues } from "@/types/form_values";
-
-// Define the VehicleOption type locally or import if it's centralized
-interface VehicleOption {
-  value: string;
-  label: string;
-}
+import { FormValues, VehicleOption } from "@/types/form_values";
 
 interface VehicleInfoStepProps {
   form: UseFormReturnType<FormValues>;

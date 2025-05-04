@@ -20,4 +20,9 @@ This document tracks potential improvements and refactoring tasks for the mileag
 
 ## General / Future
 
+- [x] **Centralize VehicleOption Type:** Move the `VehicleOption` interface to a central types file (e.g., `types/vehicle.d.ts` or `types/form_values.ts`) and import it into `VehicleInfoStep` and `ReviewStep`.
+- [ ] **Review `getVehicleLabel` Utility:** Check usage of `getVehicleLabel` in `utils/vehicle.utils.ts`. If unused, remove it. If used elsewhere, refactor it to accept constants as arguments instead of importing them directly.
+- [ ] **Simplify Date Handling:** Investigate using `form.getInputProps('startDate')` and `form.getInputProps('endDate')` directly with `DatePickerInput` in `DateRangeStep` to potentially remove `handleStartDateChange` and `handleEndDateChange` from `MileageForm`.
+- [ ] **Code Comments Cleanup:** Review and update/remove comments in `MileageForm`, `VehicleSelector`, `VehicleInfoStep`, and `ReviewStep` to reflect recent refactoring.
+
 - *(Add other potential improvement ideas here)*

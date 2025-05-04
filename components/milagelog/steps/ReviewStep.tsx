@@ -1,14 +1,8 @@
 import React from "react";
 import { Box, Text, SimpleGrid, Title, Paper } from "@mantine/core";
 import { UseFormReturnType } from "@mantine/form";
-import { FormValues } from "@/types/form_values";
+import { FormValues, VehicleOption } from "@/types/form_values";
 import { formatDate } from "@/utils/date.utils";
-
-// Define VehicleOption locally or import if centralized
-interface VehicleOption {
-  value: string;
-  label: string;
-}
 
 // --- Component Props Interface --- //
 
