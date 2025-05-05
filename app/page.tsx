@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     url: process.env.NEXT_PUBLIC_SITE_URL,
     images: [
       {
-        url: `${process.env.NEXT_PUBLIC_SITE_URL}/og-image.png`,
+        url: `${process.env.NEXT_PUBLIC_SITE_URL}/images/og-image.png`,
         width: 1200,
         height: 630,
         alt: "MileGen - IRS-Compliant Mileage Logs in Minutes",
@@ -54,22 +54,23 @@ export default async function Home({
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "SoftwareApplication",
-            "name": "Milegen",
-            "applicationCategory": "BusinessApplication",
-            "description": "Generate professional, IRS-compliant mileage logs quickly and easily. Save time, maximize tax deductions, and protect yourself from audits.",
-            "operatingSystem": "Web",
-            "offers": {
+            name: "Milegen",
+            applicationCategory: "BusinessApplication",
+            description:
+              "Generate professional, IRS-compliant mileage logs quickly and easily. Save time, maximize tax deductions, and protect yourself from audits.",
+            operatingSystem: "Web",
+            offers: {
               "@type": "Offer",
-              "price": "9.99",
-              "priceCurrency": "USD",
-              "priceValidUntil": "2025-12-31"
+              price: "9.99",
+              priceCurrency: "USD",
+              priceValidUntil: "2025-12-31",
             },
-            "aggregateRating": {
+            aggregateRating: {
               "@type": "AggregateRating",
-              "ratingValue": "4.8",
-              "ratingCount": "124"
-            }
-          })
+              ratingValue: "4.8",
+              ratingCount: "124",
+            },
+          }),
         }}
       />
       <HeroSection user={user} />

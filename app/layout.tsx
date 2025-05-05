@@ -19,11 +19,29 @@ import milegenHeroBkg from "@/images/milegen-hero-bkg.webp";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Milegen - Mileage Log Generator",
+  title: "MileGen - IRS-Compliant Mileage Logs in Minutes",
   description:
-    "Create compliant mileage logs for tax deduction or reimbursement with Milegen",
+    "Generate professional, IRS-compliant mileage logs quickly and easily. Save time, maximize tax deductions, and protect yourself from audits.",
+  keywords:
+    "mileage log, IRS compliant, tax deduction, business miles, mileage tracking, mileage calculator, tax documentation, real estate mileage, sales professional mileage",
+  openGraph: {
+    title: "MileGen - IRS-Compliant Mileage Logs in Minutes",
+    description:
+      "Generate IRS-compliant mileage logs in minutes. Maximize tax deductions and protect yourself from audits.",
+    url: process.env.NEXT_PUBLIC_SITE_URL,
+    images: [
+      {
+        url: `${process.env.NEXT_PUBLIC_SITE_URL}/images/og-image.png`,
+        width: 1200,
+        height: 630,
+        alt: "MileGen - IRS-Compliant Mileage Logs in Minutes",
+      },
+    ],
+    siteName: "MileGen",
+    locale: "en_US",
+    type: "website",
+  },
 };
-
 export default function RootLayout({
   children,
 }: Readonly<{
