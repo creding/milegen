@@ -105,15 +105,37 @@ function shuffleArray<T>(array: T[]): void {
  * Selects a random business purpose based on the business type.
  * Assumes BUSINESS_TYPES is a static array.
  * @param businessType The category of business.
+ * @param customPurposeNames Optional array of specific purpose names for a custom type.
  * @returns A random purpose string.
  */
-function getRandomBusinessPurpose(businessType: string): string {
+function getRandomBusinessPurpose(
+  businessType: string,
+  customPurposeNames?: string[]
+): string {
+  // 1. Prioritize provided custom purposes
+  if (customPurposeNames && customPurposeNames.length > 0) {
+    const randomIndex = Math.floor(Math.random() * customPurposeNames.length);
+    return customPurposeNames[randomIndex];
+  }
+
+  // 2. Try finding predefined type
   const type = BUSINESS_TYPES.find((t) => t.name === businessType);
   if (type?.purposes?.length) {
     return type.purposes[Math.floor(Math.random() * type.purposes.length)];
   }
-  // Fallback if type not found or has no purposes
-  return "Business Meeting";
+
+  // 3. Fallback if no custom or predefined match
+  // Use a generic purpose or one from a default list if available
+  // For now, return a safe default. Consider adding a generic list to constants.
+  const GENERIC_BUSINESS_PURPOSES = [
+    "Client Meeting",
+    "Supplier Visit",
+    "Site Inspection",
+    "Business Lunch",
+  ]; // Example generic list
+  return GENERIC_BUSINESS_PURPOSES[
+    Math.floor(Math.random() * GENERIC_BUSINESS_PURPOSES.length)
+  ];
 }
 
 /**

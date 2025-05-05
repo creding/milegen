@@ -129,3 +129,37 @@ export function isHoliday(date: Date, holidays: typeof HOLIDAYS): boolean {
   const isHolidayResult = holidays[yearKey]?.includes(formattedDate) || false;
   return isHolidayResult;
 }
+
+// --- Trip Purpose Generation Functions ---
+
+/**
+ * Gets a random business purpose based on the specified business type.
+ * If the type is not recognized, it falls back to a generic list.
+ * @param businessType - The key of the business type (e.g., 'Consulting', 'Real Estate').
+ * @param customPurposeNames - Optional array of specific purpose names for a custom type.
+ * @returns A random business purpose string.
+ */
+export function getRandomBusinessPurpose(
+  businessType?: string | null, // Can be predefined key or custom UUID
+  customPurposeNames?: string[] // Optional array of names for custom types
+): string {
+  // 1. Prioritize provided custom purposes
+  if (customPurposeNames && customPurposeNames.length > 0) {
+    const randomIndex = Math.floor(Math.random() * customPurposeNames.length);
+    return customPurposeNames[randomIndex];
+  }
+
+  // 2. Check if it's a known predefined business type
+  if (businessType) {
+    const businessTypeObject = BUSINESS_TYPES.find((type) => type.name === businessType);
+    if (businessTypeObject && businessTypeObject.purposes.length > 0) {
+      const randomIndex = Math.floor(Math.random() * businessTypeObject.purposes.length);
+      return businessTypeObject.purposes[randomIndex];
+    }
+  }
+
+  // 3. Fallback to generic business purposes if no custom or predefined match
+  // Note: This part is not implemented as there is no BUSINESS_PURPOSES array in the provided code
+  // You may need to add this array or implement a different fallback logic
+  throw new Error("No generic business purposes defined");
+}
