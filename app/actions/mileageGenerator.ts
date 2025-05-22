@@ -1,20 +1,36 @@
 "use server";
 
 import { addDays, format, isWeekend } from "date-fns";
-import { BUSINESS_TYPES } from "@/utils/mileageUtils"; // Assuming BUSINESS_TYPES is static data
-import { HOLIDAYS, getBusinessMileageRate } from "@/utils/constants"; // Assuming HOLIDAYS is static data
+import { BUSINESS_TYPES as PREDEFINED_BUSINESS_TYPES, BusinessType as PredefinedBusinessTypeInfo } from "@/utils/mileageUtils";
+import { HOLIDAYS, getBusinessMileageRate } from "@/utils/constants";
 import {
   getBusinessLocation,
   getPersonalLocation,
 } from "@/utils/locationUtils";
-import { saveMileageLog } from "./saveMileageLog"; // Assuming this exists
-import { isHoliday } from "@/utils/mileageUtils"; // Import isHoliday function
-import { createClient } from "@/lib/supabaseServerClient"; // Corrected import path
+import { saveMileageLog } from "./saveMileageLog";
+import { isHoliday as checkHoliday } from "@/utils/mileageUtils"; // Renamed to avoid conflict
+import { createClient } from "@/lib/supabaseServerClient";
 import { Tables } from "@/types/database.types";
 import { mileageGeneratorParamsSchema } from "@/features/mileage-generator/utils/inputValidation.utils";
 import { logger } from "@/lib/logger";
+import { _getCustomBusinessTypeDetails } from "@/lib/data/customBusinessTypes.data";
+import { CustomBusinessType as CustomTypeDetails, CustomBusinessPurpose } from "@/types/custom_business_type";
 
-// --- Interfaces ---
+// --- Resolved Business Type Details Interface ---
+interface ResolvedBusinessPurpose {
+  purpose_name: string;
+  max_distance?: number; // Max distance is optional for predefined, required for custom
+}
+
+interface ResolvedBusinessTypeDetails {
+  id?: string; // Only for custom types
+  name: string;
+  avg_trips_per_workday?: number; // Optional, as it's not in predefined
+  purposes: ResolvedBusinessPurpose[];
+  isCustom: boolean;
+}
+
+// --- Original Interfaces ---
 
 interface MileageGeneratorParams {
   startDate: Date;
@@ -59,8 +75,8 @@ const CONFIG = {
   // Realistic trip lengths (adjust as needed)
   MILES_PER_TRIP: {
     business: {
-      min: 2.3,
-      max: 25.7,
+      min: 2.3, // Default min for any business trip
+      max: 25.7, // Default max, can be overridden by purpose-specific max_distance
     },
     personal: {
       min: 1.8,
@@ -102,37 +118,27 @@ function shuffleArray<T>(array: T[]): void {
 }
 
 /**
- * Selects a random business purpose based on the business type.
- * Assumes BUSINESS_TYPES is a static array.
- * @param businessType The category of business.
- * @param customPurposeNames Optional array of specific purpose names for a custom type.
- * @returns A random purpose string.
+ * Selects a random business purpose based on the resolved business type details.
+ * @param businessTypeDetails The resolved details of the business type.
+ * @returns A random purpose object { purpose_name: string, max_distance?: number }.
  */
 function getRandomBusinessPurpose(
-  businessType: string,
-  customPurposeNames?: string[]
-): string {
-  // 1. Prioritize provided custom purposes
-  if (customPurposeNames && customPurposeNames.length > 0) {
-    const randomIndex = Math.floor(Math.random() * customPurposeNames.length);
-    return customPurposeNames[randomIndex];
+  businessTypeDetails: ResolvedBusinessTypeDetails
+): ResolvedBusinessPurpose {
+  const { purposes } = businessTypeDetails;
+
+  if (purposes && purposes.length > 0) {
+    const randomIndex = Math.floor(Math.random() * purposes.length);
+    return purposes[randomIndex];
   }
 
-  // 2. Try finding predefined type
-  const type = BUSINESS_TYPES.find((t) => t.name === businessType);
-  if (type?.purposes?.length) {
-    return type.purposes[Math.floor(Math.random() * type.purposes.length)];
-  }
-
-  // 3. Fallback if no custom or predefined match
-  // Use a generic purpose or one from a default list if available
-  // For now, return a safe default. Consider adding a generic list to constants.
-  const GENERIC_BUSINESS_PURPOSES = [
-    "Client Meeting",
-    "Supplier Visit",
-    "Site Inspection",
-    "Business Lunch",
-  ]; // Example generic list
+  // Fallback to a generic purpose if no specific ones are defined
+  const GENERIC_BUSINESS_PURPOSES: ResolvedBusinessPurpose[] = [
+    { purpose_name: "Client Meeting" },
+    { purpose_name: "Supplier Visit" },
+    { purpose_name: "Site Inspection" },
+    { purpose_name: "Business Lunch" },
+  ];
   return GENERIC_BUSINESS_PURPOSES[
     Math.floor(Math.random() * GENERIC_BUSINESS_PURPOSES.length)
   ];
@@ -155,7 +161,7 @@ function roundMiles(miles: number): number {
  * @param endDate The ending date of the log period.
  * @param startMileage The starting odometer reading.
  * @param endMileage The ending odometer reading.
- * @param businessType The type of business.
+ * @param businessTypeDetails The resolved details of the business type.
  * @param vehicleInfo Description of the vehicle used.
  * @param totalPersonalMiles The user-specified total personal miles for the period.
  * @returns A Promise resolving to the generated MileageLog object.
@@ -165,11 +171,15 @@ async function generateMileageLog(
   endDate: Date,
   startMileage: number,
   endMileage: number,
-  businessType: string,
+  businessTypeDetails: ResolvedBusinessTypeDetails,
   vehicleInfo: string,
   totalPersonalMiles: number
 ): Promise<MileageLog> {
   const totalMileage = roundMiles(endMileage - startMileage);
+  // Log avg_trips_per_workday if available, for future algorithm enhancements
+  if (businessTypeDetails.avg_trips_per_workday) {
+    logger.info(`Business Type "${businessTypeDetails.name}" has avg_trips_per_workday: ${businessTypeDetails.avg_trips_per_workday}`);
+  }
   const targetBusinessMiles = roundMiles(totalMileage - totalPersonalMiles);
 
   // Ensure targets are non-negative after calculation
@@ -201,7 +211,7 @@ async function generateMileageLog(
       dailyTarget.targetMiles,
       dailyTarget.targetBusinessMiles,
       currentMileage,
-      businessType,
+      businessTypeDetails, // Pass resolved details
       vehicleInfo
     );
 
@@ -251,7 +261,7 @@ async function generateMileageLog(
       businessRate * finalTotalBusinessMiles
     ),
     vehicle_info: vehicleInfo,
-    business_type: businessType,
+    business_type: businessTypeDetails.name, // Use name from resolved details
     log_entries: entries, // Keep entries for saving
   };
 
@@ -296,7 +306,7 @@ function distributeMileageAcrossDays(
 
   // 1. Generate all dates in the range and mark workdays/non-workdays/holidays
   while (currentDate <= endDate) {
-    const holidayCheck = isHoliday(currentDate, HOLIDAYS); // Pass HOLIDAYS constant
+    const holidayCheck = checkHoliday(currentDate, HOLIDAYS); // Use renamed import
     dates.push({
       date: new Date(currentDate),
       isWorkday: !isWeekend(currentDate) && !holidayCheck, // Treat holidays like non-workdays
@@ -511,12 +521,19 @@ function distributeMileageAcrossDays(
   // --- Final Adjustments & Holiday Check ---
   // Explicitly set business miles to ZERO for all holidays to avoid floating point issues
   tempTargets.forEach((target) => {
-    if (isHoliday(target.date, HOLIDAYS)) {
+    if (checkHoliday(target.date, HOLIDAYS)) { // Use renamed import
       target.targetBusinessMiles = 0;
       // Recalculate targetMiles if business miles were zeroed out
-      target.targetMiles = roundMiles(
-        target.targetMiles - target.targetBusinessMiles
-      ); // Should subtract 0 if already 0
+      // target.targetMiles should be the sum of business and personal. If business is 0, personal is targetMiles.
+      // This assumes target.targetMiles was initially sum of dailyBusiness and dailyPersonal.
+      // If targetBusinessMiles is set to 0, then targetMiles should become what dailyPersonalMiles was.
+      // However, the logic above calculates dailyBusinessMiles and dailyPersonalMiles separately and sums them.
+      // So, if targetBusinessMiles is zeroed, targetMiles should be re-evaluated or just be personal part.
+      // For simplicity, let's assume personal miles are already correctly set.
+      // If we only zero out business miles, total miles for the day will reduce.
+      // This is acceptable as it means no business activity on holiday.
+       target.targetMiles = roundMiles(target.targetMiles - tempTargets.find(t => t.date.getTime() === target.date.getTime())!.targetBusinessMiles);
+       if (target.targetMiles < 0) target.targetMiles = 0; // Ensure not negative
     }
   });
 
@@ -530,7 +547,7 @@ function distributeMileageAcrossDays(
  * @param targetMiles Total miles to generate for the day.
  * @param targetBusinessMiles Business miles to generate for the day.
  * @param startMileage Odometer reading at the start of the day.
- * @param businessType The category of business.
+ * @param businessTypeDetails The resolved details of the business type.
  * @param vehicleInfo Description of the vehicle.
  * @returns An array of mileage entries for the day.
  */
@@ -539,14 +556,14 @@ function generateTripsForDay(
   targetMiles: number,
   targetBusinessMiles: number,
   startMileage: number,
-  businessType: string,
+  businessTypeDetails: ResolvedBusinessTypeDetails,
   vehicleInfo: string
 ): Tables<"mileage_log_entries">[] {
   const trips: Tables<"mileage_log_entries">[] = [];
   let currentMileage = startMileage;
   const targetPersonalMiles = roundMiles(targetMiles - targetBusinessMiles);
 
-  const businessConfig = CONFIG.MILES_PER_TRIP.business;
+  const businessConfig = CONFIG.MILES_PER_TRIP.business; // Default min/max
   const personalConfig = CONFIG.MILES_PER_TRIP.personal;
   const precision = CONFIG.FLOAT_PRECISION_THRESHOLD;
 
@@ -554,37 +571,52 @@ function generateTripsForDay(
   if (targetBusinessMiles > precision) {
     let remainingBusiness = targetBusinessMiles;
     while (remainingBusiness > precision) {
+      const selectedPurpose = getRandomBusinessPurpose(businessTypeDetails);
+      
+      let tripMaxMiles = selectedPurpose.max_distance ?? businessConfig.max;
+      // Ensure tripMaxMiles is at least businessConfig.min to allow some travel
+      tripMaxMiles = Math.max(tripMaxMiles, businessConfig.min);
+
       let miles = roundMiles(
         businessConfig.min +
-          Math.random() * (businessConfig.max - businessConfig.min)
+          Math.random() * (Math.min(tripMaxMiles, businessConfig.max) - businessConfig.min) // Use the more restrictive max
       );
+      
+      // If a purpose-specific max_distance exists, ensure the trip does not exceed it.
+      if (selectedPurpose.max_distance !== undefined) {
+        miles = Math.min(miles, selectedPurpose.max_distance);
+      }
+
       // Ensure last trip uses exactly the remaining miles, and prevent tiny trips
       if (
-        remainingBusiness <= businessConfig.max ||
+        remainingBusiness <= tripMaxMiles || // If remaining is less than allowed max for this purpose
         remainingBusiness - miles < precision
       ) {
         miles = remainingBusiness;
       }
       miles = Math.max(CONFIG.REMAINDER_INCREMENT, miles); // Ensure minimum trip length
+      // Final check against max_distance if it was strictly less than min_trip_length initially
+      if (selectedPurpose.max_distance !== undefined) {
+          miles = Math.min(miles, selectedPurpose.max_distance);
+      }
+
 
       const endM = roundMiles(currentMileage + miles);
-      const purpose = getRandomBusinessPurpose(businessType);
       const location = getBusinessLocation(
-        purpose,
+        selectedPurpose.purpose_name,
         roundMiles(miles),
-        businessType
+        businessTypeDetails.name // Pass the name of the business type
       );
       trips.push({
-        date: date.toISOString().split("T")[0], // Format Date
+        date: date.toISOString().split("T")[0],
         type: "business",
         miles: roundMiles(miles),
-        purpose: purpose, // Use generated purpose
+        purpose: selectedPurpose.purpose_name,
         start_mileage: roundMiles(currentMileage),
         end_mileage: endM,
         vehicle_info: vehicleInfo,
-        business_type: businessType,
-        // Add missing fields
-        id: "", // Placeholder ID
+        business_type: businessTypeDetails.name,
+        id: "", 
         location: location,
         created_at: null,
         updated_at: null,
@@ -621,13 +653,12 @@ function generateTripsForDay(
       date: date.toISOString().split("T")[0], // Format Date
       type: "personal",
       miles: roundMiles(miles),
-      purpose: personalPurpose, // Standard purpose for personal trips
+        purpose: personalPurpose,
       start_mileage: roundMiles(currentMileage),
       end_mileage: endM,
       vehicle_info: vehicleInfo,
-      business_type: businessType, // Often good to keep context even for personal
-      // Add missing fields
-      id: "", // Placeholder ID
+        business_type: businessTypeDetails.name, // Keep context
+        id: "", 
       location: personalLocation,
       created_at: null,
       updated_at: null,
@@ -682,24 +713,79 @@ export async function generateMileageLogFromForm(
     endMileage,
     totalPersonalMiles,
     vehicle,
-    businessType = CONFIG.DEFAULT_BUSINESS_TYPE,
+    businessType: businessTypeIdentifier, // This is name or ID
     subscriptionStatus,
   } = validation.data;
+
+  // --- Resolve Business Type Details ---
+  let resolvedDetails: ResolvedBusinessTypeDetails | null = null;
+  const supabase = await createClient(); // Create Supabase client once
+  const { data: { user } , error: userError } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    logger.error("User not authenticated for resolving business type.", { userError });
+    return { success: false, message: "User not authenticated. Cannot generate log." };
+  }
+
+  if (businessTypeIdentifier) {
+    const predefined = PREDEFINED_BUSINESS_TYPES.find(bt => bt.name === businessTypeIdentifier);
+    if (predefined) {
+      resolvedDetails = {
+        name: predefined.name,
+        purposes: predefined.purposes.map(p => ({ purpose_name: p })), // max_distance and avg_trips undefined for predefined
+        isCustom: false,
+      };
+    } else {
+      // Assume it's a custom ID
+      try {
+        const custom = await _getCustomBusinessTypeDetails(supabase, businessTypeIdentifier, user.id);
+        if (custom) {
+          resolvedDetails = {
+            id: custom.id,
+            name: custom.name,
+            avg_trips_per_workday: custom.avg_trips_per_workday,
+            purposes: custom.custom_business_purposes?.map(p => ({
+              purpose_name: p.purpose_name,
+              max_distance: p.max_distance,
+            })) || [],
+            isCustom: true,
+          };
+        } else {
+          return { success: false, message: `Custom business type with ID "${businessTypeIdentifier}" not found or not accessible.` };
+        }
+      } catch (err) {
+        logger.error({ err, businessTypeIdentifier }, "Error fetching custom business type details.");
+        return { success: false, message: `Error fetching details for custom business type ID "${businessTypeIdentifier}".` };
+      }
+    }
+  } else {
+     // Fallback to default if no identifier provided (though Zod schema might require it)
+     resolvedDetails = {
+        name: CONFIG.DEFAULT_BUSINESS_TYPE,
+        purposes: [{ purpose_name: "General Business Meeting" }, { purpose_name: "Supplies Run" }], // Example generic purposes
+        isCustom: false,
+     };
+  }
+  
+  if (!resolvedDetails) {
+    // Should ideally be caught by specific error returns above
+    return { success: false, message: "Failed to determine business type details." };
+  }
+
 
   try {
     // --- Core Logic ---
     const log = await generateMileageLog(
-      // Now uses await as generateMileageLog is async
       startDate,
       endDate,
       startMileage,
       endMileage,
-      businessType,
+      resolvedDetails, // Pass the resolved details object
       vehicle,
       totalPersonalMiles
     );
 
-    // Ensure log_entries exists (should always exist now unless error thrown)
+    // Ensure log_entries exists
     if (!log.log_entries) {
       // This case might indicate an error during generation that wasn't caught
       logger.error(
