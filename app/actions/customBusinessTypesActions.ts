@@ -79,6 +79,7 @@ export async function createCustomBusinessType(
 
     const newType = await _createCustomBusinessType(supabase, userData.user.id, typeData);
     revalidatePath(MANAGEMENT_PAGE_PATH); // Revalidate the management page
+    revalidatePath('/generator'); // Revalidate the generator page
     return { data: newType, error: null };
 
   } catch (error: unknown) {
@@ -112,6 +113,7 @@ export async function updateCustomBusinessType(
     const updatedType = await _updateCustomBusinessType(supabase, userData.user.id, typeData);
     revalidatePath(MANAGEMENT_PAGE_PATH); // Revalidate
     revalidatePath(`${MANAGEMENT_PAGE_PATH}/${typeData.id}`); // Revalidate specific detail page if exists
+    revalidatePath('/generator'); // Revalidate the generator page
     return { data: updatedType, error: null };
 
   } catch (error: unknown) {
@@ -165,6 +167,7 @@ export async function deleteCustomBusinessType(
 
     await _deleteCustomBusinessType(supabase, id, userId);
     revalidatePath(MANAGEMENT_PAGE_PATH); // Revalidate the list
+    revalidatePath('/generator'); // Revalidate the generator page
     return { success: true, error: null };
 
   } catch (error: unknown) {

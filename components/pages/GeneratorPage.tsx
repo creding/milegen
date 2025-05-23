@@ -17,12 +17,20 @@ import { MileageForm } from "@/components/milagelog/MileageForm";
 import { FormValues } from "@/types/form_values";
 import { useMediaQuery } from "@mantine/hooks";
 import { generateMileageLogFromForm } from "@/app/actions/mileageGenerator";
+import { CustomBusinessType } from "@/types/custom_business_type";
+import { BusinessType as PredefinedBusinessTypeStructure } from "@/utils/mileageUtils"; // Type from mileageUtils
+
+interface GeneratorPageProps {
+  subscriptionStatus: string | null;
+  customBusinessTypes: Pick<CustomBusinessType, 'id' | 'name'>[];
+  predefinedBusinessTypes: PredefinedBusinessTypeStructure[];
+}
 
 export const GeneratorPage = ({
   subscriptionStatus,
-}: {
-  subscriptionStatus: string | null;
-}) => {
+  customBusinessTypes,
+  predefinedBusinessTypes,
+}: GeneratorPageProps) => {
   const router = useRouter();
   const isMobile = useMediaQuery("(max-width: 768px)");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -139,6 +147,8 @@ export const GeneratorPage = ({
           subscriptionStatus={subscriptionStatus}
           onGenerate={handleGenerateMileageLog}
           onReset={resetForm}
+          customBusinessTypes={customBusinessTypes}
+          predefinedBusinessTypes={predefinedBusinessTypes}
         />
       </Card>
     </Container>

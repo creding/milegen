@@ -21,24 +21,30 @@ import { TripDetailsStep } from "./steps/TripDetailsStep";
 import { DateRangeStep } from "./steps/DateRangeStep";
 import { ReviewStep } from "./steps/ReviewStep";
 
-import { BUSINESS_TYPES } from "@/utils/mileageUtils";
+// import { BUSINESS_TYPES } from "@/utils/mileageUtils"; // No longer used here
 import {
-  VEHICLE_MAKES, // Import the constant array
-  VEHICLE_MODELS, // Import the models object/map
-  VEHICLE_YEARS, // Import the years array
+  VEHICLE_MAKES,
+  VEHICLE_MODELS,
+  VEHICLE_YEARS,
 } from "@/utils/constants";
 import { FormValues } from "@/types/form_values";
+import { CustomBusinessType } from "@/types/custom_business_type";
+import { BusinessType as PredefinedBusinessTypeStructure } from "@/utils/mileageUtils";
 
 interface MileageFormProps {
   subscriptionStatus: string | null;
   onGenerate: (values: FormValues) => Promise<void>;
   onReset: () => void;
+  customBusinessTypes: Pick<CustomBusinessType, 'id' | 'name'>[];
+  predefinedBusinessTypes: PredefinedBusinessTypeStructure[];
 }
 
 export function MileageForm({
   subscriptionStatus,
   onGenerate,
   onReset,
+  customBusinessTypes,
+  predefinedBusinessTypes,
 }: MileageFormProps) {
   const isMobile = useMediaQuery("(max-width: 768px)") || false;
   const [activeStep, setActiveStep] = useState(0);
@@ -59,13 +65,8 @@ export function MileageForm({
   // Initial vehicle parts
   const initialVehicle = parseVehicle("");
 
-  // Create business type options for the select dropdown
-  const businessTypeOptions = BUSINESS_TYPES.map(
-    (type: { name: string; purposes: string[] }) => ({
-      value: type.name,
-      label: type.name,
-    })
-  );
+  // businessTypeOptions will now be derived in TripDetailsStep from the passed props
+  // const businessTypeOptions = BUSINESS_TYPES.map( ... ); // This is removed
 
   const form = useForm<FormValues>({
     initialValues: {
@@ -252,7 +253,9 @@ export function MileageForm({
           >
             <TripDetailsStep
               form={form}
-              businessTypeOptions={businessTypeOptions}
+              // Pass down the props received by MileageForm
+              predefinedBusinessTypes={predefinedBusinessTypes}
+              customBusinessTypes={customBusinessTypes}
             />
           </Stepper.Step>
 

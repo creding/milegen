@@ -18,38 +18,40 @@ import {
 import { IconAlertCircle, IconPencil, IconTrash } from "@tabler/icons-react";
 
 import {
-  getCustomBusinessTypes,
+  // getCustomBusinessTypes, // No longer fetched internally
   createCustomBusinessType,
   updateCustomBusinessType,
   deleteCustomBusinessType,
-  getPurposesForBusinessType, // Import the new action
+  // getPurposesForBusinessType, // No longer directly used, details come from getCustomBusinessTypeDetails
+  getCustomBusinessTypeDetails, 
 } from "@/app/actions/customBusinessTypesActions";
 import {
   CustomBusinessType,
   CreateCustomBusinessTypeDTO,
   UpdateCustomBusinessTypeDTO,
   CustomBusinessPurpose,
-} from "@/types/custom_business_type"; // Use singular
+} from "@/types/custom_business_type";
 
 interface CustomTypeManagerModalProps {
   opened: boolean;
   onClose: () => void;
   onUpdate: () => void;
+  initialCustomTypes: Pick<CustomBusinessType, 'id' | 'name'>[]; // Passed in from parent
 }
 
 const CustomTypeManagerModal: React.FC<CustomTypeManagerModalProps> = ({
   opened,
   onClose,
   onUpdate,
+  initialCustomTypes,
 }) => {
-  const [types, setTypes] = useState<Pick<CustomBusinessType, "id" | "name">[]>(
-    []
-  );
-  const [isLoading, setIsLoading] = useState(false);
+  // Internal state for displaying the list of types. Initialized from props.
+  const [types, setTypes] = useState<Pick<CustomBusinessType, "id" | "name">[]>(initialCustomTypes);
+  
+  const [isLoading, setIsLoading] = useState(false); // General loading for initial list, might be removed or repurposed
   const [isCreating, setIsCreating] = useState(false);
-  const [selectedType, setSelectedType] = useState<
-    Pick<CustomBusinessType, "id" | "name"> | null
-  >(null);
+  // selectedType should hold the full details for editing, not just id/name
+  const [selectedType, setSelectedType] = useState<CustomBusinessType | null>(null); 
   const [isEditing, setIsEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false); // General save/update loading
@@ -67,58 +69,47 @@ const CustomTypeManagerModal: React.FC<CustomTypeManagerModalProps> = ({
   const [editingAvgTrips, setEditingAvgTrips] = useState<number | ''>('');
   const [editingPurposes, setEditingPurposes] = useState<CustomBusinessPurpose[]>([]);
   
-  const [newPurposeName, setNewPurposeName] = useState(""); // For adding new purpose in Edit form
-  const [newPurposeMaxDistance, setNewPurposeMaxDistance] = useState<number | ''>(""); // For adding new purpose in Edit form
-  const [newPurposeFrequency, setNewPurposeFrequency] = useState<number | ''>(''); // For adding new purpose in Edit form
+  const [newPurposeName, setNewPurposeName] = useState("");
+  const [newPurposeMaxDistance, setNewPurposeMaxDistance] = useState<number | ''>("");
+  const [newPurposeFrequency, setNewPurposeFrequency] = useState<number | ''>('');
 
-  const fetchTypes = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const result = await getCustomBusinessTypes();
-      if (result.error) {
-        setError(result.error);
-        setTypes([]);
-      } else {
-        setTypes(
-          (result.data as Pick<CustomBusinessType, "id" | "name">[]) || []
-        );
-      }
-    } catch (fetchError) {
-      console.error("Error fetching types:", fetchError);
-      setError("An unexpected error occurred while fetching types.");
-      setTypes([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  // Reset state when modal opens
+  // Effect to synchronize internal `types` state with `initialCustomTypes` prop
+  useEffect(() => {
+    setTypes(initialCustomTypes);
+  }, [initialCustomTypes]);
+  
+  // Reset other states when modal opens/closes or when initial types change (e.g. after a refresh)
   useEffect(() => {
     if (opened) {
-      fetchTypes(); // Initial fetch
-      // Reset state when opening
-      setSelectedType(null);
-      setIsEditing(false);
-      setIsCreating(false);
-      setError(null);
-      setTypeToDeleteId(null);
-      setIsDeleting(false);
-      setNewTypeName("");
-      setNewAvgTrips('');
-      setNewTypePurposes([]);
-      setCurrentNewPurposeName("");
-      setCurrentNewPurposeMaxDistance("");
-      setCurrentNewPurposeFrequency(""); // Reset for Add form
-
-      setEditingTypeName("");
-      setEditingAvgTrips('');
-      setEditingPurposes([]);
-      setNewPurposeName(""); // Reset for Edit form's new purpose input
-      setNewPurposeMaxDistance(""); // Reset for Edit form's new purpose input
-      setNewPurposeFrequency(""); // Reset for Edit form's new purpose input
+      // When modal opens, ensure forms are reset, errors cleared.
+      // types state is now handled by the prop sync effect above.
+      // No need to call fetchTypes() anymore.
+      // setIsLoading(true) might be set if initialCustomTypes could be loading from parent,
+      // but generally, parent should handle that.
+      setIsLoading(false); // Assuming initialCustomTypes are ready when modal is opened.
     }
-  }, [opened, fetchTypes]);
+    // Reset form states regardless of whether modal is opening or closing,
+    // or if the underlying list of types changes (which might invalidate current edit/add)
+    setSelectedType(null);
+    setIsEditing(false);
+    setIsCreating(false);
+    setError(null);
+    setTypeToDeleteId(null);
+    setIsDeleting(false);
+    setNewTypeName("");
+    setNewAvgTrips('');
+    setNewTypePurposes([]);
+    setCurrentNewPurposeName("");
+    setCurrentNewPurposeMaxDistance("");
+    setCurrentNewPurposeFrequency("");
+
+    setEditingTypeName("");
+    setEditingAvgTrips('');
+    setEditingPurposes([]);
+    setNewPurposeName("");
+    setNewPurposeMaxDistance("");
+    setNewPurposeFrequency("");
+  }, [opened, initialCustomTypes]); // Effect also runs if initialCustomTypes changes
 
   const handleUpdateType = async () => {
     if (!selectedType || !editingTypeName.trim() || typeof editingAvgTrips !== 'number' || editingAvgTrips <= 0) {
@@ -129,32 +120,22 @@ const CustomTypeManagerModal: React.FC<CustomTypeManagerModalProps> = ({
     setIsSaving(true);
     setError(null);
 
-    // Fetch full details of selected type to compare avg_trips_per_workday
-    // This is a bit inefficient but necessary if avg_trips_per_workday is not in the initial `types` list
-    let originalAvgTrips = selectedType.avg_trips_per_workday; // Assume it might be there
-    if (originalAvgTrips === undefined) {
-        try {
-            const details = await getCustomBusinessTypeDetails(selectedType.id);
-            if (details.data) {
-                originalAvgTrips = details.data.avg_trips_per_workday;
-            } else {
-                 setError("Could not verify original data for update. Please try again.");
-                 setIsSaving(false);
-                 return;
-            }
-        } catch (e) {
-            setError("Error fetching original data for update. Please try again.");
-            setIsSaving(false);
-            return;
-        }
-    }
+    // selectedType now holds the full original details, including avg_trips_per_workday.
+    const originalAvgTrips = selectedType.avg_trips_per_workday;
 
-
-    const purposeDTOs: UpdateCustomBusinessTypeDTO['purposes'] = editingPurposes.map(p => ({
-      id: p.id.startsWith('temp-') ? undefined : p.id,
-      purpose_name: p.purpose_name,
-      max_distance: p.max_distance,
-    }));
+    const purposeDTOs: UpdateCustomBusinessTypeDTO['purposes'] = editingPurposes.map(p => {
+      const dtoPurpose: any = { // Build DTO piece by piece
+        purpose_name: p.purpose_name,
+        max_distance: p.max_distance,
+      };
+      if (!p.id.startsWith('temp-')) {
+        dtoPurpose.id = p.id; // Include ID only for existing purposes
+      }
+      if (p.frequency_per_day !== undefined) {
+        dtoPurpose.frequency_per_day = p.frequency_per_day;
+      }
+      return dtoPurpose;
+    });
 
     const updateData: UpdateCustomBusinessTypeDTO = { id: selectedType.id };
     let changesMade = false;
@@ -208,9 +189,9 @@ const CustomTypeManagerModal: React.FC<CustomTypeManagerModalProps> = ({
         setError(result.error);
       } else {
         setIsEditing(false);
-        setSelectedType(null);
-        await fetchTypes();
-        onUpdate();
+        setSelectedType(null); // Clear selected type after successful update
+        // No need to call fetchTypes() here. onUpdate will trigger parent refresh.
+        onUpdate(); 
       }
     } catch (err) {
       setError("An unexpected error occurred while updating.");
@@ -259,8 +240,8 @@ const CustomTypeManagerModal: React.FC<CustomTypeManagerModalProps> = ({
       if (result.error) {
         setError(result.error);
       } else {
-        await fetchTypes();
-        onUpdate();
+        // No need to call fetchTypes(). onUpdate will trigger parent refresh.
+        onUpdate(); 
         setIsCreating(false);
         setNewTypeName("");
         setNewAvgTrips('');
@@ -304,38 +285,40 @@ const CustomTypeManagerModal: React.FC<CustomTypeManagerModalProps> = ({
   };
 
 
-  const handleEditClick = async (type: CustomBusinessType) => { // Expect full CustomBusinessType now
+  // This is the main handler when "Edit" is clicked on a type from the list.
+  // It should fetch the *full* details of the type.
+  const handleInitiateEdit = async (typeSummary: Pick<CustomBusinessType, 'id' | 'name'>) => {
     setIsEditing(true);
     setIsCreating(false);
-    setSelectedType(type);
-    setEditingTypeName(type.name);
-    setEditingAvgTrips(type.avg_trips_per_workday); // Set avg trips
     setError(null);
-    setNewPurposeName(''); // For new purpose input in edit form
-    setNewPurposeMaxDistance(''); // For new purpose input in edit form
-    setEditingPurposes([]); // Clear previous purposes before fetch
-    // setDeletedPurposeIds([]); // Removed
+    setIsFetchingPurposes(true); // Re-purpose this for fetching full details
 
-    setIsFetchingPurposes(true);
     try {
-      // Ensure getPurposesForBusinessType is correctly imported and used
-      const result = await getPurposesForBusinessType(type.id);
-      if (result.error) {
-        console.error("Error fetching purposes:", result.error);
-        setError(`Failed to load purposes: ${result.error}`);
-        setEditingPurposes([]);
+      const result = await getCustomBusinessTypeDetails(typeSummary.id);
+      if (result.error || !result.data) {
+        setError(result.error || "Could not fetch type details for editing.");
+        setIsEditing(false); // Abort editing
+        setSelectedType(null);
       } else {
-        // Store full purpose objects
-        setEditingPurposes(result.data || []); 
+        const fullTypeDetails = result.data;
+        setSelectedType(fullTypeDetails); // Store the full type details
+        setEditingTypeName(fullTypeDetails.name);
+        setEditingAvgTrips(fullTypeDetails.avg_trips_per_workday);
+        // Purposes are part of fullTypeDetails.custom_business_purposes
+        setEditingPurposes(fullTypeDetails.custom_business_purposes || []);
+        setNewPurposeName(''); 
+        setNewPurposeMaxDistance('');
+        setNewPurposeFrequency('');
       }
-    } catch (fetchError) {
-      console.error('Unexpected error fetching purposes:', fetchError);
-      setError('An unexpected error occurred while loading purposes.');
-      setEditingPurposes([]);
+    } catch (e) {
+      setError("An unexpected error occurred while fetching type details for editing.");
+      setIsEditing(false);
+      setSelectedType(null);
     } finally {
       setIsFetchingPurposes(false);
     }
   };
+
 
   const handleDeleteClick = (id: string) => {
     setTypeToDeleteId(id);
@@ -356,9 +339,9 @@ const CustomTypeManagerModal: React.FC<CustomTypeManagerModalProps> = ({
       if (result.error) {
         setError(result.error);
       } else {
-        setTypeToDeleteId(null); // Close confirmation
-        await fetchTypes(); // Refresh list
-        onUpdate(); // Notify parent
+        setTypeToDeleteId(null); 
+        // No need to call fetchTypes(). onUpdate will trigger parent refresh.
+        onUpdate(); 
       }
     } catch (err) {
       setError("An unexpected error occurred while deleting.");
@@ -418,41 +401,21 @@ const CustomTypeManagerModal: React.FC<CustomTypeManagerModalProps> = ({
     );
   };
   
-  // Fetch full business type details when editing, including purposes
-  // This ensures avg_trips_per_workday and full purpose details are available
-  // The main `types` list only has id and name.
-  const enhancedHandleEditClick = async (type: Pick<CustomBusinessType, 'id' | 'name'>) => {
-    setIsFetchingPurposes(true); // Use this generic loading for fetching full details
-    setError(null);
-    try {
-      const result = await getCustomBusinessTypeDetails(type.id);
-      if (result.error || !result.data) {
-        setError(result.error || "Could not fetch type details.");
-        setIsFetchingPurposes(false);
-        return;
-      }
-      // Now call the original handleEditClick with the full data
-      handleEditClick(result.data); 
-    } catch (e) {
-      setError("An unexpected error occurred while fetching type details.");
-    } finally {
-      // handleEditClick will set setIsFetchingPurposes(false) after its own purpose fetch
-    }
-  };
-
-
-  // Find the name of the type being deleted for the confirmation message
-  // Ensure `types` contains full CustomBusinessType objects if you need more than name here,
-  // or adjust to use the `selectedType` if appropriate.
   const typeNameToDelete = types.find((t) => t.id === typeToDeleteId)?.name;
-
 
   return (
     <Modal
       opened={opened}
-      onClose={onClose}
-      title={isEditing ? `Edit Type: ${selectedType?.name || ''}` : "Manage Custom Business Types"}
-      size="xl" // Increased size for more complex forms
+      onClose={() => {
+        // Ensure form states are reset when modal is closed externally too
+        setIsCreating(false);
+        setIsEditing(false);
+        setSelectedType(null);
+        setError(null);
+        onClose(); // Call original onClose
+      }}
+      title={isEditing && selectedType ? `Edit Type: ${selectedType.name}` : "Manage Custom Business Types"}
+      size="xl"
     >
       <Stack gap="md">
         {error && (
@@ -467,14 +430,11 @@ const CustomTypeManagerModal: React.FC<CustomTypeManagerModalProps> = ({
           </Alert>
         )}
 
-        {isLoading ? (
-          <Group justify="center">
-            <Loader />
-          </Group>
-        ) : (
-          <>
-            {/* --- Edit Form --- */}
-            {isEditing && selectedType && (
+        {/* Removed primary isLoading state for the whole list, as it's prop-driven now */}
+        {/* Loading for specific actions like fetching details for edit is handled by isFetchingPurposes or isSaving */}
+        <>
+          {/* --- Edit Form --- */}
+          {isEditing && selectedType && (
               <Stack gap="md" mt="sm">
                 <TextInput
                   label="Edit type name"
@@ -635,8 +595,8 @@ const CustomTypeManagerModal: React.FC<CustomTypeManagerModalProps> = ({
                       <Button
                         size="xs"
                         variant="outline"
-                        onClick={() => enhancedHandleEditClick(type)} // Use enhanced click handler
-                        disabled={isCreating || isEditing || isDeleting || !!typeToDeleteId || isLoading}
+                        onClick={() => handleInitiateEdit(type)} // Use new handler
+                        disabled={isCreating || isEditing || isDeleting || !!typeToDeleteId || isLoading || isFetchingPurposes}
                       >
                         Edit
                       </Button>
@@ -645,7 +605,7 @@ const CustomTypeManagerModal: React.FC<CustomTypeManagerModalProps> = ({
                         color="red"
                         variant="outline"
                         onClick={() => handleDeleteClick(type.id)}
-                        disabled={isCreating || isEditing || isDeleting || !!typeToDeleteId || isLoading}
+                        disabled={isCreating || isEditing || isDeleting || !!typeToDeleteId || isLoading || isFetchingPurposes}
                       >
                         Delete
                       </Button>

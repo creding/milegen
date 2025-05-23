@@ -20,81 +20,106 @@ import { CustomInputWrapper } from "@/components/form/CustomInputWrapper";
 import { UseFormReturnType } from "@mantine/form";
 import { FormValues } from "@/types/form_values";
 import CustomTypeManagerModal from '@/features/custom-business-types/components/CustomTypeManagerModal';
-import { getCustomBusinessTypes, getCustomBusinessTypeDetails } from '@/app/actions/customBusinessTypesActions';
+import { getCustomBusinessTypeDetails, getCustomBusinessTypes } from '@/app/actions/customBusinessTypesActions'; // getCustomBusinessTypes for handleTypesUpdated
 import { CustomBusinessType, CustomBusinessPurpose } from '@/types/custom_business_type';
+import { BusinessType as PredefinedBusinessTypeStructure } from "@/utils/mileageUtils"; // Type from mileageUtils
 
-// Assuming predefined types also have a similar structure for details
-// If BUSINESS_TYPES constant was available, we'd use its type.
-// For now, this is an assumption based on the task requirements.
-interface PredefinedBusinessType {
-  value: string; // Corresponds to the ID/value in the select
-  label: string; // Display name
-  name: string; // Actual name, might be same as label
-  avg_trips_per_workday: number;
-  purposes: Array<{ purpose_name: string; max_distance: number }>; // Simplified purpose structure
+// This interface will represent the structure of predefined types as passed in props.
+// It's based on PredefinedBusinessTypeStructure but might be adapted if needed for display.
+// For now, let's assume it's directly PredefinedBusinessTypeStructure and we'll adapt it for formatOptionsWithGroups.
+interface PredefinedBusinessTypeForProp extends PredefinedBusinessTypeStructure {
+  // We need value and label for the Select component's items, if not directly in PredefinedBusinessTypeStructure
+  value: string; 
+  label: string;
+  // avg_trips_per_workday and purposes with max_distance are NOT in PredefinedBusinessTypeStructure
+  // So, we need to define them here if we want to display them for predefined types.
+  // This highlights a potential mismatch: predefined types from mileageUtils don't have these details.
+  // The previous implementation of TripDetailsStep *assumed* businessTypeOptions had these.
+  // For this refactor, we pass what's available. Display logic will need to adjust or these fields will be undefined for predefined.
+  avg_trips_per_workday?: number; 
+  purposes?: Array<{ purpose_name: string; max_distance?: number }>;
 }
+
 
 interface TripDetailsStepProps {
   form: UseFormReturnType<FormValues, (values: FormValues) => FormValues>;
-  // Assuming businessTypeOptions will be an array of PredefinedBusinessType
-  businessTypeOptions: PredefinedBusinessType[]; 
+  predefinedBusinessTypes: PredefinedBusinessTypeStructure[]; // Raw from mileageUtils
+  customBusinessTypes: Pick<CustomBusinessType, 'id' | 'name'>[]; // Summary from getCustomBusinessTypes
 }
 
+import { useRouter } from 'next/navigation'; // Added for router.refresh()
+
 // Helper to format options for the Select component, including grouping
-const formatOptionsWithGroups = (predefined: PredefinedBusinessType[], custom: Pick<CustomBusinessType, 'id' | 'name'>[]) => {
+const formatOptionsWithGroups = (
+    predefinedRaw: PredefinedBusinessTypeStructure[] | undefined,  // Allow undefined
+    customSummary: Pick<CustomBusinessType, 'id' | 'name'>[] | undefined // Allow undefined
+  ) => {
   const options = [];
-  if (predefined && predefined.length > 0) {
-    options.push({ 
-      group: "Predefined Types", 
-      items: predefined.map(p => ({ value: p.value, label: p.label })) 
+  if (predefinedRaw && predefinedRaw.length > 0) {
+    options.push({
+      group: "Predefined Types",
+      items: predefinedRaw.map(p => ({ value: p.name, label: p.name }))
     });
   }
-  if (custom && custom.length > 0) {
-    options.push({ 
-      group: "Custom Types", 
-      items: custom.map(type => ({ value: type.id, label: type.name })) 
+  if (customSummary && customSummary.length > 0) {
+    options.push({
+      group: "Custom Types",
+      items: customSummary.map(type => ({ value: type.id, label: type.name }))
     });
   }
   return options;
 };
 
+// Helper to create the PredefinedBusinessTypeForProp structure from PredefinedBusinessTypeStructure
+// This is needed because PredefinedBusinessTypeStructure from mileageUtils lacks detailed fields.
+// For this step, we'll acknowledge this by making details optional or using defaults.
+const adaptPredefinedTypeForDetails = (rawType: PredefinedBusinessTypeStructure): PredefinedBusinessTypeForProp => {
+    return {
+        ...rawType, // name, purposes (string[])
+        value: rawType.name,
+        label: rawType.name,
+        // These details are NOT available in PredefinedBusinessTypeStructure from mileageUtils
+        // So, they will be undefined or we can set defaults if design requires.
+        avg_trips_per_workday: undefined, // Or a default like 0 or 1 if makes sense
+        purposes: rawType.purposes.map(pName => ({ purpose_name: pName, max_distance: undefined })),
+    };
+};
+
+
 export function TripDetailsStep({
   form,
-  businessTypeOptions, // Now PredefinedBusinessType[]
+  predefinedBusinessTypes,
+  customBusinessTypes,
 }: TripDetailsStepProps) {
+  const router = useRouter(); // Initialize router
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentOptions, setCurrentOptions] = useState(formatOptionsWithGroups(businessTypeOptions, []));
+  
+  const [currentOptions, setCurrentOptions] = useState(
+    formatOptionsWithGroups(predefinedBusinessTypes, customBusinessTypes)
+  );
+  
   const [selectedBusinessTypeDetails, setSelectedBusinessTypeDetails] = 
-    useState<CustomBusinessType | PredefinedBusinessType | null>(null);
+    useState<CustomBusinessType | PredefinedBusinessTypeForProp | null>(null);
+  
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
 
   const selectedBusinessTypeValue = form.values.businessType;
 
-  // Effect to fetch and set all types for the dropdown
+  // Effect to update dropdown options when props change
   useEffect(() => {
-    const fetchAndSetTypes = async () => {
-      // setIsLoadingDetails(true); // Potentially show loader for entire dropdown population
-      try {
-        const result = await getCustomBusinessTypes(); // Fetches {id, name}
-        if (result.error) {
-          console.error("Error fetching custom types for dropdown:", result.error);
-          setCurrentOptions(formatOptionsWithGroups(businessTypeOptions, [])); // Fallback to predefined
-        } else {
-          const customTypesForDropdown = result.data as Pick<CustomBusinessType, 'id' | 'name'>[];
-          setCurrentOptions(formatOptionsWithGroups(businessTypeOptions, customTypesForDropdown));
-        }
-      } catch (error) {
-        console.error("Unexpected error fetching custom types for dropdown:", error);
-        setCurrentOptions(formatOptionsWithGroups(businessTypeOptions, [])); // Fallback to predefined
-      }
-      // setIsLoadingDetails(false);
-    };
+    setCurrentOptions(formatOptionsWithGroups(predefinedBusinessTypes, customBusinessTypes));
+    // If the selectedBusinessTypeValue is no longer in the new options, reset it.
+    // This handles cases where a selected custom type is deleted, or predefined list changes.
+    const newFlattenedOptions = (predefinedBusinessTypes?.map(p => p.name) || []).concat(customBusinessTypes?.map(c => c.id) || []);
+    if (selectedBusinessTypeValue && !newFlattenedOptions.includes(selectedBusinessTypeValue)) {
+        form.setFieldValue('businessType', '');
+        setSelectedBusinessTypeDetails(null);
+    }
+  }, [predefinedBusinessTypes, customBusinessTypes, selectedBusinessTypeValue, form]);
 
-    fetchAndSetTypes();
-  }, [businessTypeOptions]); // Re-fetch if predefined types (prop) change
 
-  // Effect to fetch details when a business type is selected
+  // Effect to fetch details when a business type is selected from the (now prop-driven) dropdown
   useEffect(() => {
     const fetchDetails = async () => {
       if (!selectedBusinessTypeValue) {
@@ -103,100 +128,64 @@ export function TripDetailsStep({
         return;
       }
 
-      // Try to find in predefined types first
-      const predefinedDetail = businessTypeOptions.find(
-        (opt) => opt.value === selectedBusinessTypeValue
+      const predefinedRawDetail = predefinedBusinessTypes?.find(
+        (opt) => opt.name === selectedBusinessTypeValue
       );
 
-      if (predefinedDetail) {
-        setSelectedBusinessTypeDetails(predefinedDetail);
+      if (predefinedRawDetail) {
+        setSelectedBusinessTypeDetails(adaptPredefinedTypeForDetails(predefinedRawDetail));
         setIsLoadingDetails(false);
         setErrorDetails(null);
       } else {
-        // If not predefined, assume it's a custom type and fetch its full details
-        setIsLoadingDetails(true);
-        setErrorDetails(null);
-        try {
-          const result = await getCustomBusinessTypeDetails(selectedBusinessTypeValue);
-          if (result.error || !result.data) {
-            setErrorDetails(result.error || "Failed to load custom business type details.");
+        // Check if it's a known custom ID from props before fetching
+        const isKnownCustomId = customBusinessTypes?.some(ct => ct.id === selectedBusinessTypeValue);
+        if (isKnownCustomId) {
+            setIsLoadingDetails(true);
+            setErrorDetails(null);
+            try {
+              const result = await getCustomBusinessTypeDetails(selectedBusinessTypeValue);
+              if (result.error || !result.data) {
+                setErrorDetails(result.error || "Failed to load custom business type details.");
+                setSelectedBusinessTypeDetails(null);
+              } else {
+                setSelectedBusinessTypeDetails(result.data);
+              }
+            } catch (error) {
+              console.error("Unexpected error fetching custom type details:", error);
+              setErrorDetails("An unexpected error occurred while fetching details.");
+              setSelectedBusinessTypeDetails(null);
+            } finally {
+              setIsLoadingDetails(false);
+            }
+        } else {
+            // Not predefined and not in the list of custom type IDs from props.
+            // This could happen if the selected value is stale after a list update.
+            // The useEffect above that watches props should ideally clear this.
             setSelectedBusinessTypeDetails(null);
-          } else {
-            setSelectedBusinessTypeDetails(result.data);
-          }
-        } catch (error) {
-          console.error("Unexpected error fetching custom type details:", error);
-          setErrorDetails("An unexpected error occurred while fetching details.");
-          setSelectedBusinessTypeDetails(null);
-        } finally {
-          setIsLoadingDetails(false);
+            setErrorDetails(null); // Or "Selected type is no longer valid"
         }
       }
     };
 
     fetchDetails();
-  }, [selectedBusinessTypeValue, businessTypeOptions]); // Rerun when selection or predefined options change
+  }, [selectedBusinessTypeValue, predefinedBusinessTypes, customBusinessTypes]);
 
-  // This function is called when the modal signals an update.
   const handleTypesUpdated = async () => {
-    console.log('Custom business types updated via modal. Refreshing dropdown options and current selection details...');
-    setIsLoadingDetails(true); // Show loading while we refresh everything
+    // console.log('Custom business types updated via modal. Refreshing page data via router.refresh()...'); // Removed console.log
+    
+    // Clear current selection and details before refresh to avoid showing stale data
+    form.setFieldValue('businessType', '');
+    setSelectedBusinessTypeDetails(null);
     setErrorDetails(null);
-    let refreshedCustomTypesForDropdown: Pick<CustomBusinessType, 'id' | 'name'>[] = [];
-    try {
-      const result = await getCustomBusinessTypes(); // Fetches {id, name}
-      if (result.error) {
-        console.error("Error fetching updated custom types for dropdown:", result.error);
-        // Keep existing custom types in dropdown if fetch fails, or clear them:
-        // For safety, format with potentially stale custom types if already in currentOptions, or empty
-        const existingCustom = currentOptions.find(g => g.group === "Custom Types")?.items || [];
-        setCurrentOptions(formatOptionsWithGroups(businessTypeOptions, existingCustom));
-      } else {
-        refreshedCustomTypesForDropdown = result.data as Pick<CustomBusinessType, 'id' | 'name'>[];
-        setCurrentOptions(formatOptionsWithGroups(businessTypeOptions, refreshedCustomTypesForDropdown));
-      }
-    } catch (error) {
-      console.error("Unexpected error fetching updated custom types for dropdown:", error);
-      const existingCustom = currentOptions.find(g => g.group === "Custom Types")?.items || [];
-      setCurrentOptions(formatOptionsWithGroups(businessTypeOptions, existingCustom));
-    }
+    // Optionally, can set isLoadingDetails to true here to give immediate feedback
+    // setIsLoadingDetails(true); // User will see loading until props are updated
 
-    // After updating dropdown, check if current selection needs details refreshed
-    // This is important if the currently selected custom type was edited or deleted.
-    if (selectedBusinessTypeValue) {
-        const isPredefined = businessTypeOptions.some(opt => opt.value === selectedBusinessTypeValue);
-        if (isPredefined) {
-            // Predefined type details don't change via modal, so no action needed here or already handled by selection effect
-            const predefinedDetail = businessTypeOptions.find(opt => opt.value === selectedBusinessTypeValue);
-            setSelectedBusinessTypeDetails(predefinedDetail || null);
-        } else {
-            // Custom type: was it deleted?
-            const stillExists = refreshedCustomTypesForDropdown.some(ct => ct.id === selectedBusinessTypeValue);
-            if (stillExists) {
-                try {
-                    const detailsResult = await getCustomBusinessTypeDetails(selectedBusinessTypeValue);
-                    if (detailsResult.error || !detailsResult.data) {
-                        setErrorDetails(detailsResult.error || "Failed to refresh details for selected custom type.");
-                        setSelectedBusinessTypeDetails(null);
-                        form.setFieldValue('businessType', ''); // Clear selection if details fail
-                    } else {
-                        setSelectedBusinessTypeDetails(detailsResult.data);
-                    }
-                } catch (e) {
-                    setErrorDetails("Error refreshing selected custom type details.");
-                    setSelectedBusinessTypeDetails(null);
-                    form.setFieldValue('businessType', ''); 
-                }
-            } else {
-                // Selected custom type was deleted
-                setSelectedBusinessTypeDetails(null);
-                form.setFieldValue('businessType', ''); // Clear selection
-            }
-        }
-    } else {
-        setSelectedBusinessTypeDetails(null); // No selection
-    }
-    setIsLoadingDetails(false);
+    router.refresh(); 
+    // After router.refresh(), the page (app/generator/page.tsx) will re-fetch.
+    // New props (predefinedBusinessTypes, customBusinessTypes) will flow down.
+    // The useEffect listening to these props will update currentOptions.
+    // The useEffect listening to selectedBusinessTypeValue (now cleared) will reset details.
+    // No need to manually call getCustomBusinessTypes or setCurrentOptions here.
   };
 
   return (
@@ -270,29 +259,30 @@ export function TripDetailsStep({
             <Text size="sm" fw={500} mt="xs" mb="xs">
               Configured Purposes:
             </Text>
-            {/* Check if purposes are from CustomBusinessType (custom_business_purposes) or PredefinedBusinessType (purposes) */}
-            {(selectedBusinessTypeDetails as CustomBusinessType).custom_business_purposes || (selectedBusinessTypeDetails as PredefinedBusinessType).purposes?.length > 0 ? (
-              <List
-                spacing="xs"
-                size="sm"
-                center
-                icon={
-                  <ThemeIcon color="teal" size={18} radius="xl">
-                    <IconCircleCheck size={12} />
-                  </ThemeIcon>
+            {(() => {
+              let purposesToDisplay: Array<{ purpose_name: string; max_distance?: number; [key: string]: any }> = [];
+              if (selectedBusinessTypeDetails) {
+                if ('custom_business_purposes' in selectedBusinessTypeDetails && selectedBusinessTypeDetails.custom_business_purposes) {
+                  purposesToDisplay = selectedBusinessTypeDetails.custom_business_purposes;
+                } else if ('purposes' in selectedBusinessTypeDetails && selectedBusinessTypeDetails.purposes) {
+                  purposesToDisplay = selectedBusinessTypeDetails.purposes;
                 }
-              >
-                {((selectedBusinessTypeDetails as CustomBusinessType).custom_business_purposes || (selectedBusinessTypeDetails as PredefinedBusinessType).purposes).map(
-                  (purpose: CustomBusinessPurpose | { purpose_name: string; max_distance: number }, index: number) => (
-                    <List.Item key={index}>
-                      {purpose.purpose_name} (Max: {purpose.max_distance} miles)
-                    </List.Item>
-                  )
-                )}
-              </List>
-            ) : (
-              <Text size="sm" c="dimmed">No specific purposes defined for this type.</Text>
-            )}
+              }
+
+              if (purposesToDisplay.length > 0) {
+                return (
+                  <List spacing="xs" size="sm" center icon={<ThemeIcon color="teal" size={18} radius="xl"><IconCircleCheck size={12} /></ThemeIcon>}>
+                    {purposesToDisplay.map((purpose, index) => (
+                      <List.Item key={index}>
+                        {purpose.purpose_name}
+                        {purpose.max_distance !== undefined ? ` (Max: ${purpose.max_distance} miles)` : ''}
+                      </List.Item>
+                    ))}
+                  </List>
+                );
+              }
+              return <Text size="sm" c="dimmed">No specific purposes defined for this type.</Text>;
+            })()}
           </Paper>
         )}
       </Paper>
