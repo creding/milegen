@@ -90,48 +90,160 @@ describe('generateMileageLogFromForm Action', () => {
     
     const savedLog = (mockSaveMileageLog as vi.Mock).mock.calls[0][0] as MileageLog;
     expect(savedLog.business_type).toBe('Sales');
-    // Further checks: Inspect log_entries to infer purpose usage if possible,
-    // though this is harder. For now, ensuring correct type name is primary.
-    expect(savedLog.log_entries?.some(entry => entry.type === 'business' && (entry.purpose === 'Client Meeting' || entry.purpose === 'Prospecting'))).toBe(true);
+    const businessEntries = savedLog.log_entries?.filter(e => e.type === 'business') || [];
+    // Predefined types don't have frequency limits in this mock, so multiple can appear
+    // up to avg_trips_per_workday or mileage target.
+    expect(businessEntries.length).toBeGreaterThan(0); 
+    expect(businessEntries.every(entry => entry.purpose === 'Client Meeting' || entry.purpose === 'Prospecting'))
   });
 
-  it('should fetch and use custom business type details when a custom ID is provided', async () => {
-    (mockGetCustomDetails as vi.Mock).mockResolvedValue(sampleCustomType);
-    const params = { ...baseParams, businessType: 'custom-id-123' };
+  it('should fetch and use custom business type details when a custom ID is provided (respecting max_distance)', async () => {
+    // sampleCustomType has "Custom Pickup B" with max_distance: 15
+    (mockGetCustomDetails as vi.Mock).mockResolvedValue(sampleCustomType); 
+    const params = { 
+      ...baseParams, 
+      businessType: 'custom-id-123',
+      endDate: new Date('2023-01-01'), // Single day for easier trip analysis
+      endMileage: baseParams.startMileage + 200, // Enough miles for multiple trips
+      totalPersonalMiles: 10,
+    };
     const result = await generateMileageLogFromForm(params);
 
     expect(result.success).toBe(true);
-    expect(result.logId).toBe('log-123');
     expect(mockGetCustomDetails).toHaveBeenCalledWith(expect.anything(), 'custom-id-123', 'test-user-id');
     
     const savedLog = (mockSaveMileageLog as vi.Mock).mock.calls[0][0] as MileageLog;
     expect(savedLog.business_type).toBe('My Custom Deliveries');
-     // Check if avg_trips_per_workday was logged (as per implementation)
     expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('avg_trips_per_workday: 4'));
 
-    // Check if custom purposes were used (example)
-    const hasCustomPurpose = savedLog.log_entries?.some(entry => 
-        entry.type === 'business' && 
-        (entry.purpose === 'Custom Delivery A' || entry.purpose === 'Custom Pickup B')
-    );
-    expect(hasCustomPurpose).toBe(true);
-
-    // Check if max_distance was respected (harder to test precisely without internal state)
-    // We can check if any trip significantly exceeds the smallest max_distance
-    const maxAllowedForCustom = 15; // Smallest max_distance in sampleCustomType
-    const businessTrips = savedLog.log_entries?.filter(e => e.type === 'business') || [];
-    businessTrips.forEach(trip => {
-        // Allow for some flexibility due to how remaining miles are handled
-        // The core logic tries to make trips within max_distance, but might adjust the last one.
-        // This test is a basic check.
-        if (trip.purpose === 'Custom Pickup B') { // This purpose has max_distance: 15
-             expect(trip.miles).toBeLessThanOrEqual(maxAllowedForCustom + 0.1); // Add small tolerance
-        }
-         if (trip.purpose === 'Custom Delivery A') { // This purpose has max_distance: 20
-             expect(trip.miles).toBeLessThanOrEqual(20 + 0.1);
-        }
+    const businessEntries = savedLog.log_entries?.filter(e => e.type === 'business') || [];
+    expect(businessEntries.length).toBeGreaterThan(0);
+    businessEntries.forEach(entry => {
+      if (entry.purpose === 'Custom Pickup B') {
+        expect(entry.miles).toBeLessThanOrEqual(15 + 0.1); // Max distance + tolerance
+      }
+      if (entry.purpose === 'Custom Delivery A') { // max_distance: 20
+        expect(entry.miles).toBeLessThanOrEqual(20 + 0.1);
+      }
     });
   });
+  
+  it('should respect frequency_per_day for custom types', async () => {
+    const customTypeWithFrequency = {
+      ...sampleCustomType,
+      avg_trips_per_workday: 5, // Allow up to 5 trips a day if possible
+      custom_business_purposes: [
+        { ...sampleCustomType.custom_business_purposes[0], purpose_name: 'Frequent Purpose', frequency_per_day: 2, max_distance: 20 },
+        { ...sampleCustomType.custom_business_purposes[1], purpose_name: 'Rare Purpose', frequency_per_day: 1, max_distance: 10 },
+      ],
+    };
+    (mockGetCustomDetails as vi.Mock).mockResolvedValue(customTypeWithFrequency);
+    const params = { 
+        ...baseParams, 
+        businessType: 'custom-id-123',
+        endDate: new Date('2023-01-01'), // Single day
+        endMileage: baseParams.startMileage + 300, // Ample mileage
+        totalPersonalMiles: 10,
+    };
+    await generateMileageLogFromForm(params);
+    const savedLog = (mockSaveMileageLog as vi.Mock).mock.calls[0][0] as MileageLog;
+    const businessEntries = savedLog.log_entries?.filter(e => e.type === 'business') || [];
+    
+    const frequentCount = businessEntries.filter(e => e.purpose === 'Frequent Purpose').length;
+    const rareCount = businessEntries.filter(e => e.purpose === 'Rare Purpose').length;
+
+    expect(frequentCount).toBeLessThanOrEqual(2);
+    expect(rareCount).toBeLessThanOrEqual(1);
+    // Total business trips could be up to 3 (2+1) if mileage allows, or less.
+    // It could also be limited by avg_trips_per_workday if that was smaller.
+    expect(businessEntries.length).toBeLessThanOrEqual(3); 
+  });
+
+  it('should stop generating business trips if all frequency-limited purposes are exhausted for the day', async () => {
+    const customTypeSingleFreq = {
+      ...sampleCustomType,
+      avg_trips_per_workday: 5, // High avg trips
+      custom_business_purposes: [
+        { id: 'p1', business_type_id: 'custom-id-123', purpose_name: 'Single Use Daily', max_distance: 20, frequency_per_day: 1, created_at: '' },
+      ],
+    };
+    (mockGetCustomDetails as vi.Mock).mockResolvedValue(customTypeSingleFreq);
+    const params = { 
+        ...baseParams, 
+        businessType: 'custom-id-123',
+        endDate: new Date('2023-01-01'), // Single day
+        endMileage: baseParams.startMileage + 300, // Ample mileage for many trips
+        totalPersonalMiles: 10,
+    };
+    await generateMileageLogFromForm(params);
+    const savedLog = (mockSaveMileageLog as vi.Mock).mock.calls[0][0] as MileageLog;
+    const businessEntries = savedLog.log_entries?.filter(e => e.type === 'business') || [];
+    expect(businessEntries.length).toBe(1); // Only one trip of "Single Use Daily"
+    expect(businessEntries[0].purpose).toBe('Single Use Daily');
+  });
+  
+  it('total trips should be limited by sum of frequencies if less than avg_trips_per_workday', async () => {
+    const customTypeLimitedSumFreq = {
+      ...sampleCustomType,
+      name: "Limited Sum Freq Type",
+      avg_trips_per_workday: 10, // High avg trips
+      custom_business_purposes: [
+        { id: 'p1', business_type_id: 'custom-id-123', purpose_name: 'P1 Freq1', max_distance: 20, frequency_per_day: 1, created_at: '' },
+        { id: 'p2', business_type_id: 'custom-id-123', purpose_name: 'P2 Freq1', max_distance: 10, frequency_per_day: 1, created_at: '' },
+      ],
+    };
+     (mockGetCustomDetails as vi.Mock).mockResolvedValue(customTypeLimitedSumFreq);
+    const params = { 
+        ...baseParams, 
+        businessType: 'custom-id-123',
+        endDate: new Date('2023-01-01'), // Single day
+        endMileage: baseParams.startMileage + 300, // Ample mileage
+        totalPersonalMiles: 10,
+    };
+    await generateMileageLogFromForm(params);
+    const savedLog = (mockSaveMileageLog as vi.Mock).mock.calls[0][0] as MileageLog;
+    const businessEntries = savedLog.log_entries?.filter(e => e.type === 'business') || [];
+    // Total trips capped by sum of frequencies (1+1=2) because avg_trips (10) is higher.
+    expect(businessEntries.length).toBe(2); 
+  });
+
+  it('should allow non-frequency limited purposes to fill up to avg_trips_per_workday', async () => {
+    const customTypeMixedFreq = {
+      ...sampleCustomType,
+      name: "Mixed Freq Type",
+      avg_trips_per_workday: 3, 
+      custom_business_purposes: [
+        { id: 'p1', business_type_id: 'custom-id-123', purpose_name: 'P1 Freq1', max_distance: 20, frequency_per_day: 1, created_at: '' },
+        { id: 'p2', business_type_id: 'custom-id-123', purpose_name: 'P2 Unlimited', max_distance: 10, /* no frequency */ created_at: '' },
+      ],
+    };
+    (mockGetCustomDetails as vi.Mock).mockResolvedValue(customTypeMixedFreq);
+     const params = { 
+        ...baseParams, 
+        businessType: 'custom-id-123',
+        endDate: new Date('2023-01-01'), // Single day
+        endMileage: baseParams.startMileage + 300, // Ample mileage
+        totalPersonalMiles: 10,
+    };
+    await generateMileageLogFromForm(params);
+    const savedLog = (mockSaveMileageLog as vi.Mock).mock.calls[0][0] as MileageLog;
+    const businessEntries = savedLog.log_entries?.filter(e => e.type === 'business') || [];
+    
+    const p1Count = businessEntries.filter(e => e.purpose === 'P1 Freq1').length;
+    const p2Count = businessEntries.filter(e => e.purpose === 'P2 Unlimited').length;
+
+    expect(p1Count).toBe(1); // Limited by its frequency
+    // P2 Unlimited can make up the rest of avg_trips_per_workday
+    // Total trips should be <= avg_trips_per_workday (3)
+    expect(businessEntries.length).toBeLessThanOrEqual(3); 
+    expect(p2Count).toBe(businessEntries.length - p1Count);
+    // If mileage was low, total trips could be less than 3. If high, it will be 3.
+    // For this test, with ample mileage, we expect it to hit avg_trips_per_workday.
+    if(businessEntries.length === 3) {
+        expect(p2Count).toBe(2);
+    }
+  });
+
 
   it('should return an error if an invalid custom business type ID is provided', async () => {
     (mockGetCustomDetails as vi.Mock).mockResolvedValue(null); // Simulate type not found

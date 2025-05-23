@@ -99,11 +99,17 @@ export async function _createCustomBusinessType(
 
   // 2. Insert the purposes
   if (typeData.purposes && typeData.purposes.length > 0) {
-    const purposesToInsert = typeData.purposes.map((p) => ({
-      business_type_id: newType.id,
-      purpose_name: p.purpose_name,
-      max_distance: p.max_distance,
-    }));
+    const purposesToInsert = typeData.purposes.map((p) => {
+      const purposeInsertData: any = { // Use 'any' or define a more specific insert type
+        business_type_id: newType.id,
+        purpose_name: p.purpose_name,
+        max_distance: p.max_distance,
+      };
+      if (p.frequency_per_day !== undefined) {
+        purposeInsertData.frequency_per_day = p.frequency_per_day;
+      }
+      return purposeInsertData;
+    });
 
     const { error: purposeError } = await supabase
       .from("custom_business_purposes")
@@ -171,12 +177,19 @@ export async function _updateCustomBusinessType(
 
     // Insert new purposes if any
     if (purposes.length > 0) {
-       const purposesToInsert = purposes.map((p) => ({
-          business_type_id: id,
-          // Include id if provided for potential future upsert logic, but insert ignores it here
-          purpose_name: p.purpose_name,
-          max_distance: p.max_distance,
-        }));
+       const purposesToInsert = purposes.map((p) => {
+         const purposeInsertData: any = { // Use 'any' or define a more specific insert type
+            business_type_id: id,
+            purpose_name: p.purpose_name,
+            max_distance: p.max_distance,
+          };
+          // p here is Omit<CustomBusinessPurpose, 'created_at' | 'business_type_id' | 'id'> & { id?: string }
+          // So, p.frequency_per_day should be accessible if it's part of CustomBusinessPurpose
+          if (p.frequency_per_day !== undefined) {
+            purposeInsertData.frequency_per_day = p.frequency_per_day;
+          }
+          return purposeInsertData;
+        });
         
       const { error: insertError } = await supabase
         .from('custom_business_purposes')

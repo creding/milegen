@@ -17,7 +17,7 @@ import {
 
 // Import the new step components
 import { VehicleInfoStep } from "./steps/VehicleInfoStep";
-import { TripDetailsStep, PredefinedBusinessType } from "./steps/TripDetailsStep";
+import { TripDetailsStep } from "./steps/TripDetailsStep";
 import { DateRangeStep } from "./steps/DateRangeStep";
 import { ReviewStep } from "./steps/ReviewStep";
 
@@ -60,16 +60,10 @@ export function MileageForm({
   const initialVehicle = parseVehicle("");
 
   // Create business type options for the select dropdown
-  const businessTypeOptions: PredefinedBusinessType[] = BUSINESS_TYPES.map(
-    (type: { name: string; purposes: string[] }): PredefinedBusinessType => ({
+  const businessTypeOptions = BUSINESS_TYPES.map(
+    (type: { name: string; purposes: string[] }) => ({
       value: type.name,
       label: type.name,
-      name: type.name, // Add name property
-      avg_trips_per_workday: 2, // Default value
-      purposes: type.purposes.map(p_name => ({ 
-        purpose_name: p_name, 
-        max_distance: 20 // Default max_distance
-      })),
     })
   );
 

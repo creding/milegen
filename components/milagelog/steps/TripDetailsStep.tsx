@@ -26,7 +26,7 @@ import { CustomBusinessType, CustomBusinessPurpose } from '@/types/custom_busine
 // Assuming predefined types also have a similar structure for details
 // If BUSINESS_TYPES constant was available, we'd use its type.
 // For now, this is an assumption based on the task requirements.
-export interface PredefinedBusinessType {
+interface PredefinedBusinessType {
   value: string; // Corresponds to the ID/value in the select
   label: string; // Display name
   name: string; // Actual name, might be same as label
@@ -41,11 +41,8 @@ interface TripDetailsStepProps {
 }
 
 // Helper to format options for the Select component, including grouping
-const formatOptionsWithGroups = (
-  predefined: PredefinedBusinessType[], 
-  custom: Pick<CustomBusinessType, 'id' | 'name'>[]
-): Array<{ group: string; items: Array<{ value: string; label: string; }> }> => {
-  const options: Array<{ group: string; items: Array<{ value: string; label: string; }> }> = [];
+const formatOptionsWithGroups = (predefined: PredefinedBusinessType[], custom: Pick<CustomBusinessType, 'id' | 'name'>[]) => {
+  const options = [];
   if (predefined && predefined.length > 0) {
     options.push({ 
       group: "Predefined Types", 
@@ -62,19 +59,15 @@ const formatOptionsWithGroups = (
 };
 
 export function TripDetailsStep({
-  // console.log("TripDetailsStep re-rendered. Selected Business Type:", form.values.businessType); // DEBUG
   form,
   businessTypeOptions, // Now PredefinedBusinessType[]
 }: TripDetailsStepProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentOptions, setCurrentOptions] = useState<
-    Array<{ group: string; items: Array<{ value: string; label: string; }> }>
-  >(formatOptionsWithGroups(businessTypeOptions, []));
+  const [currentOptions, setCurrentOptions] = useState(formatOptionsWithGroups(businessTypeOptions, []));
   const [selectedBusinessTypeDetails, setSelectedBusinessTypeDetails] = 
     useState<CustomBusinessType | PredefinedBusinessType | null>(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
-  const [lastFetchedCustomTypes, setLastFetchedCustomTypes] = useState<Pick<CustomBusinessType, 'id' | 'name'>[]>([]);
 
   const selectedBusinessTypeValue = form.values.businessType;
 
@@ -86,43 +79,28 @@ export function TripDetailsStep({
         const result = await getCustomBusinessTypes(); // Fetches {id, name}
         if (result.error) {
           console.error("Error fetching custom types for dropdown:", result.error);
-          setCurrentOptions(formatOptionsWithGroups(businessTypeOptions, lastFetchedCustomTypes)); // Fallback to predefined or last fetched
+          setCurrentOptions(formatOptionsWithGroups(businessTypeOptions, [])); // Fallback to predefined
         } else {
           const customTypesForDropdown = result.data as Pick<CustomBusinessType, 'id' | 'name'>[];
           setCurrentOptions(formatOptionsWithGroups(businessTypeOptions, customTypesForDropdown));
-          setLastFetchedCustomTypes(customTypesForDropdown);
         }
       } catch (error) {
         console.error("Unexpected error fetching custom types for dropdown:", error);
-        setCurrentOptions(formatOptionsWithGroups(businessTypeOptions, lastFetchedCustomTypes)); // Fallback to predefined or last fetched
+        setCurrentOptions(formatOptionsWithGroups(businessTypeOptions, [])); // Fallback to predefined
       }
       // setIsLoadingDetails(false);
     };
 
     fetchAndSetTypes();
-  }, [businessTypeOptions, lastFetchedCustomTypes]); // Re-fetch if predefined types (prop) or last fetched custom types change
+  }, [businessTypeOptions]); // Re-fetch if predefined types (prop) change
 
   // Effect to fetch details when a business type is selected
   useEffect(() => {
-    // console.log("Details useEffect triggered. Selected Value:", selectedBusinessTypeValue, "Current Details:", selectedBusinessTypeDetails); // DEBUG
     const fetchDetails = async () => {
       if (!selectedBusinessTypeValue) {
         setSelectedBusinessTypeDetails(null);
         setErrorDetails(null);
-        setIsLoadingDetails(false); // Ensure loading is off
         return;
-      }
-
-      // Prevent re-fetch if details for the current selection are already loaded
-      if (selectedBusinessTypeDetails) {
-        const isPredefinedCurrentlySelected = 'value' in selectedBusinessTypeDetails && selectedBusinessTypeDetails.value === selectedBusinessTypeValue;
-        const isCustomCurrentlySelected = 'id' in selectedBusinessTypeDetails && (selectedBusinessTypeDetails as CustomBusinessType).id === selectedBusinessTypeValue;
-        
-        if (isPredefinedCurrentlySelected || isCustomCurrentlySelected) {
-          // console.log("Details already loaded for:", selectedBusinessTypeValue); // DEBUG
-          setIsLoadingDetails(false); // Ensure loading is off if we skip fetch
-          return; 
-        }
       }
 
       // Try to find in predefined types first
@@ -157,7 +135,7 @@ export function TripDetailsStep({
     };
 
     fetchDetails();
-  }, [selectedBusinessTypeValue, businessTypeOptions, selectedBusinessTypeDetails]); // Rerun when selection, predefined options, or loaded details change
+  }, [selectedBusinessTypeValue, businessTypeOptions]); // Rerun when selection or predefined options change
 
   // This function is called when the modal signals an update.
   const handleTypesUpdated = async () => {
@@ -171,17 +149,16 @@ export function TripDetailsStep({
         console.error("Error fetching updated custom types for dropdown:", result.error);
         // Keep existing custom types in dropdown if fetch fails, or clear them:
         // For safety, format with potentially stale custom types if already in currentOptions, or empty
-        // Fallback to previously fetched custom types if available
-        setCurrentOptions(formatOptionsWithGroups(businessTypeOptions, lastFetchedCustomTypes));
+        const existingCustom = currentOptions.find(g => g.group === "Custom Types")?.items || [];
+        setCurrentOptions(formatOptionsWithGroups(businessTypeOptions, existingCustom));
       } else {
         refreshedCustomTypesForDropdown = result.data as Pick<CustomBusinessType, 'id' | 'name'>[];
         setCurrentOptions(formatOptionsWithGroups(businessTypeOptions, refreshedCustomTypesForDropdown));
-        setLastFetchedCustomTypes(refreshedCustomTypesForDropdown);
       }
     } catch (error) {
       console.error("Unexpected error fetching updated custom types for dropdown:", error);
-      // Fallback to previously fetched custom types if available
-      setCurrentOptions(formatOptionsWithGroups(businessTypeOptions, lastFetchedCustomTypes));
+      const existingCustom = currentOptions.find(g => g.group === "Custom Types")?.items || [];
+      setCurrentOptions(formatOptionsWithGroups(businessTypeOptions, existingCustom));
     }
 
     // After updating dropdown, check if current selection needs details refreshed
@@ -205,7 +182,7 @@ export function TripDetailsStep({
                     } else {
                         setSelectedBusinessTypeDetails(detailsResult.data);
                     }
-                } catch { // Removed unused 'e'
+                } catch (e) {
                     setErrorDetails("Error refreshing selected custom type details.");
                     setSelectedBusinessTypeDetails(null);
                     form.setFieldValue('businessType', ''); 

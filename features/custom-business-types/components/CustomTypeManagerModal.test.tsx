@@ -47,8 +47,8 @@ const sampleTypeDetails: CustomBusinessType = {
   avg_trips_per_workday: 3,
   created_at: new Date().toISOString(),
   custom_business_purposes: [
-    { id: 'p1', business_type_id: '1', purpose_name: 'Purpose 1.1', max_distance: 10, created_at: new Date().toISOString() },
-    { id: 'p2', business_type_id: '1', purpose_name: 'Purpose 1.2', max_distance: 20, created_at: new Date().toISOString() },
+    { id: 'p1', business_type_id: '1', purpose_name: 'Purpose 1.1', max_distance: 10, frequency_per_day: 2, created_at: new Date().toISOString() },
+    { id: 'p2', business_type_id: '1', purpose_name: 'Purpose 1.2', max_distance: 20, created_at: new Date().toISOString() }, // No frequency
   ],
 };
 
@@ -104,16 +104,21 @@ describe('CustomTypeManagerModal', () => {
     await user.type(screen.getByLabelText(/Average trips per workday/i), '5');
 
     // Add a purpose
-    await user.type(screen.getByPlaceholderText('Purpose Name (e.g., Site Visit)'), 'New Purpose 1');
-    // For NumberInput, direct value setting or clear and type might be needed depending on implementation
-    // Assuming clear and type for robustness
-    const maxDistInput = screen.getByPlaceholderText('Max Distance (miles)');
+    await user.type(screen.getByLabelText('Purpose Name'), 'New Purpose 1');
+    
+    const maxDistInput = screen.getByLabelText('Max Distance');
     await user.clear(maxDistInput); 
     await user.type(maxDistInput, '25');
+
+    const freqInput = screen.getByLabelText('Frequency/Day (Optional)');
+    await user.clear(freqInput);
+    await user.type(freqInput, '3');
+
     await user.click(screen.getByRole('button', { name: /Add Purpose to New Type List/i }));
 
     await waitFor(() => {
         expect(screen.getByText('New Purpose 1')).toBeInTheDocument();
+        expect(screen.getByText('Frequency: 3/day')).toBeInTheDocument();
     });
 
     await user.click(screen.getByRole('button', { name: /Save New Business Type/i }));
@@ -122,7 +127,7 @@ describe('CustomTypeManagerModal', () => {
       expect(mockCreateCustomBusinessType).toHaveBeenCalledWith({
         name: 'New Test Type',
         avg_trips_per_workday: 5,
-        purposes: [{ purpose_name: 'New Purpose 1', max_distance: 25 }],
+        purposes: [{ purpose_name: 'New Purpose 1', max_distance: 25, frequency_per_day: 3 }],
       });
     });
     expect(mockOnUpdate).toHaveBeenCalledTimes(1);
@@ -150,27 +155,51 @@ describe('CustomTypeManagerModal', () => {
     await user.click(editButtons[0]); // Click edit for "Type One"
 
     await waitFor(() => {
-      // Verify form is populated
       expect(screen.getByLabelText(/Edit type name/i)).toHaveValue('Type One');
       expect(screen.getByLabelText(/Average trips per workday/i)).toHaveValue(sampleTypeDetails.avg_trips_per_workday);
-      expect(screen.getByText('Purpose 1.1')).toBeInTheDocument(); // Check for existing purpose
+      expect(screen.getByText('Purpose 1.1')).toBeInTheDocument();
+      // Check if frequency for Purpose 1.1 is displayed
+      const purpose1FreqInput = screen.getAllByLabelText('Freq./Day').find(input => {
+        // Find the input associated with 'Purpose 1.1' - this is a bit brittle
+        // A better way might be to wrap purpose rows in testable containers
+        const parentPaper = (input as HTMLElement).closest('div.mantine-Paper-root'); // Mantine specific, might need adjustment
+        return parentPaper && parentPaper.textContent?.includes('Purpose 1.1');
+      });
+      expect(purpose1FreqInput).toHaveValue(sampleTypeDetails.custom_business_purposes![0].frequency_per_day);
     });
     
     expect(mockGetPurposesForBusinessType).toHaveBeenCalledWith('1');
 
-    // Change data
+    // Change name
     const nameInput = screen.getByLabelText(/Edit type name/i);
     await user.clear(nameInput);
-    await user.type(nameInput, 'Updated Type One');
+    await user.type(nameInput, 'Updated Type One Name');
+
+    // Change frequency of existing Purpose 1.1
+    const purpose1FreqInputToChange = screen.getAllByLabelText('Freq./Day').find(input => {
+         const parentPaper = (input as HTMLElement).closest('div.mantine-Paper-root');
+        return parentPaper && parentPaper.textContent?.includes('Purpose 1.1');
+    })!;
+    await user.clear(purpose1FreqInputToChange);
+    await user.type(purpose1FreqInputToChange, '5');
+
 
     // Add a new purpose during edit
-    await user.type(screen.getByPlaceholderText('Purpose Name (e.g., Client Meeting)'), 'Added Purpose Edit');
-    const maxDistEditInput = screen.getAllByPlaceholderText('Max Distance (miles)')[1]; // Assuming the second one is for adding new purpose in edit
+    await user.type(screen.getByLabelText('New Purpose Name'), 'Added Purpose During Edit');
+    const maxDistEditInput = screen.getByLabelText('Max Dist.');
     await user.clear(maxDistEditInput);
     await user.type(maxDistEditInput, '33');
+    const freqEditInput = screen.getAllByLabelText('Freq./Day').find(input => {
+        // This finds the frequency input in the "Add New Purpose to this Type" section
+        const parentPaper = (input as HTMLElement).closest('div.mantine-Paper-root');
+        return parentPaper && parentPaper.textContent?.includes('Add New Purpose to this Type');
+    })!;
+    await user.clear(freqEditInput);
+    await user.type(freqEditInput, '1');
+
     await user.click(screen.getByRole('button', { name: /Add Purpose to List/i }));
      await waitFor(() => {
-        expect(screen.getByText('Added Purpose Edit')).toBeInTheDocument();
+        expect(screen.getByText('Added Purpose During Edit')).toBeInTheDocument();
     });
 
 
@@ -180,12 +209,12 @@ describe('CustomTypeManagerModal', () => {
       expect(mockUpdateCustomBusinessType).toHaveBeenCalledWith(
         expect.objectContaining({
           id: '1',
-          name: 'Updated Type One',
-          avg_trips_per_workday: sampleTypeDetails.avg_trips_per_workday, // Assuming avg trips wasn't changed in this test
+          name: 'Updated Type One Name',
+          avg_trips_per_workday: sampleTypeDetails.avg_trips_per_workday,
           purposes: expect.arrayContaining([
-            expect.objectContaining({ id: 'p1', purpose_name: 'Purpose 1.1', max_distance: 10 }),
-            expect.objectContaining({ id: 'p2', purpose_name: 'Purpose 1.2', max_distance: 20 }),
-            expect.objectContaining({ purpose_name: 'Added Purpose Edit', max_distance: 33 }), // New purpose won't have an id
+            expect.objectContaining({ id: 'p1', purpose_name: 'Purpose 1.1', max_distance: 10, frequency_per_day: 5 }),
+            expect.objectContaining({ id: 'p2', purpose_name: 'Purpose 1.2', max_distance: 20, frequency_per_day: undefined }), // Was undefined
+            expect.objectContaining({ purpose_name: 'Added Purpose During Edit', max_distance: 33, frequency_per_day: 1 }), 
           ])
         })
       );
@@ -247,10 +276,11 @@ describe('CustomTypeManagerModal', () => {
     await user.click(screen.getByRole('button', { name: /Add New Type/i }));
     await user.type(screen.getByLabelText(/Business Type Name/i), 'Error Type');
     await user.type(screen.getByLabelText(/Average trips per workday/i), '1');
-     await user.type(screen.getByPlaceholderText('Purpose Name (e.g., Site Visit)'), 'Purpose E');
-    const maxDistInputE = screen.getByPlaceholderText('Max Distance (miles)');
+    await user.type(screen.getByLabelText('Purpose Name'), 'Purpose E');
+    const maxDistInputE = screen.getByLabelText('Max Distance');
     await user.clear(maxDistInputE); 
     await user.type(maxDistInputE, '5');
+    // Not setting frequency for this error case, it's optional
     await user.click(screen.getByRole('button', { name: /Add Purpose to New Type List/i }));
     await user.click(screen.getByRole('button', { name: /Save New Business Type/i }));
 

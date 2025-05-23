@@ -20,6 +20,7 @@ import { CustomBusinessType as CustomTypeDetails, CustomBusinessPurpose } from "
 interface ResolvedBusinessPurpose {
   purpose_name: string;
   max_distance?: number; // Max distance is optional for predefined, required for custom
+  frequency_per_day?: number; // Optional: How many times this purpose might occur per day
 }
 
 interface ResolvedBusinessTypeDetails {
@@ -563,43 +564,74 @@ function generateTripsForDay(
   let currentMileage = startMileage;
   const targetPersonalMiles = roundMiles(targetMiles - targetBusinessMiles);
 
-  const businessConfig = CONFIG.MILES_PER_TRIP.business; // Default min/max
+  const businessConfig = CONFIG.MILES_PER_TRIP.business;
   const personalConfig = CONFIG.MILES_PER_TRIP.personal;
   const precision = CONFIG.FLOAT_PRECISION_THRESHOLD;
+  const purposeUsageCount: { [purposeName: string]: number } = {};
 
   // Generate business trips only if there's a non-negligible amount
   if (targetBusinessMiles > precision) {
     let remainingBusiness = targetBusinessMiles;
-    while (remainingBusiness > precision) {
-      const selectedPurpose = getRandomBusinessPurpose(businessTypeDetails);
+    let businessTripsGeneratedToday = 0;
+    const maxBusinessTripsForDay = businessTypeDetails.avg_trips_per_workday ?? Infinity; // Use avg_trips_per_workday or fallback
+
+    while (remainingBusiness > precision && businessTripsGeneratedToday < maxBusinessTripsForDay) {
+      // Filter available purposes based on frequency_per_day
+      const availablePurposes = businessTypeDetails.purposes.filter(p => {
+        if (!p.frequency_per_day) return true; // No frequency limit
+        return (purposeUsageCount[p.purpose_name] || 0) < p.frequency_per_day;
+      });
+
+      if (availablePurposes.length === 0) {
+        logger.info(`No available business purposes for date ${format(date, "yyyy-MM-dd")} due to frequency limits or no purposes defined. Remaining business miles for day: ${remainingBusiness}`);
+        break; // Stop generating business trips for the day if no suitable purposes
+      }
+
+      // Select a random purpose from the available ones
+      const selectedPurpose = availablePurposes[Math.floor(Math.random() * availablePurposes.length)];
+      // If, due to some edge case, selectedPurpose is undefined (e.g. availablePurposes was empty but check failed), fallback.
+      // This should ideally not happen due to the break above.
+      if (!selectedPurpose) {
+          logger.warn(`Selected purpose is undefined for date ${format(date, "yyyy-MM-dd")}. Breaking trip generation for safety.`);
+          break;
+      }
       
       let tripMaxMiles = selectedPurpose.max_distance ?? businessConfig.max;
-      // Ensure tripMaxMiles is at least businessConfig.min to allow some travel
       tripMaxMiles = Math.max(tripMaxMiles, businessConfig.min);
 
       let miles = roundMiles(
         businessConfig.min +
-          Math.random() * (Math.min(tripMaxMiles, businessConfig.max) - businessConfig.min) // Use the more restrictive max
+          Math.random() * (Math.min(tripMaxMiles, businessConfig.max) - businessConfig.min)
       );
       
-      // If a purpose-specific max_distance exists, ensure the trip does not exceed it.
       if (selectedPurpose.max_distance !== undefined) {
         miles = Math.min(miles, selectedPurpose.max_distance);
       }
 
-      // Ensure last trip uses exactly the remaining miles, and prevent tiny trips
       if (
-        remainingBusiness <= tripMaxMiles || // If remaining is less than allowed max for this purpose
+        remainingBusiness <= tripMaxMiles ||
         remainingBusiness - miles < precision
       ) {
         miles = remainingBusiness;
       }
-      miles = Math.max(CONFIG.REMAINDER_INCREMENT, miles); // Ensure minimum trip length
-      // Final check against max_distance if it was strictly less than min_trip_length initially
+      miles = Math.max(CONFIG.REMAINDER_INCREMENT, miles);
       if (selectedPurpose.max_distance !== undefined) {
           miles = Math.min(miles, selectedPurpose.max_distance);
       }
-
+      
+      // Ensure miles is not effectively zero if precision is very low or remainingBusiness is tiny
+      if (miles < CONFIG.REMAINDER_INCREMENT && remainingBusiness >= CONFIG.REMAINDER_INCREMENT) {
+          miles = Math.min(remainingBusiness, CONFIG.REMAINDER_INCREMENT);
+      } else if (miles < CONFIG.REMAINDER_INCREMENT) {
+          // If remainingBusiness is also very small, and miles is calculated even smaller,
+          // it might be better to skip this tiny trip or assign remainingBusiness fully.
+          // For now, if miles is too small, but remainingBusiness is also small, assign remaining.
+          miles = remainingBusiness; 
+      }
+      if (miles <= 0 && remainingBusiness > 0) { // If somehow miles became 0 but we still need to assign
+          miles = Math.min(remainingBusiness, businessConfig.min); // Try to assign at least min
+      }
+      if (miles <= 0) break; // Avoid 0-mile trips if remainingBusiness is also 0 or less
 
       const endM = roundMiles(currentMileage + miles);
       const location = getBusinessLocation(
@@ -616,32 +648,65 @@ function generateTripsForDay(
         end_mileage: endM,
         vehicle_info: vehicleInfo,
         business_type: businessTypeDetails.name,
-        id: "", 
+        id: "", // Placeholder ID, will be set by DB or ignored if not needed by save
         location: location,
-        created_at: null,
-        updated_at: null,
-        log_id: null,
+        created_at: new Date().toISOString(), // Use current time for new entries
+        updated_at: new Date().toISOString(),
+        log_id: null, // Will be set during save
       });
 
+      purposeUsageCount[selectedPurpose.purpose_name] = (purposeUsageCount[selectedPurpose.purpose_name] || 0) + 1;
       remainingBusiness = roundMiles(remainingBusiness - miles);
       currentMileage = endM;
+      businessTripsGeneratedToday++;
     }
   }
 
   // Generate personal trips
   let remainingPersonal = targetPersonalMiles;
-  while (remainingPersonal > precision) {
+  while (remainingPersonal > precision) { 
+    // Add a check to prevent infinite loops if REMAINDER_INCREMENT is too small for remainingPersonal
+    if (remainingPersonal < CONFIG.REMAINDER_INCREMENT && remainingPersonal > 0) {
+        // Assign all tiny remaining personal miles to one last trip or add to last personal trip.
+        // For simplicity, creating one small trip here.
+        const endM_personal_final = roundMiles(currentMileage + remainingPersonal);
+        trips.push({
+            date: date.toISOString().split("T")[0],
+            type: "personal",
+            miles: roundMiles(remainingPersonal),
+            purpose: "Personal",
+            start_mileage: roundMiles(currentMileage),
+            end_mileage: endM_personal_final,
+            vehicle_info: vehicleInfo,
+            business_type: businessTypeDetails.name,
+            id: "",
+            location: getPersonalLocation("Personal", roundMiles(remainingPersonal)),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            log_id: null,
+        });
+        currentMileage = endM_personal_final;
+        remainingPersonal = 0; // All assigned
+        break; // Exit personal trip loop
+    }
+    
+    if (remainingPersonal <= 0) break; // Safety break if remainingPersonal somehow becomes non-positive
+
     let miles = roundMiles(
       personalConfig.min +
         Math.random() * (personalConfig.max - personalConfig.min)
     );
     if (
-      remainingPersonal <= personalConfig.max ||
-      remainingPersonal - miles < precision
+      remainingPersonal <= personalConfig.max || // If remaining is less than typical max
+      remainingPersonal - miles < precision      // Or if this trip would nearly finish it
     ) {
       miles = remainingPersonal;
     }
-    miles = Math.max(CONFIG.REMAINDER_INCREMENT, miles); // Ensure minimum trip length
+    miles = Math.max(CONFIG.REMAINDER_INCREMENT, miles); 
+    
+    // Ensure miles is not greater than remainingPersonal
+    miles = Math.min(miles, remainingPersonal);
+    if (miles <= 0) break; // Avoid 0-mile trips
 
     const endM = roundMiles(currentMileage + miles);
     const personalPurpose = "Personal";
@@ -657,11 +722,11 @@ function generateTripsForDay(
       start_mileage: roundMiles(currentMileage),
       end_mileage: endM,
       vehicle_info: vehicleInfo,
-        business_type: businessTypeDetails.name, // Keep context
-        id: "", 
+      business_type: businessTypeDetails.name,
+      id: "",
       location: personalLocation,
-      created_at: null,
-      updated_at: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
       log_id: null,
     });
 
@@ -669,16 +734,26 @@ function generateTripsForDay(
     currentMileage = endM;
   }
 
-  // Shuffle the generated trips for the day for better realism
-  shuffleArray(trips);
+  shuffleArray(trips); // Shuffle for realism
 
-  // Recalculate start/end mileage based on shuffled order
-  let runningMileage = startMileage;
+  // Recalculate start/end mileage for all trips based on shuffled order
+  // This ensures mileage continuity after shuffling business and personal trips
+  let dayStartMileage = startMileage;
   for (const trip of trips) {
-    trip.start_mileage = roundMiles(runningMileage);
-    trip.end_mileage = roundMiles(runningMileage + trip.miles);
-    runningMileage = trip.end_mileage;
+    trip.start_mileage = roundMiles(dayStartMileage);
+    trip.end_mileage = roundMiles(dayStartMileage + trip.miles);
+    dayStartMileage = trip.end_mileage;
   }
+  
+  // Final check: ensure the day's total mileage from trips matches currentMileage (end of day)
+  // This is more of a sanity check for the overall day's mileage accumulation.
+  const totalMilesFromTrips = trips.reduce((sum, trip) => sum + trip.miles, 0);
+  if (Math.abs(roundMiles(startMileage + totalMilesFromTrips) - currentMileage) > CONFIG.FLOAT_PRECISION_THRESHOLD * trips.length) {
+      logger.warn(`Discrepancy in day-end mileage for ${format(date, "yyyy-MM-dd")}. Start: ${startMileage}, End by trips: ${roundMiles(startMileage + totalMilesFromTrips)}, End by accumulation: ${currentMileage}. This might be due to very small remainders.`);
+      // Optionally, could force currentMileage to be startMileage + totalMilesFromTrips
+      // For now, we trust the accumulated currentMileage as it reflects the sequence.
+  }
+
 
   return trips;
 }
@@ -732,7 +807,7 @@ export async function generateMileageLogFromForm(
     if (predefined) {
       resolvedDetails = {
         name: predefined.name,
-        purposes: predefined.purposes.map(p => ({ purpose_name: p })), // max_distance and avg_trips undefined for predefined
+            purposes: predefined.purposes.map(p => ({ purpose_name: p })), // frequency_per_day, max_distance and avg_trips undefined for predefined
         isCustom: false,
       };
     } else {
@@ -747,6 +822,7 @@ export async function generateMileageLogFromForm(
             purposes: custom.custom_business_purposes?.map(p => ({
               purpose_name: p.purpose_name,
               max_distance: p.max_distance,
+                  frequency_per_day: p.frequency_per_day, // Ensure this is mapped
             })) || [],
             isCustom: true,
           };
