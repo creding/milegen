@@ -107,7 +107,7 @@ export function SEOSection() {
                   </Group>
 
                   <Text size="md" c="dimmed" mt="xs">
-                    The IRS standard mileage rate for 2025 is 67.5 cents per
+                    The IRS standard mileage rate for 2025 is 70 cents per
                     business mile. Without proper documentation, you risk losing
                     thousands in potential tax savings or facing penalties
                     during an audit.

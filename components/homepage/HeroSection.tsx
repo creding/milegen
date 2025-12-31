@@ -1,5 +1,6 @@
 import {
   Box,
+  Button,
   Container,
   Grid,
   GridCol,
@@ -7,6 +8,8 @@ import {
   Text,
   Title,
 } from "@mantine/core";
+import { IconChevronRight } from "@tabler/icons-react";
+import Link from "next/link";
 import heroImage from "@/images/hero.jpg";
 import { PriceCard } from "@/components/ui/PriceCard";
 
@@ -37,6 +40,17 @@ export function HeroSection() {
               >
                 Effortless Mileage Logging. Unlimited Logs.
               </Title>
+              <Link href="/?signup=true">
+                <Button
+                  size="lg"
+                  radius="md"
+                  variant="gradient"
+                  rightSection={<IconChevronRight size="1.2rem" />}
+                  className="hero-button"
+                >
+                  Get Started Now
+                </Button>
+              </Link>
               <Text
                 style={{
                   fontSize: "2.5rem",

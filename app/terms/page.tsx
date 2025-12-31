@@ -168,9 +168,9 @@ export default function TermsPage() {
           </Box>
 
           <Group justify="center" mt="xl">
-            <Button component={Link} href="/?signup=true">
-              Back to Sign Up
-            </Button>
+            <Link href="/?signup=true">
+              <Button>Back to Sign Up</Button>
+            </Link>
           </Group>
         </Stack>
       </Container>

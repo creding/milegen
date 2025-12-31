@@ -64,20 +64,22 @@ export function MobileNav({ user, subscriptionStatus }: MobileNavProps) {
         <Stack gap={0} p="md">
           {user ? (
             <>
-              <NavLink
-                component={Link}
-                href="/generator"
-                label="Generate Log"
-                onClick={() => close()}
-                leftSection={<IconPlus size={16} />}
-              />
-              <NavLink
-                onClick={() => close()}
-                component={Link}
-                href="/saved-logs"
-                label="Saved Logs"
-                leftSection={<IconNotes size={16} />}
-              />
+              <Link href="/generator">
+                <NavLink
+                  component="div"
+                  label="Generate Log"
+                  onClick={() => close()}
+                  leftSection={<IconPlus size={16} />}
+                />
+              </Link>
+              <Link href="/saved-logs">
+                <NavLink
+                  component="div"
+                  onClick={() => close()}
+                  label="Saved Logs"
+                  leftSection={<IconNotes size={16} />}
+                />
+              </Link>
 
               <Divider my="sm" />
 
@@ -85,56 +87,61 @@ export function MobileNav({ user, subscriptionStatus }: MobileNavProps) {
                 <Text size="sm" fw={700} c="dimmed" mb="xs">
                   Account
                 </Text>
-                <NavLink
-                  onClick={() => close()}
-                  component={Link}
-                  href="/account"
-                  label="Account Settings"
-                  leftSection={<IconSettings size={16} />}
-                  rightSection={
-                    subscriptionStatus === "active" && (
-                      <Chip
-                        defaultChecked
-                        size="xs"
-                        color="green"
-                        variant="light"
-                      >
-                        Subscribed
-                      </Chip>
-                    )
-                  }
-                />
-                <NavLink
-                  component={Link}
-                  href="/"
-                  label="Sign Out"
-                  onClick={() => handleSignOut()}
-                  leftSection={<IconLogout size={16} />}
-                />
+                <Link href="/account">
+                  <NavLink
+                    component="div"
+                    onClick={() => close()}
+                    label="Account Settings"
+                    leftSection={<IconSettings size={16} />}
+                    rightSection={
+                      subscriptionStatus === "active" && (
+                        <Chip
+                          defaultChecked
+                          size="xs"
+                          color="green"
+                          variant="light"
+                        >
+                          Subscribed
+                        </Chip>
+                      )
+                    }
+                  />
+                </Link>
+                <Link href="/">
+                  <NavLink
+                    component="div"
+                    label="Sign Out"
+                    onClick={() => handleSignOut()}
+                    leftSection={<IconLogout size={16} />}
+                  />
+                </Link>
               </Box>
             </>
           ) : (
             <>
-              <NavLink
-                component={Link}
-                href="/"
-                label="Home"
-                leftSection={<IconHome size={16} />}
-              />
-              <NavLink
-                onClick={() => close()}
-                component={Link}
-                href="/?login=true"
-                label="Login"
-                leftSection={<IconLogin size={16} />}
-              />
-              <NavLink
-                onClick={() => close()}
-                component={Link}
-                href="/?signup=true"
-                label="Signup"
-                leftSection={<IconUserPlus size={16} />}
-              />
+              <Link href="/">
+                <NavLink
+                  component="div"
+                  label="Home"
+                  leftSection={<IconHome size={16} />}
+                />
+              </Link>
+              <Link href="/?login=true">
+                <NavLink
+                  component="div"
+                  onClick={() => close()}
+                  label="Login"
+                  leftSection={<IconLogin size={16} />}
+                />
+              </Link>
+              <Link href="/?signup=true">
+                <NavLink
+                  component="div"
+                  onClick={() => close()}
+                  label="Signup"
+                  leftSection={<IconUserPlus size={16} />}
+                />
+              </Link>
             </>
           )}
         </Stack>

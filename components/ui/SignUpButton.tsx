@@ -3,8 +3,8 @@ import { Anchor } from "@mantine/core";
 
 export function SignUpButton() {
   return (
-    <Anchor component={Link} href="/?signup=true">
-      Sign Up
-    </Anchor>
+    <Link href="/?signup=true">
+      <Anchor component="span">Sign Up</Anchor>
+    </Link>
   );
 }

@@ -68,16 +68,16 @@ export const SavedLogsPage = ({ logs }: { logs: MileageLog[] }) => {
             You haven&apos;t created any mileage logs yet. Create your first log
             to track your business mileage for tax deductions.
           </Text>
-          <Button
-            component={Link}
-            href="/generator"
-            leftSection={<IconPlus size="1rem" />}
-            variant="gradient"
-            gradient={{ from: "blue", to: "cyan" }}
-            mt="md"
-          >
-            Create Your First Log
-          </Button>
+          <Link href="/generator">
+            <Button
+              leftSection={<IconPlus size="1rem" />}
+              variant="gradient"
+              gradient={{ from: "blue", to: "cyan" }}
+              mt="md"
+            >
+              Create Your First Log
+            </Button>
+          </Link>
         </Stack>
       </Center>
     </Paper>
@@ -118,15 +118,16 @@ export const SavedLogsPage = ({ logs }: { logs: MileageLog[] }) => {
                   <TableTd>{log.total_personal_miles}</TableTd>
                   <TableTd>
                     <Group gap="xs" justify="flex-start">
-                      <ActionIcon
-                        component={Link}
-                        href={`/saved-logs/${log.id}`}
-                        variant="subtle"
-                        color="blue"
-                        size="lg"
-                      >
-                        <IconEye size="1.125rem" />
-                      </ActionIcon>
+                      <Link href={`/saved-logs/${log.id}`}>
+                        <ActionIcon
+                          variant="subtle"
+                          color="blue"
+                          size="lg"
+                          component="div"
+                        >
+                          <IconEye size="1.125rem" />
+                        </ActionIcon>
+                      </Link>
                       <ActionIcon
                         onClick={() => printMileageLog(log)}
                         variant="subtle"

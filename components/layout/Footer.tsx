@@ -39,19 +39,19 @@ export const Footer = async () => {
                     Milegen.
                   </Text>
                 </Stack>
-                <Button
-                  size="lg"
-                  radius="md"
-                  style={{
-                    background: "linear-gradient(45deg, #3498db, #2980b9)",
-                    boxShadow: "0 4px 14px rgba(0, 0, 0, 0.15)",
-                  }}
-                  component={Link}
-                  href="/?signup=true"
-                  rightSection={<IconChevronRight size="1rem" />}
-                >
-                  Get Started Now
-                </Button>
+                <Link href="/?signup=true">
+                  <Button
+                    size="lg"
+                    radius="md"
+                    style={{
+                      background: "linear-gradient(45deg, #3498db, #2980b9)",
+                      boxShadow: "0 4px 14px rgba(0, 0, 0, 0.15)",
+                    }}
+                    rightSection={<IconChevronRight size="1rem" />}
+                  >
+                    Get Started Now
+                  </Button>
+                </Link>
               </Group>
             </Container>
           </Box>
@@ -80,15 +80,21 @@ export const Footer = async () => {
                   Legal
                 </Title>
                 <Stack gap="xs">
-                  <Anchor component={Link} href="/terms" c="gray.5" size="sm">
-                    Terms of Service
-                  </Anchor>
-                  <Anchor component={Link} href="/privacy" c="gray.5" size="sm">
-                    Privacy Policy
-                  </Anchor>
-                  <Anchor component={Link} href="/cookies" c="gray.5" size="sm">
-                    Cookie Policy
-                  </Anchor>
+                  <Link href="/terms">
+                    <Anchor c="gray.5" size="sm" component="span">
+                      Terms of Service
+                    </Anchor>
+                  </Link>
+                  <Link href="/privacy">
+                    <Anchor c="gray.5" size="sm" component="span">
+                      Privacy Policy
+                    </Anchor>
+                  </Link>
+                  <Link href="/cookies">
+                    <Anchor c="gray.5" size="sm" component="span">
+                      Cookie Policy
+                    </Anchor>
+                  </Link>
                 </Stack>
               </Stack>
             </GridCol>

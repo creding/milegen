@@ -19,7 +19,7 @@ export async function checkSubscriptionStatus() {
       .eq("user_id", user?.id)
       .order("created_at", { ascending: false }) // Replace 'created_at' if needed.
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error("Supabase Error: ", error);

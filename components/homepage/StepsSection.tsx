@@ -119,16 +119,16 @@ export function StepsSection() {
                       </Text>
                     </div>
                   </Group>
-                  <Button
-                    size="md"
-                    radius="md"
-                    component={Link}
-                    href="/?signup=true"
-                    rightSection={<IconChevronRight size="1rem" />}
-                    variant="gradient"
-                  >
-                    Create Your First Log
-                  </Button>
+                  <Link href="/?signup=true">
+                    <Button
+                      size="md"
+                      radius="md"
+                      rightSection={<IconChevronRight size="1rem" />}
+                      variant="gradient"
+                    >
+                      Create Your First Log
+                    </Button>
+                  </Link>
                 </Group>
               </Paper>
             </Box>

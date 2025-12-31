@@ -22,17 +22,17 @@ export function FinalCTA() {
           <Text c="dimmed" ta="center" size="xl" mb="xl">
             Start generating IRS-compliant mileage logs in minutes
           </Text>
-          <Button
-            size="xl"
-            radius="md"
-            variant="gradient"
-            component={Link}
-            href="/?signup=true"
-            rightSection={<IconChevronRight size="1.2rem" />}
-            className="hero-button"
-          >
-            Get Started Now
-          </Button>
+          <Link href="/?signup=true">
+            <Button
+              size="xl"
+              radius="md"
+              variant="gradient"
+              rightSection={<IconChevronRight size="1.2rem" />}
+              className="hero-button"
+            >
+              Get Started Now
+            </Button>
+          </Link>
         </Stack>
       </Container>
     </Box>

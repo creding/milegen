@@ -132,17 +132,17 @@ export function CTASection() {
                     minutes.
                   </Text>
 
-                  <Button
-                    size="lg"
-                    radius="md"
-                    fullWidth
-                    variant="gradient"
-                    component={Link}
-                    href="/?signup=true"
-                    rightSection={<IconChevronRight size="1rem" />}
-                  >
-                    Create Your Log
-                  </Button>
+                  <Link href="/?signup=true">
+                    <Button
+                      size="lg"
+                      radius="md"
+                      fullWidth
+                      variant="gradient"
+                      rightSection={<IconChevronRight size="1rem" />}
+                    >
+                      Create Your Log
+                    </Button>
+                  </Link>
                 </Stack>
               </Paper>
             </GridCol>

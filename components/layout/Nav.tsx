@@ -29,28 +29,28 @@ export async function Nav() {
           <Group gap={20} className={classes.mainNav}>
             {user ? (
               <>
-                <Anchor component={Link} href="/generator">
-                  Generate Log
-                </Anchor>
+                <Link href="/generator">
+                  <Anchor component="span">Generate Log</Anchor>
+                </Link>
                 {subscriptionStatus === "active" && (
-                  <Anchor component={Link} href="/saved-logs">
-                    Saved Logs
-                  </Anchor>
+                  <Link href="/saved-logs">
+                    <Anchor component="span">Saved Logs</Anchor>
+                  </Link>
                 )}
 
                 <AccountButton subscriptionStatus={subscriptionStatus} />
                 <SignoutButton />
                 {subscriptionStatus !== "active" && (
-                  <Button
-                    component={Link}
-                    href="/subscribe"
-                    variant="gradient"
-                    gradient={{ from: "blue", to: "cyan" }}
-                    leftSection={<IconCrown size="1rem" />}
-                    size="sm"
-                  >
-                    Subscribe
-                  </Button>
+                  <Link href="/subscribe">
+                    <Button
+                      variant="gradient"
+                      gradient={{ from: "blue", to: "cyan" }}
+                      leftSection={<IconCrown size="1rem" />}
+                      size="sm"
+                    >
+                      Subscribe
+                    </Button>
+                  </Link>
                 )}
               </>
             ) : (

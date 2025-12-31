@@ -9,12 +9,14 @@ export const AccountButton = ({
 }) => {
   return (
     <Group gap={3}>
-      <Anchor component={Link} href="/account">
-        <Group gap={2}>
-          <IconUser size={16} />
-          Account
-        </Group>
-      </Anchor>
+      <Link href="/account">
+        <Anchor component="span">
+          <Group gap={2}>
+            <IconUser size={16} />
+            Account
+          </Group>
+        </Anchor>
+      </Link>
       {subscriptionStatus === "active" && (
         <Chip defaultChecked size="xs" variant="light" color="green">
           Subscribed

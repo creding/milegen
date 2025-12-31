@@ -45,15 +45,15 @@ export function SubscriptionAlert({ mb }: SubscriptionAlertProps) {
               </List.Item>
             </List>
           </Stack>
-          <Button
-            component={Link}
-            href="/subscribe"
-            variant="gradient"
-            gradient={{ from: "blue", to: "cyan" }}
-            leftSection={<IconCrown size="1rem" />}
-          >
-            Upgrade Now
-          </Button>
+          <Link href="/subscribe">
+            <Button
+              variant="gradient"
+              gradient={{ from: "blue", to: "cyan" }}
+              leftSection={<IconCrown size="1rem" />}
+            >
+              Upgrade Now
+            </Button>
+          </Link>
         </Group>
       </Stack>
     </Alert>

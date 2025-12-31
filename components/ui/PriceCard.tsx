@@ -95,11 +95,7 @@ export function PriceCard({
         <Stack gap="sm" mb="xl">
           {features.map((feature, index) => (
             <Group key={index} gap="xs" align="flex-start">
-              <ThemeIcon
-                size={22}
-                radius="xl"
-                style={{ marginTop: 2 }}
-              >
+              <ThemeIcon size={22} radius="xl" style={{ marginTop: 2 }}>
                 <IconCheck size={14} />
               </ThemeIcon>
               <Text size="sm">{feature}</Text>
@@ -107,14 +103,11 @@ export function PriceCard({
           ))}
         </Stack>
 
-        <Button
-          variant="gradient"
-          component={Link}
-          href={ctaLink}
-          fullWidth
-        >
-          {ctaText}
-        </Button>
+        <Link href={ctaLink}>
+          <Button variant="gradient" fullWidth>
+            {ctaText}
+          </Button>
+        </Link>
 
         {footerText && (
           <Text ta="center" size="xs" c="dimmed" mt="sm">

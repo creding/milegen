@@ -106,7 +106,7 @@ export const BUSINESS_MILEAGE_RATES = {
   2022: 0.585, // 58.5 cents per mile for first half, 62.5 cents per mile for second half (using lower value for safety)
   2023: 0.655, // 65.5 cents per mile
   2024: 0.67, // 67 cents per mile
-  2025: 0.67, // Using 2024 rate as placeholder until IRS announces 2025 rate
+  2025: Number(process.env.NEXT_PUBLIC_MILEAGE_RATE_2025) || 0.7, // 70 cents per mile (Official 2025 IRS rate)
   2026: 0.67, // Using 2024 rate as placeholder until IRS announces 2026 rate
   2027: 0.67, // Using 2024 rate as placeholder until IRS announces 2027 rate
   2028: 0.67, // Using 2024 rate as placeholder until IRS announces 2028 rate

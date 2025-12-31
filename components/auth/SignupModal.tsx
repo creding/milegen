@@ -136,14 +136,11 @@ export function SignupModal() {
                   label={
                     <Group gap={5} wrap="nowrap">
                       <Text size="sm">I agree to the</Text>
-                      <Anchor
-                        component={Link}
-                        href="/terms"
-                        size="sm"
-                        target="_blank"
-                      >
-                        Terms of Service
-                      </Anchor>
+                      <Link href="/terms" target="_blank">
+                        <Anchor size="sm" component="span">
+                          Terms of Service
+                        </Anchor>
+                      </Link>
                     </Group>
                   }
                   checked={termsAccepted}
