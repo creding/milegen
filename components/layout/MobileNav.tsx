@@ -12,7 +12,7 @@ import {
   Chip,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import classes from "./nav.module.css";
+import { Button } from "@mantine/core";
 import { createClient } from "@/lib/supabaseBrowserClient";
 import { useRouter } from "next/navigation";
 import {
@@ -23,6 +23,7 @@ import {
   IconSettings,
   IconPlus,
   IconNotes,
+  IconCrown,
 } from "@tabler/icons-react";
 import { User } from "@supabase/supabase-js";
 
@@ -43,33 +44,57 @@ export function MobileNav({ user, subscriptionStatus }: MobileNavProps) {
     close();
   };
   return (
-    <Box className={classes.mobileNavContainer}>
+    <Box hiddenFrom="sm">
       <Burger
         opened={opened}
         onClick={toggle}
         aria-label="Toggle navigation"
         size="sm"
+        color="gray"
       />
 
       <Drawer
         opened={opened}
         onClose={close}
-        title="Menu"
+        title={
+          <Text fw={700} size="lg">
+            Menu
+          </Text>
+        }
         position="right"
+        size="xs"
+        padding="md"
         overlayProps={{ opacity: 0.5, blur: 4 }}
         withCloseButton
-        offset={5}
-        radius="sm"
+        radius={0}
       >
-        <Stack gap={0} p="md">
+        <Stack gap={10}>
           {user ? (
             <>
+              {subscriptionStatus !== "active" && (
+                <Link href="/subscribe" onClick={() => close()}>
+                  <Button
+                    fullWidth
+                    variant="gradient"
+                    gradient={{ from: "blue", to: "cyan" }}
+                    leftSection={<IconCrown size="1rem" />}
+                    radius="xl"
+                    fw={600}
+                  >
+                    Upgrade to Pro
+                  </Button>
+                </Link>
+              )}
               <Link href="/generator">
                 <NavLink
                   component="div"
                   label="Generate Log"
                   onClick={() => close()}
                   leftSection={<IconPlus size={16} />}
+                  variant="subtle"
+                  active
+                  color="gray"
+                  className="mobile-nav-item"
                 />
               </Link>
               <Link href="/saved-logs">
@@ -78,13 +103,15 @@ export function MobileNav({ user, subscriptionStatus }: MobileNavProps) {
                   onClick={() => close()}
                   label="Saved Logs"
                   leftSection={<IconNotes size={16} />}
+                  variant="subtle"
+                  color="gray"
                 />
               </Link>
 
               <Divider my="sm" />
 
-              <Box py="xs">
-                <Text size="sm" fw={700} c="dimmed" mb="xs">
+              <Box>
+                <Text size="xs" fw={700} c="dimmed" mb="xs" tt="uppercase">
                   Account
                 </Text>
                 <Link href="/account">
@@ -95,26 +122,20 @@ export function MobileNav({ user, subscriptionStatus }: MobileNavProps) {
                     leftSection={<IconSettings size={16} />}
                     rightSection={
                       subscriptionStatus === "active" && (
-                        <Chip
-                          defaultChecked
-                          size="xs"
-                          color="green"
-                          variant="light"
-                        >
-                          Subscribed
+                        <Chip checked size="xs" color="green" variant="light">
+                          Pro
                         </Chip>
                       )
                     }
                   />
                 </Link>
-                <Link href="/">
-                  <NavLink
-                    component="div"
-                    label="Sign Out"
-                    onClick={() => handleSignOut()}
-                    leftSection={<IconLogout size={16} />}
-                  />
-                </Link>
+                <NavLink
+                  component="div"
+                  label="Sign Out"
+                  onClick={() => handleSignOut()}
+                  leftSection={<IconLogout size={16} />}
+                  c="red"
+                />
               </Box>
             </>
           ) : (
@@ -123,6 +144,7 @@ export function MobileNav({ user, subscriptionStatus }: MobileNavProps) {
                 <NavLink
                   component="div"
                   label="Home"
+                  onClick={() => close()}
                   leftSection={<IconHome size={16} />}
                 />
               </Link>
@@ -130,7 +152,7 @@ export function MobileNav({ user, subscriptionStatus }: MobileNavProps) {
                 <NavLink
                   component="div"
                   onClick={() => close()}
-                  label="Login"
+                  label="Log In"
                   leftSection={<IconLogin size={16} />}
                 />
               </Link>
@@ -138,8 +160,11 @@ export function MobileNav({ user, subscriptionStatus }: MobileNavProps) {
                 <NavLink
                   component="div"
                   onClick={() => close()}
-                  label="Signup"
+                  label="Get Started"
                   leftSection={<IconUserPlus size={16} />}
+                  variant="filled"
+                  color="blue"
+                  active
                 />
               </Link>
             </>

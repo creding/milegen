@@ -7,30 +7,31 @@ import { Group, Text, Box } from "@mantine/core";
 export function Logo() {
   return (
     <Link href="/" style={{ textDecoration: "none", color: "inherit" }}>
-      <Group gap="xs" style={{ transition: "transform 0.2s" }} align="center">
+      <Group gap={12} align="center">
         <Box
           style={{
-            background: "linear-gradient(45deg, #3498db, #39c0ba)",
-            borderRadius: "50%",
-            width: 36,
-            height: 36,
+            background: "linear-gradient(135deg, #228be6, #15aabf)",
+            borderRadius: "10px",
+            width: 38,
+            height: 38,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            boxShadow: "0 2px 10px rgba(57, 192, 186, 0.3)",
-            transition: "transform 0.2s, box-shadow 0.2s",
-            ":hover": {
-              transform: "scale(1.05)",
-              boxShadow: "0 4px 12px rgba(57, 192, 186, 0.4)",
-            },
+            boxShadow: "0 4px 12px rgba(21, 170, 191, 0.25)",
+            border: "1px solid rgba(255, 255, 255, 0.2)",
           }}
         >
-          <IconCar size={22} stroke={1.5} color="white" />
+          <IconCar size={22} stroke={2} color="white" />
         </Box>
         <Text
-          size="xl"
+          size="1.35rem"
           fw={800}
-          variant="gradient"
+          c="gray.9"
+          style={{
+            lineHeight: 1,
+            letterSpacing: "-0.02em",
+            fontFamily: "var(--mantine-font-family-headings)",
+          }}
         >
           Milegen
         </Text>

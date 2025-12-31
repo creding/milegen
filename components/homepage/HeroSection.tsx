@@ -147,12 +147,16 @@ export function HeroSection() {
                     Create Your First Log
                   </Button>
                 </Link>
-                <Link href="#how-it-works">
+                <Link
+                  href="https://oefbskcjvgqezwhepaqj.supabase.co/storage/v1/object/public/preview/mileage-log-2025-01-01-2025-12-31.pdf"
+                  target="_blank"
+                >
                   <Button
                     size="xl"
                     radius="md"
                     variant="outline"
                     color="gray"
+                    leftSection={<IconDownload size={20} />}
                     styles={{
                       root: {
                         borderColor: "rgba(255, 255, 255, 0.3)",
@@ -163,7 +167,7 @@ export function HeroSection() {
                       },
                     }}
                   >
-                    See How It Works
+                    View Sample
                   </Button>
                 </Link>
               </Group>

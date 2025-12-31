@@ -24,10 +24,7 @@ export const metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <body
-        className={inter.className}
-        style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}
-      >
+      <body className={inter.className}>
         <MantineProvider theme={theme}>
           <Notifications position="top-right" />
           <Nav />
