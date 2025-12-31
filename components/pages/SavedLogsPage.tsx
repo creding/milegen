@@ -7,13 +7,15 @@ import {
   IconTrash,
   IconPlus,
   IconFileOff,
+  IconCalendar,
+  IconCar,
+  IconFileText,
 } from "@tabler/icons-react";
 import { deleteMileageLog } from "@/app/actions/deleteMileageLog";
 import { notifications } from "@mantine/notifications";
 import Link from "next/link";
 import { printMileageLog } from "@/components/milagelog/PrintMilageLog";
 import {
-  Card,
   Text,
   Table,
   Group,
@@ -28,12 +30,13 @@ import {
   Stack,
   Button,
   Center,
-  Paper,
   ThemeIcon,
+  Badge,
+  Tooltip,
 } from "@mantine/core";
+import { ProCard } from "@/components/ui/ProCard";
 
 export const SavedLogsPage = ({ logs }: { logs: MileageLog[] }) => {
-  console.log(logs);
   const handleDelete = async (logId: string, userId: string) => {
     try {
       const result = await deleteMileageLog(logId, userId);
@@ -57,10 +60,10 @@ export const SavedLogsPage = ({ logs }: { logs: MileageLog[] }) => {
   };
 
   const EmptyState = () => (
-    <Paper p="xl" withBorder radius="md" shadow="sm">
+    <ProCard p="xl" radius="md">
       <Center>
-        <Stack align="center" gap="md" py="xl">
-          <ThemeIcon size={80} radius={100} color="gray">
+        <Stack align="center" gap="md" py={60}>
+          <ThemeIcon size={80} radius={100} variant="light" color="gray">
             <IconFileOff size={40} />
           </ThemeIcon>
           <Title order={3}>No Mileage Logs Found</Title>
@@ -73,6 +76,8 @@ export const SavedLogsPage = ({ logs }: { logs: MileageLog[] }) => {
               leftSection={<IconPlus size="1rem" />}
               variant="gradient"
               gradient={{ from: "blue", to: "cyan" }}
+              size="md"
+              radius="xl"
               mt="md"
             >
               Create Your First Log
@@ -80,80 +85,157 @@ export const SavedLogsPage = ({ logs }: { logs: MileageLog[] }) => {
           </Link>
         </Stack>
       </Center>
-    </Paper>
+    </ProCard>
   );
 
   return (
     <Container size="xl" py="xl">
-      <Card withBorder>
-        <Stack gap="md" mb="md">
-          <Title order={2}>Saved Mileage Logs</Title>
-          <Text c="dimmed" size="sm">
-            View and manage your saved mileage logs
-          </Text>
-        </Stack>
+      <Stack gap="lg">
+        <Group justify="space-between" align="center">
+          <div>
+            <Title order={2}>My Mileage Logs</Title>
+            <Text c="dimmed" size="sm">
+              Manage and export your IRS-compliant mileage reports
+            </Text>
+          </div>
+          {logs.length > 0 && (
+            <Link href="/generator">
+              <Button
+                leftSection={<IconPlus size="1rem" />}
+                variant="filled"
+                color="blue"
+                radius="xl"
+                size="sm"
+              >
+                Generate New Log
+              </Button>
+            </Link>
+          )}
+        </Group>
 
         {logs.length === 0 ? (
           <EmptyState />
         ) : (
-          <Table striped highlightOnHover>
-            <TableThead>
-              <TableTr>
-                <TableTh>Date Range</TableTh>
-                <TableTh>Total Miles</TableTh>
-                <TableTh>Business Miles</TableTh>
-                <TableTh>Personal Miles</TableTh>
-                <TableTh>Actions</TableTh>
-              </TableTr>
-            </TableThead>
-            <TableTbody>
-              {logs?.map((log, index) => (
-                <TableTr key={`${log.start_date}-${index}`}>
-                  <TableTd>
-                    {new Date(log.start_date).toLocaleDateString()} -{" "}
-                    {new Date(log.end_date).toLocaleDateString()}
-                  </TableTd>
-                  <TableTd>{log.total_mileage}</TableTd>
-                  <TableTd>{log.total_business_miles}</TableTd>
-                  <TableTd>{log.total_personal_miles}</TableTd>
-                  <TableTd>
-                    <Group gap="xs" justify="flex-start">
-                      <Link href={`/saved-logs/${log.id}`}>
-                        <ActionIcon
-                          variant="subtle"
-                          color="blue"
-                          size="lg"
-                          component="div"
-                        >
-                          <IconEye size="1.125rem" />
-                        </ActionIcon>
-                      </Link>
-                      <ActionIcon
-                        onClick={() => printMileageLog(log)}
-                        variant="subtle"
-                        color="gray"
-                        size="lg"
-                      >
-                        <IconPrinter size="1.125rem" />
-                      </ActionIcon>
-                      <ActionIcon
-                        onClick={() =>
-                          handleDelete(log.id as string, log.user_id as string)
-                        }
-                        variant="subtle"
-                        color="red"
-                        size="lg"
-                      >
-                        <IconTrash size="1.125rem" />
-                      </ActionIcon>
-                    </Group>
-                  </TableTd>
+          <ProCard p={0} radius="md" style={{ overflow: "hidden" }}>
+            <Table horizontalSpacing="lg" verticalSpacing="md">
+              <TableThead bg="gray.0">
+                <TableTr>
+                  <TableTh fw={600} w={300}>
+                    Date Range
+                  </TableTh>
+                  <TableTh fw={600}>Total Miles</TableTh>
+                  <TableTh fw={600}>Vehicle</TableTh>
+                  <TableTh fw={600} ta="right">
+                    Actions
+                  </TableTh>
                 </TableTr>
-              ))}
-            </TableTbody>
-          </Table>
+              </TableThead>
+              <TableTbody>
+                {logs?.map((log, index) => (
+                  <TableTr key={`${log.start_date}-${index}`}>
+                    <TableTd>
+                      <Group gap="sm">
+                        <ThemeIcon
+                          color="blue"
+                          variant="light"
+                          size="md"
+                          radius="md"
+                        >
+                          <IconCalendar size={18} />
+                        </ThemeIcon>
+                        <div>
+                          <Text size="sm" fw={500}>
+                            {new Date(log.start_date).toLocaleDateString(
+                              undefined,
+                              {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              }
+                            )}
+                          </Text>
+                          <Text size="xs" c="dimmed">
+                            to{" "}
+                            {new Date(log.end_date).toLocaleDateString(
+                              undefined,
+                              {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              }
+                            )}
+                          </Text>
+                        </div>
+                      </Group>
+                    </TableTd>
+                    <TableTd>
+                      <Badge
+                        size="lg"
+                        variant="light"
+                        color="blue"
+                        leftSection={<IconFileText size={14} />}
+                      >
+                        {log.total_mileage.toLocaleString()} mi
+                      </Badge>
+                    </TableTd>
+                    <TableTd>
+                      {log.vehicle_info && (
+                        <Group gap="xs" c="dimmed">
+                          <IconCar size={16} />
+                          <Text size="sm">{log.vehicle_info}</Text>
+                        </Group>
+                      )}
+                    </TableTd>
+                    <TableTd>
+                      <Group gap="xs" justify="flex-end">
+                        <Tooltip label="View Details" withArrow>
+                          <Link href={`/saved-logs/${log.id}`}>
+                            <ActionIcon
+                              variant="subtle"
+                              color="blue"
+                              size="lg"
+                              component="div"
+                            >
+                              <IconEye size="1.125rem" />
+                            </ActionIcon>
+                          </Link>
+                        </Tooltip>
+
+                        <Tooltip label="Print / Download PDF" withArrow>
+                          <ActionIcon
+                            onClick={() => printMileageLog(log)}
+                            variant="subtle"
+                            color="gray"
+                            size="lg"
+                          >
+                            <IconPrinter size="1.125rem" />
+                          </ActionIcon>
+                        </Tooltip>
+
+                        <Tooltip label="Delete Log" withArrow>
+                          <ActionIcon
+                            onClick={() =>
+                              handleDelete(
+                                log.id as string,
+                                log.user_id as string
+                              )
+                            }
+                            variant="subtle"
+                            color="red"
+                            size="lg"
+                          >
+                            <IconTrash size="1.125rem" />
+                          </ActionIcon>
+                        </Tooltip>
+                      </Group>
+                    </TableTd>
+                  </TableTr>
+                ))}
+              </TableTbody>
+            </Table>
+          </ProCard>
         )}
-      </Card>
+      </Stack>
     </Container>
   );
 };
