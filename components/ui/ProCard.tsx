@@ -1,10 +1,11 @@
-import { Paper, PaperProps } from "@mantine/core";
+import { Paper, PaperProps, Text, Group } from "@mantine/core";
 
 interface ProCardProps extends PaperProps {
   children: React.ReactNode;
+  title?: string;
 }
 
-export function ProCard({ children, style, ...props }: ProCardProps) {
+export function ProCard({ children, title, style, ...props }: ProCardProps) {
   return (
     <Paper
       p="xl"
@@ -19,6 +20,13 @@ export function ProCard({ children, style, ...props }: ProCardProps) {
       }}
       {...props}
     >
+      {title && (
+        <Group mb="md">
+          <Text fw={700} size="lg">
+            {title}
+          </Text>
+        </Group>
+      )}
       {children}
     </Paper>
   );

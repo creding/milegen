@@ -50,7 +50,7 @@ export default async function SubscriptionPage() {
           </Text>
         </div>
 
-        <ProCard padding="lg" radius="md">
+        <ProCard p="lg" radius="md">
           <Group justify="space-between" align="flex-start" mb="md">
             <Group>
               <ThemeIcon
