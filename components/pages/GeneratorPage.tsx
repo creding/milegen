@@ -219,7 +219,10 @@ export const GeneratorPage = ({
                 )}
               </Group>
             </Group>
-            <MileageLogDisplay log={mileageLog} />
+            <MileageLogDisplay
+              log={mileageLog}
+              subscriptionStatus={subscriptionStatus}
+            />
           </Stack>
         </ProCard>
       )}

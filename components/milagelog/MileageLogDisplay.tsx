@@ -29,7 +29,9 @@ import {
   IconGauge,
   IconCoin,
   IconReceipt,
+  IconCrown,
 } from "@tabler/icons-react";
+import { Button } from "@mantine/core";
 
 import { useMediaQuery } from "@mantine/hooks";
 import type { MileageEntry, MileageLog } from "@/app/actions/mileageGenerator";
@@ -343,12 +345,12 @@ export function MileageLogDisplay({
         </Stack>
       ) : (
         <Paper p="xl" radius="sm" withBorder shadow="sm" w="100%" bg="white">
-          <Group justify="space-between" mb="lg">
+          <Group>
             <Title order={4} fw={600}>
-              Detailed Log Entries
+              Detailed Log Preview
             </Title>
-            <Badge variant="light" size="lg" color="gray">
-              {log.log_entries.length} entries
+            <Badge variant="light" size="lg" color="blue">
+              First 10 of {log.log_entries.length}
             </Badge>
           </Group>
           <ScrollArea>
@@ -375,7 +377,7 @@ export function MileageLogDisplay({
                   </TableTr>
                 </TableThead>
                 <TableTbody>
-                  {log.log_entries.map((entry, index) => (
+                  {log.log_entries.slice(0, 10).map((entry, index) => (
                     <TableTr key={index}>
                       <TableTd>
                         {new Date(entry.date).toLocaleDateString()}
@@ -409,6 +411,29 @@ export function MileageLogDisplay({
                 </TableTbody>
               </Table>
             </Box>
+            {log.log_entries.length > 10 && (
+              <Stack align="center" mt="xl" gap="xs">
+                <Text size="sm" c="dimmed">
+                  This is a preview of the first 10 entries.
+                </Text>
+                <Text fw={600} size="lg">
+                  Want the full log?
+                </Text>
+                {subscriptionStatus === "active" ? (
+                  <Text c="teal" fw={700}>
+                    Use the options above to download the full report.
+                  </Text>
+                ) : (
+                  <Button
+                    variant="gradient"
+                    gradient={{ from: "blue", to: "cyan" }}
+                    leftSection={<IconCrown size={16} />}
+                  >
+                    Upgrade to Download Full Log
+                  </Button>
+                )}
+              </Stack>
+            )}
           </ScrollArea>
         </Paper>
       )}

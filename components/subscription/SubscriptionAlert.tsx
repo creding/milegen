@@ -1,7 +1,8 @@
 "use client";
 
-import { Alert, Button, Group, List, Stack, Text } from "@mantine/core";
-import { IconCheck, IconCrown, IconInfoCircle } from "@tabler/icons-react";
+import { Button, Group, Stack, Text, ThemeIcon } from "@mantine/core";
+import { IconCrown } from "@tabler/icons-react";
+import { ProCard } from "@/components/ui/ProCard";
 import Link from "next/link";
 
 interface SubscriptionAlertProps {
@@ -10,52 +11,65 @@ interface SubscriptionAlertProps {
 
 export function SubscriptionAlert({ mb }: SubscriptionAlertProps) {
   return (
-    <Alert
+    <ProCard
+      p="lg"
+      radius="md"
+      withBorder
       mb={mb}
-      icon={<IconInfoCircle size="1rem" />}
-      title="Upgrade to Premium"
-      color="blue"
+      style={{
+        background: "linear-gradient(to right, #f8fcff, #fff)",
+        borderColor: "var(--mantine-color-blue-2)",
+      }}
     >
-      <Stack gap="xs">
-        <Group justify="space-between" align="flex-start">
-          <Stack gap="xs">
-            <Text size="sm" fw={500}>
-              Unlock Premium Features:
+      <Group justify="space-between" align="center" wrap="nowrap">
+        <Group>
+          <ThemeIcon
+            size={42}
+            variant="gradient"
+            gradient={{ from: "blue.6", to: "cyan.6" }}
+            radius="md"
+          >
+            <IconCrown size={24} />
+          </ThemeIcon>
+          <Stack gap={2}>
+            <Text fw={700} size="md" c="blue.8">
+              Unlock Premium Features
             </Text>
-            <List size="sm" spacing="xs">
-              <List.Item
-                icon={
-                  <IconCheck
-                    size="1rem"
-                    color="var(--mantine-color-blue-filled)"
-                  />
-                }
-              >
-                Create unlimited mileage logs
-              </List.Item>
-              <List.Item
-                icon={
-                  <IconCheck
-                    size="1rem"
-                    color="var(--mantine-color-blue-filled)"
-                  />
-                }
-              >
-                Export to PDF and Excel formats
-              </List.Item>
-            </List>
+            <Text size="sm" c="dimmed" maw={300} lh={1.4}>
+              Generate unlimited IRS-compliant logs and export to PDF/Excel
+              instantly.
+            </Text>
           </Stack>
-          <Link href="/subscribe">
-            <Button
-              variant="gradient"
-              gradient={{ from: "blue", to: "cyan" }}
-              leftSection={<IconCrown size="1rem" />}
-            >
-              Upgrade Now
-            </Button>
-          </Link>
         </Group>
-      </Stack>
-    </Alert>
+
+        <Group visibleFrom="sm">
+          <Button
+            component={Link}
+            href="/subscribe"
+            variant="gradient"
+            gradient={{ from: "blue", to: "cyan" }}
+            size="md"
+            radius="md"
+            rightSection={<IconCrown size={16} />}
+          >
+            Upgrade Now
+          </Button>
+        </Group>
+      </Group>
+
+      {/* Mobile-only CTA */}
+      <Button
+        component={Link}
+        href="/subscribe"
+        hiddenFrom="sm"
+        fullWidth
+        mt="md"
+        variant="gradient"
+        gradient={{ from: "blue", to: "cyan" }}
+        radius="md"
+      >
+        Upgrade Now
+      </Button>
+    </ProCard>
   );
 }
