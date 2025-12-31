@@ -1,11 +1,15 @@
 import { MileageLogDisplay } from "@/components/milagelog/MileageLogDisplay";
 import type { MileageLog } from "@/app/actions/mileageGenerator";
 import { createClient } from "@/lib/supabaseServerClient";
-import { Card, Container, Title, Text, Group } from "@mantine/core";
+import { Title, Text, Group } from "@mantine/core";
+import { checkSubscriptionStatus } from "@/app/actions/checkSubscriptionStatus";
+import { PageLayout } from "@/components/ui/PageLayout";
+import { ProCard } from "@/components/ui/ProCard";
 
 type SSRParams = {
   id: string;
 };
+
 export default async function Page({ params }: { params: Promise<SSRParams> }) {
   const { id } = await params;
   const supabase = await createClient();
@@ -24,22 +28,32 @@ export default async function Page({ params }: { params: Promise<SSRParams> }) {
     console.error("Error fetching saved log:", error);
   }
 
+  const subscriptionStatus = await checkSubscriptionStatus();
+
   if (!log) {
     return (
-      <Container size="md" py="xl">
-        <Text>No log found.</Text>
-      </Container>
+      <PageLayout title="Log Not Found">
+        <ProCard>
+          <Text>We could not find the mileage log you requested.</Text>
+        </ProCard>
+      </PageLayout>
     );
   }
 
   return (
-    <Container size="xl" py="xl">
-      <Card withBorder>
+    <PageLayout
+      title="Generated Mileage Log"
+      subtitle={`Reviewing log #${log.id?.slice(0, 8)}`}
+    >
+      <ProCard maw={1000} mx="auto">
         <Group justify="space-between" mb="md">
-          <Title order={2}>Mileage Log Details</Title>
+          <Title order={3}>Mileage Log Details</Title>
         </Group>
-        <MileageLogDisplay log={log} />
-      </Card>
-    </Container>
+        <MileageLogDisplay
+          log={log}
+          subscriptionStatus={subscriptionStatus || "inactive"}
+        />
+      </ProCard>
+    </PageLayout>
   );
 }

@@ -1,4 +1,5 @@
 "use client";
+import { useRouter } from "next/navigation";
 
 import { useState } from "react";
 import { notifications } from "@mantine/notifications";
@@ -6,12 +7,7 @@ import { saveMileageLog as saveMileageLogApi } from "@/app/actions/saveMileageLo
 import type { MileageLog } from "@/app/actions/mileageGenerator";
 import { MileageLogDisplay } from "@/components/milagelog/MileageLogDisplay";
 
-import {
-  IconCheck,
-  IconDeviceFloppy,
-  IconX,
-  IconRefresh,
-} from "@tabler/icons-react";
+import { IconCheck, IconX } from "@tabler/icons-react";
 import {
   Button,
   Group,
@@ -52,6 +48,7 @@ export const GeneratorPage = ({
   const [entryCount, setEntryCount] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const router = useRouter(); // Add router
   const [showForm, setShowForm] = useState(true);
 
   const handleGenerateMileageLog = async () => {
@@ -73,11 +70,25 @@ export const GeneratorPage = ({
         subscriptionStatus: subscriptionStatus || "inactive",
         currentEntryCount: entryCount,
       });
+
       if (result) {
-        setMileageLog(result);
-        setEntryCount((prevCount) => prevCount + result.log_entries.length);
-        setShowForm(false);
-        setIsGenerating(false);
+        // Auto-save the log immediately
+        const saveResult = await saveMileageLogApi(result);
+
+        if (saveResult.success && saveResult.logId) {
+          notifications.show({
+            title: "Log Generated",
+            message: "Mileage log saved successfully! Redirecting...",
+            color: "green",
+            icon: <IconCheck />,
+          });
+          // Redirect to the new log preview page
+          router.push(`/saved-logs/${saveResult.logId}`);
+        } else {
+          throw new Error(
+            saveResult.message || "Failed to save generated log."
+          );
+        }
       }
     } catch (error: unknown) {
       if (error instanceof Error) {
@@ -89,15 +100,9 @@ export const GeneratorPage = ({
           color: "red",
           icon: <IconX />,
         });
-        setShowForm(true);
       }
+      setIsGenerating(false);
     }
-  };
-
-  const handleNewLog = () => {
-    resetForm();
-    setMileageLog(undefined);
-    setShowForm(true);
   };
 
   const resetForm = () => {
@@ -108,55 +113,6 @@ export const GeneratorPage = ({
     setTotalPersonalMiles("0");
     setVehicle("");
     setBusinessType("");
-  };
-
-  const saveMileageLog = async () => {
-    if (!mileageLog || mileageLog.log_entries.length === 0) {
-      notifications.show({
-        title: "No Entries to Save",
-        message: "Please generate a mileage log first.",
-        color: "red",
-        icon: <IconX />,
-      });
-      return;
-    }
-
-    setIsSaving(true);
-    try {
-      if (user) {
-        const result = await saveMileageLogApi(mileageLog);
-
-        if (result.success) {
-          notifications.show({
-            title: "Success",
-            message: "Mileage log saved successfully.",
-            color: "green",
-            icon: <IconCheck />,
-          });
-        } else {
-          notifications.show({
-            title: "Error",
-            message: result.message,
-            color: "red",
-            icon: <IconX />,
-          });
-        }
-      } else {
-        throw new Error("User is not logged in");
-      }
-    } catch (error) {
-      if (error instanceof Error) {
-        console.error("Error saving mileage log:", error.message);
-      }
-      notifications.show({
-        title: "Error",
-        message: "Failed to save mileage log. Please try again.",
-        color: "red",
-        icon: <IconX />,
-      });
-    } finally {
-      setIsSaving(false);
-    }
   };
 
   return (
@@ -189,43 +145,6 @@ export const GeneratorPage = ({
           />
         </ProCard>
       ) : null}
-
-      {!showForm && mileageLog && (
-        <ProCard>
-          <Stack>
-            <Group justify="space-between">
-              <Title order={3} c="gray.8">
-                Generated Log Preview
-              </Title>
-              <Group>
-                <Button
-                  variant="outline"
-                  color="gray"
-                  leftSection={<IconRefresh size={18} />}
-                  onClick={handleNewLog}
-                >
-                  New Log
-                </Button>
-                {subscriptionStatus === "active" && (
-                  <Button
-                    loading={isSaving}
-                    variant="gradient"
-                    gradient={{ from: "teal", to: "cyan" }}
-                    leftSection={<IconDeviceFloppy size={18} />}
-                    onClick={saveMileageLog}
-                  >
-                    Save & Download
-                  </Button>
-                )}
-              </Group>
-            </Group>
-            <MileageLogDisplay
-              log={mileageLog}
-              subscriptionStatus={subscriptionStatus}
-            />
-          </Stack>
-        </ProCard>
-      )}
     </PageLayout>
   );
 };

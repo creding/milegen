@@ -400,15 +400,5 @@ export async function generateMileageLogFromForm(
     params.totalPersonalMiles
   );
 
-  if (params.subscriptionStatus !== "active") {
-    const totalEntries = log.log_entries.length;
-    log.log_entries = log.log_entries.slice(0, 10);
-    if (totalEntries > 10) {
-      log.log_entries[9].purpose += ` (${
-        totalEntries - 10
-      } more entries available with subscription)`;
-    }
-  }
-
   return log;
 }
