@@ -14,8 +14,6 @@ import {
 } from "@tabler/icons-react";
 import {
   Button,
-  Card,
-  Container,
   Group,
   Title,
   Stack,
@@ -26,6 +24,8 @@ import { MileageForm } from "@/components/milagelog/MileageForm";
 import { User } from "@supabase/supabase-js";
 import { useMediaQuery } from "@mantine/hooks";
 import { generateMileageLogFromForm } from "@/app/actions/mileageGenerator";
+import { PageLayout } from "@/components/ui/PageLayout";
+import { ProCard } from "@/components/ui/ProCard";
 
 export const GeneratorPage = ({
   user,
@@ -160,16 +160,13 @@ export const GeneratorPage = ({
   };
 
   return (
-    <Container size="xl" py="xl" px={isMobile ? "xs" : "md"}>
+    <PageLayout
+      title="Generate Mileage Log"
+      subtitle="Enter your trip details below to generate an IRS-compliant mileage log in seconds."
+    >
       {showForm ? (
-        <Card withBorder pos="relative">
+        <ProCard pos="relative" maw={800} mx="auto">
           <LoadingOverlay visible={isGenerating} overlayProps={{ blur: 2 }} />
-          <Stack gap="md" mb="md">
-            <Title order={2}>Generate Mileage Log</Title>
-            <Text c="dimmed" size="sm">
-              Fill out the form to generate a mileage log.
-            </Text>
-          </Stack>
           <MileageForm
             startMileage={startMileage}
             endMileage={endMileage}
@@ -190,40 +187,42 @@ export const GeneratorPage = ({
             onGenerate={handleGenerateMileageLog}
             onReset={resetForm}
           />
-        </Card>
+        </ProCard>
       ) : null}
 
       {!showForm && mileageLog && (
-        <Card radius="md" withBorder>
+        <ProCard>
           <Stack>
             <Group justify="space-between">
-              <Title order={2}>Generated Mileage Log</Title>
+              <Title order={3} c="gray.8">
+                Generated Log Preview
+              </Title>
               <Group>
                 <Button
-                  variant="light"
-                  leftSection={<IconRefresh size={20} />}
+                  variant="outline"
+                  color="gray"
+                  leftSection={<IconRefresh size={18} />}
                   onClick={handleNewLog}
-                  size={isMobile ? "md" : "sm"}
                 >
-                  New
+                  New Log
                 </Button>
                 {subscriptionStatus === "active" && (
                   <Button
                     loading={isSaving}
-                    variant="light"
-                    leftSection={<IconDeviceFloppy size={20} />}
+                    variant="gradient"
+                    gradient={{ from: "teal", to: "cyan" }}
+                    leftSection={<IconDeviceFloppy size={18} />}
                     onClick={saveMileageLog}
-                    size={isMobile ? "md" : "sm"}
                   >
-                    Save
+                    Save & Download
                   </Button>
                 )}
               </Group>
             </Group>
             <MileageLogDisplay log={mileageLog} />
           </Stack>
-        </Card>
+        </ProCard>
       )}
-    </Container>
+    </PageLayout>
   );
 };

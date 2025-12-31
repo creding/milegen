@@ -9,7 +9,6 @@ import {
   TableTbody,
   TableTd,
   Stack,
-  Card,
   Box,
   ScrollArea,
   Title,
@@ -17,7 +16,10 @@ import {
   Paper,
   ThemeIcon,
   Table,
+  Badge,
+  SimpleGrid,
 } from "@mantine/core";
+import { ProCard } from "@/components/ui/ProCard";
 import {
   IconCar,
   IconCalendar,
@@ -49,56 +51,54 @@ export function MileageLogDisplay({
   }
 
   const MobileLogEntry = ({ entry }: { entry: MileageEntry }) => (
-    <Card shadow="sm" p="md" radius="md" withBorder mb="sm">
-      <Text fw={700} mb="xs">
-        {new Date(entry.date).toLocaleDateString()}
-      </Text>
-      <Stack gap="xs">
-        <Group justify="apart">
-          <Text size="sm" c="dimmed">
-            Vehicle:
-          </Text>
-          <Text size="sm">{entry.vehicle_info || log.vehicle_info}</Text>
-        </Group>
-        <Group justify="apart">
-          <Text size="sm" c="dimmed">
-            Starting Mileage:
-          </Text>
-          <Text size="sm">{parseFloat(entry.start_mileage.toFixed(1))}</Text>
-        </Group>
-        <Group justify="apart">
-          <Text size="sm" c="dimmed">
-            Ending Mileage:
-          </Text>
-          <Text size="sm">{parseFloat(entry.end_mileage.toFixed(1))}</Text>
-        </Group>
-        <Divider my="xs" />
-        <Text size="sm" c="dimmed" mt="xs">
-          Purpose:
+    <ProCard p="sm" mb="sm">
+      <Group justify="space-between" mb="xs">
+        <Text fw={700} size="sm">
+          {new Date(entry.date).toLocaleDateString()}
         </Text>
-        <Text size="sm">{entry.purpose}</Text>
-        <Divider my="xs" />
-        <Group justify="apart">
-          <Text size="sm" c="dimmed">
-            Total Miles:
+        <Badge
+          size="sm"
+          variant={entry.type === "Business" ? "filled" : "light"}
+          color={entry.type === "Business" ? "teal" : "gray"}
+        >
+          {entry.type}
+        </Badge>
+      </Group>
+      <Stack gap="xs">
+        <Group justify="space-between">
+          <Text size="xs" c="dimmed">
+            Miles
           </Text>
-          <Text size="sm">{parseFloat(entry.miles.toFixed(1))} miles</Text>
+          <Text size="sm" fw={500}>
+            {parseFloat(entry.miles.toFixed(1))}
+          </Text>
         </Group>
-        <Group justify="apart">
-          <Text size="sm" c="dimmed">
-            Type:
+        <Group justify="space-between">
+          <Text size="xs" c="dimmed">
+            Purpose
           </Text>
-          <Text size="sm">{entry.type}</Text>
+          <Text size="sm" style={{ textAlign: "right", maxWidth: "200px" }}>
+            {entry.purpose}
+          </Text>
+        </Group>
+        <Group justify="space-between">
+          <Text size="xs" c="dimmed">
+            Odometer
+          </Text>
+          <Text size="xs">
+            {parseFloat(entry.start_mileage.toFixed(1))} →{" "}
+            {parseFloat(entry.end_mileage.toFixed(1))}
+          </Text>
         </Group>
       </Stack>
-    </Card>
+    </ProCard>
   );
 
   return (
     <Stack gap={isMobile ? "md" : 5}>
       {subscriptionStatus !== "active" && <SubscriptionAlert />}
       {isMobile ? (
-        <Paper p="md" radius="sm" withBorder shadow="xs" w="100%">
+        <ProCard p="sm" w="100%">
           <Stack gap="xs">
             {subscriptionStatus === "active" && (
               <Stack justify="flex-start">
@@ -188,10 +188,10 @@ export function MileageLogDisplay({
               </>
             )}
           </Stack>
-        </Paper>
+        </ProCard>
       ) : (
         <>
-          <Paper p="lg" radius="sm" withBorder shadow="xs" w="100%">
+          <ProCard p="xl" w="100%">
             <Group justify="flex-end" mb="xl" gap="xs">
               {subscriptionStatus === "active" && (
                 <Group justify="flex-start">
@@ -331,7 +331,7 @@ export function MileageLogDisplay({
                 </Group>
               </Stack>
             </Group>
-          </Paper>
+          </ProCard>
         </>
       )}
 
@@ -342,21 +342,34 @@ export function MileageLogDisplay({
           ))}
         </Stack>
       ) : (
-        <Paper p="lg" radius="sm" withBorder shadow="xs" w="100%">
-          <Title order={4} mb="md">
-            Mileage Log Entries
-          </Title>
-          <Divider mb="md" />
+        <Paper p="xl" radius="sm" withBorder shadow="sm" w="100%" bg="white">
+          <Group justify="space-between" mb="lg">
+            <Title order={4} fw={600}>
+              Detailed Log Entries
+            </Title>
+            <Badge variant="light" size="lg" color="gray">
+              {log.log_entries.length} entries
+            </Badge>
+          </Group>
           <ScrollArea>
             <Box maw="100%" w="100%">
-              <Table striped highlightOnHover withTableBorder w="100%">
+              <Table
+                striped
+                highlightOnHover
+                withTableBorder
+                withColumnBorders
+                styles={{
+                  th: { backgroundColor: "#f8fafc", color: "#64748b" },
+                  td: { fontSize: "14px" },
+                }}
+              >
                 <TableThead>
                   <TableTr>
                     <TableTh>Date</TableTh>
                     <TableTh>Vehicle</TableTh>
                     <TableTh>Start</TableTh>
                     <TableTh>End</TableTh>
-                    <TableTh>Miles</TableTh>
+                    <TableTh>Total Miles</TableTh>
                     <TableTh>Purpose</TableTh>
                     <TableTh>Type</TableTh>
                   </TableTr>
@@ -376,9 +389,21 @@ export function MileageLogDisplay({
                       <TableTd>
                         {parseFloat(entry.end_mileage.toFixed(1))}
                       </TableTd>
-                      <TableTd>{parseFloat(entry.miles.toFixed(1))}</TableTd>
+                      <TableTd fw={600}>
+                        {parseFloat(entry.miles.toFixed(1))}
+                      </TableTd>
                       <TableTd>{entry.purpose}</TableTd>
-                      <TableTd>{entry.type}</TableTd>
+                      <TableTd>
+                        <Badge
+                          size="sm"
+                          variant={
+                            entry.type === "Business" ? "dot" : "outline"
+                          }
+                          color={entry.type === "Business" ? "teal" : "gray"}
+                        >
+                          {entry.type}
+                        </Badge>
+                      </TableTd>
                     </TableTr>
                   ))}
                 </TableTbody>
