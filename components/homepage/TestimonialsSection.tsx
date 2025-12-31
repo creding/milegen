@@ -4,103 +4,142 @@ import {
   Group,
   Paper,
   SimpleGrid,
+  Stack,
   Text,
   ThemeIcon,
   Title,
+  Rating,
+  Badge,
 } from "@mantine/core";
-import { IconQuote, IconUser } from "@tabler/icons-react";
+import { IconUser } from "@tabler/icons-react";
+
+interface Testimonial {
+  quote: string;
+  author: string;
+  role: string;
+  rating: number;
+}
+
+const testimonials: Testimonial[] = [
+  {
+    quote:
+      "MileGen saved me during my IRS audit. The logs were accepted without question, and I was able to claim my full deduction. Worth every penny!",
+    author: "Michael R.",
+    role: "Small Business Owner",
+    rating: 5,
+  },
+  {
+    quote:
+      "As a sales rep, I drive 500+ miles per week but never had time to track them. MileGen helped me recover over $3,000 in deductions I would have lost.",
+    author: "Sarah T.",
+    role: "Sales Professional",
+    rating: 5,
+  },
+  {
+    quote:
+      "The interface is incredibly intuitive. I created a full year's worth of mileage logs in under 10 minutes. This is exactly what busy professionals need.",
+    author: "David L.",
+    role: "Real Estate Agent",
+    rating: 5,
+  },
+  {
+    quote:
+      "I was skeptical at first, but MileGen delivered exactly what it promised. Clean, professional logs that my accountant actually complimented me on.",
+    author: "Jennifer K.",
+    role: "Independent Contractor",
+    rating: 5,
+  },
+  {
+    quote:
+      "After years of using expensive apps that charge monthly, finding MileGen was a game-changer. One annual fee for unlimited logs? Sign me up!",
+    author: "Robert M.",
+    role: "Rideshare Driver",
+    rating: 5,
+  },
+  {
+    quote:
+      "My CPA recommended I get better documentation for my mileage. MileGen made it simple to create professional logs that hold up to scrutiny.",
+    author: "Lisa P.",
+    role: "Home Health Nurse",
+    rating: 5,
+  },
+];
 
 export function TestimonialsSection() {
-  // Testimonials
-  const testimonials = [
-    {
-      quote:
-        "Milegen saved me during my IRS audit. The logs were accepted without question, and I was able to claim my full deduction.",
-      author: "Michael R., Small Business Owner",
-    },
-    {
-      quote:
-        "As a sales representative, I drive constantly but never had time to track my miles. Milegen helped me recover thousands in deductions I would have otherwise lost.",
-      author: "Sarah T., Sales Professional",
-    },
-    {
-      quote:
-        "The interface is so intuitive. I was able to create a full year's worth of mileage logs in under 10 minutes. Incredible time-saver!",
-      author: "David L., Real Estate Agent",
-    },
-  ];
-
   return (
     <Box
       py={80}
       style={{
-        background: "linear-gradient(to right, #3498db, #39c0ba)",
-        borderTop: "1px solid rgba(0, 0, 0, 0.05)",
-        borderBottom: "1px solid rgba(0, 0, 0, 0.05)",
+        background: "linear-gradient(135deg, #1a365d 0%, #2d3748 100%)",
       }}
     >
-      <Container size="lg">
-        <Title order={2} ta="center" mb="xs" style={{ color: "#3498db" }}>
-          WHAT OUR USERS SAY
-        </Title>
-        <Text c="dimmed" ta="center" maw={700} size="lg" mb={50} mx="auto">
-          Thousands of professionals trust MileGen for their mileage tracking
-          needs
-        </Text>
+      <Container size="xl">
+        <Stack align="center" gap="xs" mb={50}>
+          <Badge
+            size="lg"
+            variant="gradient"
+            gradient={{ from: "teal", to: "cyan" }}
+            mb="sm"
+          >
+            Trusted by Thousands
+          </Badge>
+          <Title order={2} ta="center" c="white">
+            What Our Users Say
+          </Title>
+          <Text c="gray.4" ta="center" maw={600} size="lg">
+            Join thousands of professionals who trust MileGen for their mileage
+            documentation
+          </Text>
+        </Stack>
 
-        <SimpleGrid cols={{ base: 1, md: 3 }} spacing="xl">
+        <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="xl">
           {testimonials.map((testimonial, index) => (
             <Paper
               key={index}
               p="xl"
-              radius="md"
-              withBorder
+              radius="lg"
               style={{
-                backgroundColor: "white",
-                boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
+                backgroundColor: "rgba(255, 255, 255, 0.05)",
+                backdropFilter: "blur(10px)",
+                border: "1px solid rgba(255, 255, 255, 0.1)",
                 display: "flex",
                 flexDirection: "column",
                 height: "100%",
-                position: "relative",
-                overflow: "hidden",
               }}
-              className="hover-card"
             >
-              <ThemeIcon
-                size={40}
-                radius="xl"
-                style={{
-                  background: "linear-gradient(to right, #3498db, #39c0ba)",
-                  position: "absolute",
-                  top: -20,
-                  right: -20,
-                  opacity: 0.1,
-                  transform: "scale(2.5)",
-                }}
-              >
-                <IconQuote size="1.5rem" />
-              </ThemeIcon>
+              <Stack gap="md" style={{ flex: 1 }}>
+                {/* Rating */}
+                <Rating value={testimonial.rating} readOnly color="yellow" />
 
-              <Text
-                size="lg"
-                style={{ fontStyle: "italic", flexGrow: 1 }}
-                mb="xl"
-              >
-                &quot;{testimonial.quote}&quot;
-              </Text>
-
-              <Group>
-                <ThemeIcon
-                  size={40}
-                  radius="xl"
-                  style={{
-                    background: "linear-gradient(to right, #3498db, #39c0ba)",
-                  }}
+                {/* Quote */}
+                <Text
+                  size="md"
+                  c="gray.2"
+                  style={{ fontStyle: "italic", flex: 1 }}
                 >
-                  <IconUser size="1.5rem" />
-                </ThemeIcon>
-                <Text fw={600}>{testimonial.author}</Text>
-              </Group>
+                  &ldquo;{testimonial.quote}&rdquo;
+                </Text>
+
+                {/* Author */}
+                <Group mt="auto">
+                  <ThemeIcon
+                    size={44}
+                    radius="xl"
+                    variant="gradient"
+                    gradient={{ from: "teal", to: "cyan" }}
+                  >
+                    <IconUser size={24} />
+                  </ThemeIcon>
+                  <div>
+                    <Text fw={600} c="white">
+                      {testimonial.author}
+                    </Text>
+                    <Text size="sm" c="gray.4">
+                      {testimonial.role}
+                    </Text>
+                  </div>
+                </Group>
+              </Stack>
             </Paper>
           ))}
         </SimpleGrid>

@@ -1,6 +1,9 @@
-export { HeroSection } from './HeroSection';
-export { StepsSection } from './StepsSection';
-export { TestimonialsSection } from './TestimonialsSection';
-export { CTASection } from './CTASection';
-export { FinalCTA } from './FinalCTA';
-export { SEOSection } from './SEOSection';
+export { HeroSection } from "./HeroSection";
+export { TrustSection } from "./TrustSection";
+export { StepsSection } from "./StepsSection";
+export { BenefitsSection } from "./BenefitsSection";
+export { TestimonialsSection } from "./TestimonialsSection";
+export { PricingSection } from "./PricingSection";
+export { CTASection } from "./CTASection";
+export { FinalCTA } from "./FinalCTA";
+export { SEOSection } from "./SEOSection";
